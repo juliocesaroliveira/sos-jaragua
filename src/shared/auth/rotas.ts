@@ -18,6 +18,9 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     // Gestão de usuários/permissões
     { prefixo: '/admin', roles: ['administrador'] },
 
+    // Convocação em massa — alcance grande demais para operação de campo
+    { prefixo: '/convocacao', roles: ['coordenador', 'administrador'] },
+
     // Relatórios e exportações
     { prefixo: '/relatorios', roles: ['coordenador', 'administrador'] },
     { prefixo: '/api/relatorios/export', roles: ['coordenador', 'administrador'] },
