@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider, themeInitScript } from '@/src/shared/ui/theme/theme-provider'
-import { ThemeToggle } from '@/src/shared/ui/theme/theme-toggle'
+import { Toaster } from '@/src/shared/ui/toast/toast'
 import '@/app/globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -21,10 +21,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body>
                 <ThemeProvider>
-                    <div className="fixed right-4 top-4 z-50">
-                        <ThemeToggle />
-                    </div>
                     {children}
+                    {/* Toaster único da aplicação (DESIGN_SYSTEM.md §4.8) — o
+                        ThemeToggle fica no header de cada shell, não flutuando
+                        sobre o conteúdo. */}
+                    <Toaster />
                 </ThemeProvider>
                 <SpeedInsights />
                 <Analytics />
