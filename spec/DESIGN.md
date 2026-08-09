@@ -481,31 +481,7 @@ condicional que possa ser esquecido em um novo relatório).
 
 ---
 
-## 18. Cleanup Inicial Necessário
-
-Antes de iniciar a implementação dos módulos de negócio, resolver o débito do scaffold
-atual (herdado do exemplo `with-mongodb` do `create-next-app`):
-
-1. **Duplicação de stylesheet**: `app/layout.tsx` importa `@/styles/globals.css`
-   (obsoleto, baseado em `rgb()` vars) em vez de `app/globals.css` (já usa `@theme inline`,
-   local canônico do App Router). Ação: manter apenas `app/globals.css`, remover
-   `styles/globals.css`, e adicionar um alternador manual de tema (classe `dark` no `html`
-    - `localStorage`/cookie) — hoje ambos os arquivos só reagem a `prefers-color-scheme`, o
-      que **não** atende ao requisito de tema "alternável" do NFR §2.2.
-2. **`tailwind.config.ts` legado**: escrito no estilo v3 (content globs + extensão de
-   `backgroundImage`); Tailwind v4 é CSS-first via `@theme` em `globals.css`. Reconciliar —
-   mover extensões de tema para `@theme` e avaliar se o arquivo `.ts` ainda é necessário.
-3. **Remover código de exemplo**: `app/app-demo/`, `app/actions.ts`
-   (`testDatabaseConnection`); realocar a lógica de cliente Mongo de `lib/mongodb.ts` para
-   `src/shared/db/mongo/client.ts`, escopada exclusivamente para o uso de auditoria (não
-   mais um teste de conectividade genérico).
-4. **`tsconfig.json`**: `target: es5` é incomum para Next 16/React 19 (funcionalidades
-   modernas de runtime não precisam desse nível de transpilação). Revisar para um target
-   mais atual (ex.: `es2020`+) como parte da configuração inicial.
-
----
-
-## 19. Testes
+## 18. Testes
 
 O skill de Vitest está disponível no ambiente, mas `vitest` ainda não é uma dependência do
 projeto. Proposta: testes unitários co-localizados por módulo, focados nas camadas
@@ -517,7 +493,7 @@ atômica).
 
 ---
 
-## 20. Decisões de Design Consolidadas
+## 19. Decisões de Design Consolidadas
 
 Resumo das decisões que fecham pontos originalmente ambíguos no BRD/NFR — todas confirmadas
 com o usuário, sem pendências para a implementação:
