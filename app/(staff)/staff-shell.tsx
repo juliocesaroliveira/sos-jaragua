@@ -9,6 +9,7 @@ import {
     FileSpreadsheet,
     LayoutDashboard,
     LogOut,
+    Megaphone,
     Menu as MenuIcon,
     Package,
     PackageMinus,
@@ -45,6 +46,7 @@ const NAV: ItemNav[] = [
     { href: '/estoque/kits', label: 'Kits', icone: <Package aria-hidden className="size-5" /> },
     { href: '/estoque/descarte', label: 'Descarte', icone: <Trash2 aria-hidden className="size-5" /> },
     { href: '/crise', label: 'Variáveis da crise', icone: <TriangleAlert aria-hidden className="size-5" /> },
+    { href: '/convocacao', label: 'Convocação', icone: <Megaphone aria-hidden className="size-5" /> },
     { href: '/relatorios', label: 'Relatórios', icone: <FileSpreadsheet aria-hidden className="size-5" /> }
 ]
 

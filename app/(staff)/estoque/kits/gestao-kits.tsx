@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useCallback, useId, useRef, useState, useTransition } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import {
     Alert,
@@ -30,19 +30,26 @@ import { salvarKit } from '@/src/modules/estoque/presentation/actions/estoque'
  */
 type LinhaReceita = { id: string; itemId: string[]; quantidade: string }
 
-let contador = 0
-const novaLinha = (): LinhaReceita => ({ id: `r${contador++}`, itemId: [], quantidade: '' })
-
 export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: ItemComSaldo[] }) {
     const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
+
+    /**
+     * Ids por instância, com prefixo de `useId` — um contador de módulo
+     * persistiria entre requisições no servidor e o SSR divergiria da
+     * hidratação, quebrando o `htmlFor` de cada label.
+     */
+    const idBase = useId()
+    const sequencia = useRef(0)
+    const proximoId = useCallback(() => `${idBase}${sequencia.current++}`, [idBase])
+    const novaLinha = useCallback((): LinhaReceita => ({ id: proximoId(), itemId: [], quantidade: '' }), [proximoId])
 
     const [editando, setEditando] = useState<KitComReceita | null>(null)
     const [aberto, setAberto] = useState(false)
     const [nome, setNome] = useState('')
     const [descricao, setDescricao] = useState('')
     const [ativo, setAtivo] = useState(true)
-    const [receita, setReceita] = useState<LinhaReceita[]>([novaLinha()])
+    const [receita, setReceita] = useState<LinhaReceita[]>(() => [novaLinha()])
     const [erro, setErro] = useState<string | null>(null)
 
     const saldos = new Map(itens.map((i) => [i.id, i.saldo]))
@@ -65,7 +72,7 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
         setReceita(
             kit.componentes.length > 0
                 ? kit.componentes.map((c) => ({
-                      id: `r${contador++}`,
+                      id: proximoId(),
                       itemId: [c.itemId],
                       quantidade: String(c.quantidadePorKit)
                   }))

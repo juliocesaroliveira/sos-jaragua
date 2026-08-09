@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { ROLES_STAFF, ROTULO_ROLE } from '@/src/shared/auth/roles'
 import { exigirRoles } from '@/src/shared/auth/sessao'
+import { contarNaoLidas, listarNotificacoes } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
+import { SinoNotificacoes } from './sino-notificacoes'
 import { StaffShell } from './staff-shell'
 
 /**
@@ -22,8 +24,17 @@ export const instant = false
 export default async function StaffLayout({ children }: { children: ReactNode }) {
     const ator = await exigirRoles(ROLES_STAFF)
 
+    // Notificações são por-usuário e nunca cacheadas (DESIGN.md §7); ficam no
+    // layout para o sino estar presente em toda a área interna.
+    const [notificacoes, naoLidas] = await Promise.all([listarNotificacoes(ator.userId), contarNaoLidas(ator.userId)])
+
     return (
-        <StaffShell nome={ator.nome} role={ator.role} rotuloRole={ROTULO_ROLE[ator.role]}>
+        <StaffShell
+            nome={ator.nome}
+            role={ator.role}
+            rotuloRole={ROTULO_ROLE[ator.role]}
+            notificacoes={<SinoNotificacoes notificacoes={notificacoes} naoLidas={naoLidas} />}
+        >
             {children}
         </StaffShell>
     )

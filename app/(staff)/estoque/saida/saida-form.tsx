@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useCallback, useId, useRef, useState, useTransition } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { Alert, Button, IconButton, Input, NumberInput, RadioGroup, Select, avisar } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE, type TipoSaida } from '@/src/modules/estoque/domain/item'
@@ -18,17 +18,27 @@ import { registrarSaida } from '@/src/modules/estoque/presentation/actions/estoq
  */
 type Linha = { id: string; refId: string[]; quantidade: string }
 
-let contador = 0
-const novaLinha = (): Linha => ({ id: `l${contador++}`, refId: [], quantidade: '' })
-
 export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitComReceita[] }) {
     const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
 
+    /**
+     * Os ids das linhas precisam ser estáveis entre servidor e cliente e
+     * **por instância**: um contador de módulo persistiria entre requisições no
+     * servidor, o SSR emitiria `l2` enquanto a hidratação emitiria `l0`, e o
+     * `htmlFor` de cada label apontaria para um campo inexistente.
+     */
+    const idBase = useId()
+    const sequencia = useRef(0)
+    const novaLinha = useCallback(
+        (): Linha => ({ id: `${idBase}${sequencia.current++}`, refId: [], quantidade: '' }),
+        [idBase]
+    )
+
     const [tipo, setTipo] = useState<TipoSaida>('avulso')
     const [destino, setDestino] = useState('')
     const [responsavel, setResponsavel] = useState('')
-    const [linhas, setLinhas] = useState<Linha[]>([novaLinha()])
+    const [linhas, setLinhas] = useState<Linha[]>(() => [novaLinha()])
     const [erroDeficit, setErroDeficit] = useState<string | null>(null)
     const [erros, setErros] = useState<Record<string, string>>({})
 
