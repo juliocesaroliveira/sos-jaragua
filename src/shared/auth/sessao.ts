@@ -1,0 +1,72 @@
+import 'server-only'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { auth } from './auth'
+import { expirouPorInatividade } from './inatividade'
+import { ehRole, type Role } from './roles'
+
+export type SessaoAtor = {
+    userId: string
+    role: Role
+    nome: string
+    email: string
+    ativo: boolean
+    sessionToken: string
+}
+
+/**
+ * Sessão autoritativa lida no servidor (`auth.api.getSession`) — a fonte de
+ * verdade de autorização, complementando a barreira rápida do `proxy.ts`
+ * (defesa em profundidade, DESIGN.md §6.2).
+ *
+ * Retorna `null` quando não há sessão, quando o usuário foi desativado
+ * (`user.ativo = false`) ou quando a sessão de staff expirou por inatividade
+ * (DESIGN.md §6.3) — neste último caso a sessão também é invalidada.
+ */
+export async function obterSessao(): Promise<SessaoAtor | null> {
+    const cabecalhos = await headers()
+    const sessao = await auth.api.getSession({ headers: cabecalhos })
+    if (!sessao) return null
+
+    const role = ehRole(sessao.user.role) ? sessao.user.role : 'usuario'
+
+    if (!sessao.user.ativo) {
+        await auth.api.signOut({ headers: cabecalhos })
+        return null
+    }
+
+    if (expirouPorInatividade(role, sessao.session.lastActivityAt as Date | null)) {
+        await auth.api.signOut({ headers: cabecalhos })
+        return null
+    }
+
+    return {
+        userId: sessao.user.id,
+        role,
+        nome: sessao.user.name,
+        email: sessao.user.email,
+        ativo: sessao.user.ativo,
+        sessionToken: sessao.session.token
+    }
+}
+
+/** Exige sessão válida; redireciona para `/login` caso contrário. */
+export async function exigirSessao(destinoPosLogin?: string): Promise<SessaoAtor> {
+    const ator = await obterSessao()
+    if (!ator) {
+        const query = destinoPosLogin ? `?redirecionar=${encodeURIComponent(destinoPosLogin)}` : ''
+        redirect(`/login${query}`)
+    }
+    return ator
+}
+
+/**
+ * Exige sessão com uma das `roles`. Sem sessão → `/login`; com sessão mas sem
+ * permissão → `/sem-permissao` (não `/login`, para não sugerir que basta
+ * autenticar de novo).
+ */
+export async function exigirRoles(roles: readonly Role[], destinoPosLogin?: string): Promise<SessaoAtor> {
+    const ator = await exigirSessao(destinoPosLogin)
+    if (!roles.includes(ator.role)) redirect('/sem-permissao')
+    return ator
+}
