@@ -7,6 +7,7 @@ import {
     type Result,
     type UseCase
 } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import type { VoluntarioRepository } from '../ports/voluntario-repository'
 
 export type EntradaRejeitarCandidatura = {
@@ -41,7 +42,20 @@ export class RejeitarCandidaturaUseCase implements UseCase<EntradaRejeitarCandid
         const perfil = await this.voluntarios.buscarPorId(perfilId)
         if (!perfil) return falha(new NaoEncontradoError('Candidatura não encontrada.'))
 
-        await this.voluntarios.rejeitar({ perfilId, aprovadoPor, motivo: motivoLimpo })
+        await withAudit(
+            {
+                entidade: 'Voluntario',
+                acao: 'update',
+                tabela: 'voluntario_perfil',
+                dadosAnteriores: async () => ({ ...perfil }),
+                extrair: () => ({
+                    entidadeId: perfilId,
+                    dadosNovos: { ...perfil, status: 'rejeitado', aprovadoPor, motivoRejeicao: motivoLimpo }
+                })
+            },
+            () => this.voluntarios.rejeitar({ perfilId, aprovadoPor, motivo: motivoLimpo })
+        )
+
         return ok({ perfilId })
     }
 }

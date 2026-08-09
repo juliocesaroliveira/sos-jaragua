@@ -1,4 +1,5 @@
 import { DomainError, NaoEncontradoError, falha, ok, type Result, type UseCase } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import type { NotificacaoService } from '@/src/modules/notificacoes/application/ports/notificacao-service'
 import type { UnidadeDeTrabalho } from '../ports/voluntario-repository'
 
@@ -37,21 +38,39 @@ export class AprovarCandidaturaUseCase implements UseCase<
         perfilId,
         aprovadoPor
     }: EntradaAprovarCandidatura): Promise<Result<SaidaAprovarCandidatura, DomainError>> {
-        const resultado = await this.uow.executar(async ({ voluntarios, usuarios }) => {
-            const perfil = await voluntarios.buscarPorId(perfilId)
-            if (!perfil) return null
+        // BR-AUD-01: transição de status de `voluntario_perfil` é o evento de
+        // auditoria mais sensível do módulo — muda a role de alguém.
+        const resultado = await withAudit(
+            {
+                entidade: 'Voluntario',
+                acao: 'update',
+                tabela: 'voluntario_perfil',
+                dadosAnteriores: async () => {
+                    const perfil = await this.uow.executar(({ voluntarios }) => voluntarios.buscarPorId(perfilId))
+                    return perfil ? { ...perfil } : null
+                },
+                extrair: (perfil) => ({
+                    entidadeId: perfilId,
+                    dadosNovos: perfil ? { ...perfil, status: 'aprovado', aprovadoPor } : null
+                })
+            },
+            () =>
+                this.uow.executar(async ({ voluntarios, usuarios }) => {
+                    const perfil = await voluntarios.buscarPorId(perfilId)
+                    if (!perfil) return null
 
-            await voluntarios.aprovar({ perfilId, aprovadoPor })
+                    await voluntarios.aprovar({ perfilId, aprovadoPor })
 
-            // Só promove quem ainda é `usuario`: um Coordenador que também é
-            // voluntário não pode ser rebaixado pela aprovação.
-            const roleAtual = await usuarios.buscarRole(perfil.userId)
-            if (roleAtual === 'usuario') {
-                await usuarios.atualizarRole(perfil.userId, 'voluntario')
-            }
+                    // Só promove quem ainda é `usuario`: um Coordenador que também é
+                    // voluntário não pode ser rebaixado pela aprovação.
+                    const roleAtual = await usuarios.buscarRole(perfil.userId)
+                    if (roleAtual === 'usuario') {
+                        await usuarios.atualizarRole(perfil.userId, 'voluntario')
+                    }
 
-            return perfil
-        })
+                    return perfil
+                })
+        )
 
         if (!resultado) return falha(new NaoEncontradoError('Candidatura não encontrada.'))
 

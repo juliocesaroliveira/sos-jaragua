@@ -4,7 +4,7 @@ import { revalidateTag, updateTag } from 'next/cache'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
-import { obterSessao } from '@/src/shared/auth/sessao'
+import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { criarVoluntarioRepository } from '../../infrastructure/drizzle/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from '../../application/use-cases/submeter-candidatura'
 import { DISPONIBILIDADES, TIPOS_VEICULO } from '../../domain/candidatura'
@@ -43,7 +43,7 @@ export async function submeterCandidatura(
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
     const useCase = new SubmeterCandidaturaUseCase(criarVoluntarioRepository())
-    const resultado = await useCase.executar({ userId: ator.userId, dados: parse.data })
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar({ userId: ator.userId, dados: parse.data }))
 
     if (resultado.ok) {
         // A fila de triagem precisa refletir a nova candidatura imediatamente.

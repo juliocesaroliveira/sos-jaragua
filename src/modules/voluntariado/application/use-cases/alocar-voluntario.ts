@@ -7,6 +7,7 @@ import {
     type Result,
     type UseCase
 } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import type { NotificacaoService } from '@/src/modules/notificacoes/application/ports/notificacao-service'
 import type { AtividadeRepository } from '../ports/atividade-repository'
 import type { VoluntarioRepository } from '../ports/voluntario-repository'
@@ -63,7 +64,21 @@ export class AlocarVoluntarioUseCase implements UseCase<EntradaAlocarVoluntario,
             )
         }
 
-        const alocado = await this.atividades.alocar({ turnoId, voluntarioPerfilId, alocadoPor })
+        const alocado = await withAudit(
+            {
+                entidade: 'Atividade',
+                acao: 'create',
+                tabela: 'alocacao',
+                extrair: (resultado) => ({
+                    entidadeId: resultado?.alocacaoId ?? turnoId,
+                    dadosNovos: resultado
+                        ? { alocacaoId: resultado.alocacaoId, turnoId, voluntarioPerfilId, alocadoPor }
+                        : null
+                })
+            },
+            () => this.atividades.alocar({ turnoId, voluntarioPerfilId, alocadoPor })
+        )
+
         if (!alocado) {
             return falha(
                 new ValidacaoError('Este voluntário já está alocado neste turno.', {
@@ -96,7 +111,16 @@ export class CancelarAlocacaoUseCase implements UseCase<EntradaCancelarAlocacao,
         const destinatario = await this.atividades.destinatarioDaAlocacao(alocacaoId)
         if (!destinatario) return falha(new NaoEncontradoError('Alocação não encontrada.'))
 
-        await this.atividades.cancelarAlocacao(alocacaoId)
+        await withAudit(
+            {
+                entidade: 'Atividade',
+                acao: 'update',
+                tabela: 'alocacao',
+                dadosAnteriores: async () => ({ ...destinatario, status: 'confirmado' }),
+                extrair: () => ({ entidadeId: alocacaoId, dadosNovos: { status: 'cancelado' } })
+            },
+            () => this.atividades.cancelarAlocacao(alocacaoId)
+        )
 
         await this.notificacoes.enviar({
             evento: 'alteracao_atividade',

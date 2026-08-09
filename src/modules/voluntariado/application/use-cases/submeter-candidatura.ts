@@ -1,4 +1,5 @@
 import { DomainError, ValidacaoError, falha, ok, type Result, type UseCase } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import { validarCandidatura, type DadosCandidatura } from '../../domain/candidatura'
 import type { PerfilVoluntario, VoluntarioRepository } from '../ports/voluntario-repository'
 
@@ -41,7 +42,19 @@ export class SubmeterCandidaturaUseCase implements UseCase<EntradaSubmeterCandid
             )
         }
 
-        const perfil = await this.voluntarios.salvarCandidatura({ userId, dados: candidatura })
+        const perfil = await withAudit(
+            {
+                entidade: 'Voluntario',
+                // Reenvio reaproveita a linha existente (BR-VOL-01) — o que é
+                // `update`, não `create`.
+                acao: existente ? 'update' : 'create',
+                tabela: 'voluntario_perfil',
+                dadosAnteriores: async () => (existente ? { ...existente } : null),
+                extrair: (salvo) => ({ entidadeId: salvo.id, dadosNovos: { ...salvo } })
+            },
+            () => this.voluntarios.salvarCandidatura({ userId, dados: candidatura })
+        )
+
         return ok(perfil)
     }
 }

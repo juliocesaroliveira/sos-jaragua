@@ -5,7 +5,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO, tagAtividade } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import type { Role } from '@/src/shared/auth/roles'
-import { obterSessao } from '@/src/shared/auth/sessao'
+import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { notificacaoService } from '@/src/modules/notificacoes/infrastructure'
 import { atividadeRepository } from '../../infrastructure/drizzle/atividade-repository'
 import { criarVoluntarioRepository } from '../../infrastructure/drizzle/voluntario-repository'
@@ -57,13 +57,15 @@ export async function criarAtividade(entrada: EntradaCriarAtividade): Promise<Re
     const turnos = gerarTurnosConsecutivos(inicio, parse.data.quantidadeTurnos, parse.data.vagasPorTurno)
 
     const useCase = new CriarAtividadeUseCase(atividadeRepository)
-    const resultado = await useCase.executar({
-        titulo: parse.data.titulo,
-        categoriaId: parse.data.categoriaId,
-        local: parse.data.local,
-        criadoPor: ator.userId,
-        turnos
-    })
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            titulo: parse.data.titulo,
+            categoriaId: parse.data.categoriaId,
+            local: parse.data.local,
+            criadoPor: ator.userId,
+            turnos
+        })
+    )
 
     if (resultado.ok) updateTag(CACHE_TAGS.atividades)
 
@@ -87,7 +89,7 @@ export async function editarAtividade(
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
     const useCase = new EditarAtividadeUseCase(atividadeRepository, notificacaoService)
-    const resultado = await useCase.executar(parse.data)
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar(parse.data))
 
     if (resultado.ok) {
         updateTag(CACHE_TAGS.atividades)
@@ -112,7 +114,7 @@ export async function alterarStatusAtividade(
     if (!parse.success) return erroAction('validacao', 'Status inválido.')
 
     const useCase = new AlterarStatusAtividadeUseCase(atividadeRepository, notificacaoService)
-    const resultado = await useCase.executar(parse.data)
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar(parse.data))
 
     if (resultado.ok) {
         updateTag(CACHE_TAGS.atividades)
@@ -139,11 +141,13 @@ export async function alocarVoluntario(
     if (!parse.success) return erroAction('validacao', 'Dados de alocação inválidos.')
 
     const useCase = new AlocarVoluntarioUseCase(atividadeRepository, criarVoluntarioRepository(), notificacaoService)
-    const resultado = await useCase.executar({
-        turnoId: parse.data.turnoId,
-        voluntarioPerfilId: parse.data.voluntarioPerfilId,
-        alocadoPor: ator.userId
-    })
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            turnoId: parse.data.turnoId,
+            voluntarioPerfilId: parse.data.voluntarioPerfilId,
+            alocadoPor: ator.userId
+        })
+    )
 
     if (resultado.ok) {
         updateTag(tagAtividade(parse.data.atividadeId))
@@ -165,7 +169,7 @@ export async function cancelarAlocacao(
     if (!parse.success) return erroAction('validacao', 'Alocação inválida.')
 
     const useCase = new CancelarAlocacaoUseCase(atividadeRepository, notificacaoService)
-    const resultado = await useCase.executar({ alocacaoId: parse.data.alocacaoId })
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar({ alocacaoId: parse.data.alocacaoId }))
 
     if (resultado.ok) {
         updateTag(tagAtividade(parse.data.atividadeId))

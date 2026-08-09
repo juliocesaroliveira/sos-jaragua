@@ -7,6 +7,7 @@ import {
     type Result,
     type UseCase
 } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import type { NotificacaoService } from '@/src/modules/notificacoes/application/ports/notificacao-service'
 import { validarTurno, type DadosTurno } from '../../domain/turno'
 import type { Atividade, AtividadeRepository, StatusAtividade } from '../ports/atividade-repository'
@@ -53,7 +54,20 @@ export class CriarAtividadeUseCase implements UseCase<EntradaCriarAtividade, Ati
             }
         }
 
-        return ok(await this.atividades.criar(entrada))
+        const criada = await withAudit(
+            {
+                entidade: 'Atividade',
+                acao: 'create',
+                tabela: 'atividade',
+                extrair: (atividade) => ({
+                    entidadeId: atividade.id,
+                    dadosNovos: { ...atividade, turnos: entrada.turnos.length }
+                })
+            },
+            () => this.atividades.criar(entrada)
+        )
+
+        return ok(criada)
     }
 }
 
@@ -78,7 +92,23 @@ export class EditarAtividadeUseCase implements UseCase<EntradaEditarAtividade, A
         const base = validarCamposAtividade(entrada)
         if (base) return falha(base)
 
-        const atualizada = await this.atividades.atualizar(entrada)
+        const atualizada = await withAudit(
+            {
+                entidade: 'Atividade',
+                acao: 'update',
+                tabela: 'atividade',
+                dadosAnteriores: async () => {
+                    const anterior = await this.atividades.buscarPorId(entrada.id)
+                    return anterior ? { ...anterior } : null
+                },
+                extrair: (resultado) => ({
+                    entidadeId: entrada.id,
+                    dadosNovos: resultado ? { ...resultado } : null
+                })
+            },
+            () => this.atividades.atualizar(entrada)
+        )
+
         if (!atualizada) return falha(new NaoEncontradoError('Atividade não encontrada.'))
 
         await this.avisarAlocados(entrada.id, atualizada.titulo, 'alterada')
@@ -124,7 +154,16 @@ export class AlterarStatusAtividadeUseCase implements UseCase<EntradaAlterarStat
         // remove alocações, mas manter a ordem deixa a intenção explícita.
         const destinatarios = status === 'cancelada' ? await this.atividades.destinatariosDaAtividade(id) : []
 
-        await this.atividades.alterarStatus({ id, status })
+        await withAudit(
+            {
+                entidade: 'Atividade',
+                acao: 'update',
+                tabela: 'atividade',
+                dadosAnteriores: async () => ({ ...atividade }),
+                extrair: () => ({ entidadeId: id, dadosNovos: { ...atividade, status } })
+            },
+            () => this.atividades.alterarStatus({ id, status })
+        )
 
         if (destinatarios.length > 0) {
             await this.notificacoes.enviarEmLote(

@@ -5,7 +5,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import { ROLES_STAFF } from '@/src/shared/auth/roles'
-import { obterSessao } from '@/src/shared/auth/sessao'
+import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { notificacaoService } from '@/src/modules/notificacoes/infrastructure'
 import { criarVoluntarioRepository, unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
 import { AprovarCandidaturaUseCase } from '../../application/use-cases/aprovar-candidatura'
@@ -27,7 +27,9 @@ export async function aprovarCandidatura(entrada: {
     if (!parse.success) return erroAction('validacao', 'Candidatura inválida.')
 
     const useCase = new AprovarCandidaturaUseCase(unidadeDeTrabalho, notificacaoService)
-    const resultado = await useCase.executar({ perfilId: parse.data.perfilId, aprovadoPor: ator.userId })
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({ perfilId: parse.data.perfilId, aprovadoPor: ator.userId })
+    )
 
     if (resultado.ok) {
         // `updateTag`: a candidatura precisa sumir da fila na mesma resposta.
@@ -52,11 +54,13 @@ export async function rejeitarCandidatura(entrada: {
     if (!parse.success) return erroAction('validacao', 'Informe o motivo da rejeição.')
 
     const useCase = new RejeitarCandidaturaUseCase(criarVoluntarioRepository())
-    const resultado = await useCase.executar({
-        perfilId: parse.data.perfilId,
-        aprovadoPor: ator.userId,
-        motivo: parse.data.motivo
-    })
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            perfilId: parse.data.perfilId,
+            aprovadoPor: ator.userId,
+            motivo: parse.data.motivo
+        })
+    )
 
     if (resultado.ok) {
         updateTag(CACHE_TAGS.voluntariadoPendentes)
