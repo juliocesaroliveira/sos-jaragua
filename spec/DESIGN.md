@@ -384,10 +384,13 @@ condicional que possa ser esquecido em um novo relatório).
 - Catálogo de eventos espelha 1:1 a matriz de comunicação do BRD §6: `triagem_concluida`,
   `atividade_atribuida`, `alteracao_atividade`, `lembrete_turno`, `broadcast_urgencia`,
   `cadastros_acumulados`, `estoque_critico`, `deficit_atendimento`.
-- **Lembrete de turno** (2h antes): não há trigger de evento natural (é baseado em tempo),
-  então usa **Vercel Cron** — `vercel.json` agenda `GET /api/cron/lembrete-turno` a cada
-  ~15 minutos; a rota (protegida por header `Authorization: Bearer $CRON_SECRET`) busca
-  `alocacao` join `turno` com `turno.inicio` entre 105 e 120 minutos no futuro e
+- **Lembrete de turno** (aviso diário): não há trigger de evento natural (é baseado em
+  tempo), então usa **Vercel Cron** — `vercel.json` agenda `GET /api/cron/lembrete-turno`
+  **1x por dia** às 12:00 UTC (09:00 America/Sao_Paulo). O plano Hobby da Vercel só
+  permite cron diário, então o lembrete "2h antes" do BRD §6 foi substituído por um aviso
+  matinal cobrindo os turnos das próximas ~24h. A rota (protegida por header
+  `Authorization: Bearer $CRON_SECRET`) busca `alocacao` join `turno` com `turno.inicio`
+  entre 0 e 26 horas no futuro (folga acima de 24h para tolerar atraso do cron) e
   `alocacao.lembreteEnviadoEm IS NULL`, dispara a notificação e marca
   `lembreteEnviadoEm = now()` (evita duplicidade entre execuções).
 - **Broadcast de Urgência**: uma única Server Action em lote, disparada pelo Coordenador

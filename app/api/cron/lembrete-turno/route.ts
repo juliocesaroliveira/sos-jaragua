@@ -5,18 +5,19 @@ import { alocacao, atividade, turno, voluntarioPerfil } from '@/db/schema/volunt
 import { notificacaoService } from '@/src/modules/notificacoes/infrastructure'
 
 /**
- * Lembrete de turno, 2h antes do início (BRD §6, DESIGN.md §12).
+ * Lembrete de turno (BRD §6, DESIGN.md §12).
  *
  * É o único evento **baseado em tempo**, sem gatilho natural na aplicação —
- * por isso um cron da Vercel (`vercel.json`) chama esta rota a cada ~15 min.
+ * por isso um cron da Vercel (`vercel.json`) chama esta rota.
  *
- * A janela é 105–120 min no futuro (e não "exatamente 120"): o cron não roda em
- * instante exato, e uma janela mais larga que o intervalo entre execuções
- * garante que nenhum turno seja pulado. `lembreteEnviadoEm IS NULL` é o que
- * evita avisar duas vezes quando duas execuções pegam o mesmo turno.
+ * O plano Hobby da Vercel só permite **uma execução por dia**, então o lembrete
+ * não é mais "2h antes" e sim um aviso matinal cobrindo todos os turnos das
+ * próximas ~24h. A janela tem folga acima de 24h para que um atraso do cron não
+ * deixe nenhum turno sem aviso; `lembreteEnviadoEm IS NULL` é o que evita
+ * avisar duas vezes quando duas execuções pegam o mesmo turno.
  */
-const JANELA_MINIMA_MINUTOS = 105
-const JANELA_MAXIMA_MINUTOS = 120
+const JANELA_MINIMA_MINUTOS = 0
+const JANELA_MAXIMA_MINUTOS = 26 * 60
 
 export async function GET(request: NextRequest) {
     const autorizado = verificarSegredo(request)
@@ -83,8 +84,8 @@ export async function GET(request: NextRequest) {
         pendentes.map((p) => ({
             evento: 'lembrete_turno' as const,
             destinatarioUserId: p.userId,
-            titulo: 'Seu turno começa em 2 horas',
-            mensagem: `${p.titulo} — ${p.local}, das ${formatarHora(p.inicio)} às ${formatarHora(p.fim)}.`,
+            titulo: 'Lembrete do seu próximo turno',
+            mensagem: `${p.titulo} — ${p.local}, ${formatarData(p.inicio)}, das ${formatarHora(p.inicio)} às ${formatarHora(p.fim)}.`,
             contexto: { atividadeId: p.atividadeId, turnoId: p.turnoId, alocacaoId: p.alocacaoId }
         }))
     )
@@ -114,4 +115,15 @@ const HORA = new Intl.DateTimeFormat('pt-BR', {
 
 function formatarHora(data: Date): string {
     return HORA.format(data)
+}
+
+// A janela cobre mais de um dia, então a data precisa aparecer na mensagem.
+const DATA = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+})
+
+function formatarData(data: Date): string {
+    return DATA.format(data)
 }

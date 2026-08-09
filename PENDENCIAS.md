@@ -257,7 +257,8 @@ código. O que existe pronto:
 
 - `.env.example` lista **todas** as variáveis necessárias, incluindo as três de
   limiar de alerta;
-- `vercel.json` já agenda `GET /api/cron/lembrete-turno` a cada 15 minutos;
+- `vercel.json` já agenda `GET /api/cron/lembrete-turno` 1x por dia (12:00 UTC =
+  09:00 BRT) — o plano Hobby da Vercel não aceita mais de uma execução diária;
 - a rota do cron foi verificada localmente (401 sem token, 200 com o token, e
   dedupe correto entre execuções).
 

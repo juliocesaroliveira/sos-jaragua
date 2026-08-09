@@ -266,10 +266,11 @@ decidida ad-hoc.
       mesma invocação (DESIGN.md §12).
 - [x] NOT-06 Implementar rota `app/api/cron/lembrete-turno/route.ts` (protegida por
       `Authorization: Bearer $CRON_SECRET`): busca `alocacao` join `turno` com
-      `turno.inicio` entre 105–120 min no futuro e `lembreteEnviadoEm IS NULL`, dispara
+      `turno.inicio` entre 0 e 26h no futuro e `lembreteEnviadoEm IS NULL`, dispara
       notificação e marca `lembreteEnviadoEm = now()` (DESIGN.md §12).
 - [x] NOT-07 Configurar `vercel.json` com Cron agendando
-      `GET /api/cron/lembrete-turno` a cada ~15 minutos (DESIGN.md §12).
+      `GET /api/cron/lembrete-turno` 1x por dia às 12:00 UTC / 09:00 BRT — limite do
+      plano Hobby da Vercel (DESIGN.md §12).
 - [x] NOT-08 Implementar alertas de coordenador gerados em leitura (não job separado):
       `cadastros_acumulados` (contador da fila pendente), `estoque_critico` (item abaixo
       do mínimo de segurança), `deficit_atendimento` (capacidade de kits abaixo da
