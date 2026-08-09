@@ -142,44 +142,44 @@ decidida ad-hoc.
 
 ## 4. VOLUNTARIADO — Candidatura, Triagem, Atividades e Turnos
 
-- [ ] VOL-01 Modelar `atividade_categoria`, `atividade`, `turno`, `alocacao` em
+- [x] VOL-01 Modelar `atividade_categoria`, `atividade`, `turno`, `alocacao` em
       `db/schema/voluntariado.ts` e gerar/aplicar migration (DB_SCHEMA.md §5).
-- [ ] VOL-02 Implementar formulário público de candidatura
+- [x] VOL-02 Implementar formulário público de candidatura
       (`app/(public)/voluntariado/candidatura/page.tsx`) com todos os campos de BRD §3.1
       (react-hook-form + zod), incluindo campo condicional `Tipo de Veículo` quando
       `veiculoProprio = true`.
-- [ ] VOL-03 UseCase `SubmeterCandidaturaUseCase`: cria/atualiza `voluntario_perfil` com
+- [x] VOL-03 UseCase `SubmeterCandidaturaUseCase`: cria/atualiza `voluntario_perfil` com
       `status = 'pendente'`; reenvio de candidatura rejeitada reaproveita a mesma linha
       por CPF, limpando `aprovadoPor`/`aprovadoEm`/`motivoRejeicao` (BR-VOL-01,
       DESIGN.md §10.1).
-- [ ] VOL-04 Query + página `(staff)/cadastros-pendentes/page.tsx`: fila de candidaturas
+- [x] VOL-04 Query + página `(staff)/cadastros-pendentes/page.tsx`: fila de candidaturas
       `status = 'pendente'`, com detalhe (Dialog) e ações Aprovar/Rejeitar (BR-VOL-01,
       BR-VOL-02).
-- [ ] VOL-05 UseCase `AprovarCandidaturaUseCase`: transação Postgres atualizando
+- [x] VOL-05 UseCase `AprovarCandidaturaUseCase`: transação Postgres atualizando
       `voluntario_perfil.status = 'aprovado'` + `user.role = 'voluntario'`, seguido de
       notificação `triagem_concluida` e auditoria best-effort (BR-VOL-03, DESIGN.md §4
       trace, §10.1).
-- [ ] VOL-06 UseCase `RejeitarCandidaturaUseCase`: `status = 'rejeitado'` +
+- [x] VOL-06 UseCase `RejeitarCandidaturaUseCase`: `status = 'rejeitado'` +
       `motivoRejeicao` (BR-VOL-02).
-- [ ] VOL-07 Server Actions `aprovarCandidatura`/`rejeitarCandidatura` em
+- [x] VOL-07 Server Actions `aprovarCandidatura`/`rejeitarCandidatura` em
       `presentation/actions/`, com `revalidateTag('voluntariado:pendentes')`.
-- [ ] VOL-08 CRUD de `atividade` (Título, Categoria, Local, Vagas) — página
+- [x] VOL-08 CRUD de `atividade` (Título, Categoria, Local, Vagas) — página
       `(staff)/atividades/page.tsx` + Server Actions de criar/editar/cancelar
       (BRD §3.3).
-- [ ] VOL-09 Fragmentação de Atividade em `turno`s de 4 horas: validação no `domain`
+- [x] VOL-09 Fragmentação de Atividade em `turno`s de 4 horas: validação no `domain`
       (não `CHECK` de banco) rejeitando blocos ≠ 4h, com mensagem de erro específica
       (BR-VOL-04, DESIGN.md §10.2).
-- [ ] VOL-10 UseCase de Alocação: Coordenador seleciona voluntário (filtrável por
+- [x] VOL-10 UseCase de Alocação: Coordenador seleciona voluntário (filtrável por
       `habilidade` via `voluntario_habilidade`) e vincula a um `turno`, respeitando
       `unique(turnoId, voluntarioPerfilId)` (BR-VOL-05).
-- [ ] VOL-11 Página `(staff)/atividades/[id]/page.tsx` — painel Kanban/lista por
+- [x] VOL-11 Página `(staff)/atividades/[id]/page.tsx` — painel Kanban/lista por
       atividade, exibindo vagas preenchidas (`count(alocacao where status='confirmado')`)
       vs. `turno.vagas`, destaque vermelho em turnos deficitários, usando
       `KanbanColumn`/`KanbanCard` (DS-18) e colapsando para lista em mobile
       (BRD §3.3, DESIGN.md §10.2).
-- [ ] VOL-12 Listagem paginada de voluntários (TanStack Table, server-side pagination),
+- [x] VOL-12 Listagem paginada de voluntários (TanStack Table, server-side pagination),
       filtrável por habilidade/status (DESIGN.md §7, §8).
-- [ ] VOL-13 Página `voluntariado/minhas-atividades` para o voluntário visualizar suas
+- [x] VOL-13 Página `voluntariado/minhas-atividades` para o voluntário visualizar suas
       atividades/turnos atribuídos (BRD §2, matriz de permissões).
 
 ---
