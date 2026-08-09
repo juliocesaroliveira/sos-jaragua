@@ -326,15 +326,15 @@ decidida ad-hoc.
 
 ## 11. TESTES
 
-- [ ] TEST-01 Adicionar `vitest` como devDependency e configurar `vitest.config.ts`
+- [x] TEST-01 Adicionar `vitest` como devDependency e configurar `vitest.config.ts`
       (DESIGN.md §18).
-- [ ] TEST-02 Testes unitários de `domain`: maioridade (≥18), dígito verificador de CPF,
+- [x] TEST-02 Testes unitários de `domain`: maioridade (≥18), dígito verificador de CPF,
       validação de bloco de 4h por turno, validação de data de validade não retroativa.
-- [ ] TEST-03 Testes unitários de `application`: expansão de receita de kit +
+- [x] TEST-03 Testes unitários de `application`: expansão de receita de kit +
       consolidação por item (múltiplos kits na mesma saída).
-- [ ] TEST-04 Teste de integração (banco Neon de desenvolvimento): fluxo completo de
+- [x] TEST-04 Teste de integração (banco Neon de desenvolvimento): fluxo completo de
       aprovação de candidatura (troca de `role` na mesma transação).
-- [ ] TEST-05 Teste de integração: fluxo completo de saída de kit — cenário de sucesso
+- [x] TEST-05 Teste de integração: fluxo completo de saída de kit — cenário de sucesso
       (dedução atômica) e cenário de falha (bloqueio com mensagem de déficit por item,
       saldo inalterado).
 
@@ -345,11 +345,11 @@ decidida ad-hoc.
 - [ ] DEPLOY-01 Configurar todas as variáveis de ambiente de DESIGN.md §17 no projeto
       Vercel (produção/preview).
 - [ ] DEPLOY-02 Validar `vercel.json` (cron de lembrete de turno) em produção.
-- [ ] DEPLOY-03 Checklist final de responsividade: cada tela testada em mobile (~375px),
+- [x] DEPLOY-03 Checklist final de responsividade: cada tela testada em mobile (~375px),
       tablet (~768px) e desktop (~1280px) (DESIGN_SYSTEM.md §1.7, §6).
-- [ ] DEPLOY-04 Checklist final de tema: cada tela testada em claro e escuro
+- [x] DEPLOY-04 Checklist final de tema: cada tela testada em claro e escuro
       (DESIGN_SYSTEM.md §6).
-- [ ] DEPLOY-05 Checklist final de idioma: nenhum texto em inglês hardcoded na UI —
+- [x] DEPLOY-05 Checklist final de idioma: nenhum texto em inglês hardcoded na UI —
       toda a interface em pt-BR (NFR §2.2, DESIGN_SYSTEM.md §6).
 - [ ] DEPLOY-06 Verificação end-to-end de cada BR-code do BRD (§3–§7) contra a aplicação
       implementada — percorrer a matriz de atores/permissões (BRD §2) com um usuário de
