@@ -303,23 +303,23 @@ decidida ad-hoc.
 
 ## 9. RELATÓRIOS E EXPORTAÇÃO (BR-REL-01)
 
-- [ ] REL-01 Implementar `GET /api/relatorios/export?tipo=inventario&formato=csv|xlsx`
+- [x] REL-01 Implementar `GET /api/relatorios/export?tipo=inventario&formato=csv|xlsx`
       a partir de `saldo_estoque` + `item`, usando `xlsx` (SheetJS), protegido pela role
       de `(staff)/relatorios` (DESIGN.md §14).
-- [ ] REL-02 Implementar `GET /api/relatorios/export?tipo=saidas&formato=csv|xlsx` a
+- [x] REL-02 Implementar `GET /api/relatorios/export?tipo=saidas&formato=csv|xlsx` a
       partir de `saida`/`saida_item` (DESIGN.md §14).
-- [ ] REL-03 Página `(staff)/relatorios/page.tsx` com `Tabs` (DS-11) separando
+- [x] REL-03 Página `(staff)/relatorios/page.tsx` com `Tabs` (DS-11) separando
       Inventário Atual e Histórico de Saídas, com botões de exportação CSV/XLSX.
 
 ---
 
 ## 10. PACOTE DE CONTINGÊNCIA (BR-CON-01)
 
-- [ ] CON-01 Implementar `GET /api/contingencia/export`: workbook `xlsx` com 4 abas —
+- [x] CON-01 Implementar `GET /api/contingencia/export`: workbook `xlsx` com 4 abas —
       (1) saldo exato de `saldo_estoque`+`item` no momento do download, (2) formulário em
       branco para Entradas, (3) formulário em branco para Saídas, (4) formulário em
       branco para gestão de turnos de voluntários (DESIGN.md §15).
-- [ ] CON-02 Botão "Gerar Pacote de Contingência" (link simples `<a href=...>`, nunca
+- [x] CON-02 Botão "Gerar Pacote de Contingência" (link simples `<a href=...>`, nunca
       cacheado) acessível a Coordenador/Administrador (DESIGN.md §15).
 
 ---
