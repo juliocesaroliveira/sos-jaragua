@@ -227,20 +227,20 @@ decidida ad-hoc.
 
 ## 6. LOGÍSTICA/INTELIGÊNCIA — Dashboard de Crise
 
-- [ ] LOG-01 Modelar `crise_variaveis` (append-only) e `metrica_kit` em
+- [x] LOG-01 Modelar `crise_variaveis` (append-only) e `metrica_kit` em
       `db/schema/logistica.ts` e gerar/aplicar migration (DB_SCHEMA.md §7).
-- [ ] LOG-02 Tela para a Defesa Civil atualizar `totalFamiliasAfetadas` e
+- [x] LOG-02 Tela para a Defesa Civil atualizar `totalFamiliasAfetadas` e
       `totalPessoasAfetadas` (nova linha append-only a cada atualização) (BRD §5).
-- [ ] LOG-03 Tela/CRUD de `metrica_kit` (associar kit a `baseDemanda` e `proporcao`)
+- [x] LOG-03 Tela/CRUD de `metrica_kit` (associar kit a `baseDemanda` e `proporcao`)
       (BR-INT-01).
-- [ ] LOG-04 Implementar cálculo de "Kits Necessários (Demanda)": para kits
+- [x] LOG-04 Implementar cálculo de "Kits Necessários (Demanda)": para kits
       `por_familia`, `totalFamiliasAfetadas × proporcao`; para `por_pessoa_desabrigada`,
       `totalPessoasAfetadas × proporcao` (BR-INT-01, DESIGN.md §11).
-- [ ] LOG-05 Implementar cálculo de "Kits Possíveis (Capacidade)": para cada kit,
+- [x] LOG-05 Implementar cálculo de "Kits Possíveis (Capacidade)": para cada kit,
       `min` sobre `floor(saldo_estoque[componente].quantidadeAtual /
       kit_receita_item.quantidade)` entre todos os componentes (BR-INT-02, DESIGN.md
       §11).
-- [ ] LOG-06 Página `(staff)/dashboard/page.tsx` com `StatCard`s (DS-14) para os dois
+- [x] LOG-06 Página `(staff)/dashboard/page.tsx` com `StatCard`s (DS-14) para os dois
       indicadores, usando `cacheTag('dashboard:kits')` invalidado por entrada, saída,
       descarte, alteração de receita de kit ou de `crise_variaveis`/`metrica_kit`
       (BR-INT-02, DESIGN.md §7, §11).
@@ -249,33 +249,33 @@ decidida ad-hoc.
 
 ## 7. NOTIFICAÇÕES — Eventos, E-mail, Cron, Alertas
 
-- [ ] NOT-01 Modelar `notificacao`, `notificacao_envio` em
+- [x] NOT-01 Modelar `notificacao`, `notificacao_envio` em
       `db/schema/notificacoes.ts` e gerar/aplicar migration (DB_SCHEMA.md §8).
-- [ ] NOT-02 Definir interface `NotificacaoService` em
+- [x] NOT-02 Definir interface `NotificacaoService` em
       `src/modules/notificacoes/application/ports/` com catálogo de eventos 1:1 com BRD
       §6 (`triagem_concluida`, `atividade_atribuida`, `alteracao_atividade`,
       `lembrete_turno`, `broadcast_urgencia`, `cadastros_acumulados`, `estoque_critico`,
       `deficit_atendimento`) (DESIGN.md §12).
-- [ ] NOT-03 Implementar adapter de e-mail (Resend) e adapter in-plataforma (grava em
+- [x] NOT-03 Implementar adapter de e-mail (Resend) e adapter in-plataforma (grava em
       `notificacao`) em `src/modules/notificacoes/infrastructure/` (DESIGN.md §12).
-- [ ] NOT-04 Ligar disparo de `triagem_concluida` ao UseCase de aprovação (VOL-05) e
+- [x] NOT-04 Ligar disparo de `triagem_concluida` ao UseCase de aprovação (VOL-05) e
       `atividade_atribuida`/`alteracao_atividade` aos UseCases de alocação/edição de
       atividade (BRD §6).
-- [ ] NOT-05 Implementar Server Action de Broadcast de Urgência em lote (Coordenador →
+- [x] NOT-05 Implementar Server Action de Broadcast de Urgência em lote (Coordenador →
       todos os voluntários ou subconjunto filtrado), processando em chunks dentro da
       mesma invocação (DESIGN.md §12).
-- [ ] NOT-06 Implementar rota `app/api/cron/lembrete-turno/route.ts` (protegida por
+- [x] NOT-06 Implementar rota `app/api/cron/lembrete-turno/route.ts` (protegida por
       `Authorization: Bearer $CRON_SECRET`): busca `alocacao` join `turno` com
       `turno.inicio` entre 105–120 min no futuro e `lembreteEnviadoEm IS NULL`, dispara
       notificação e marca `lembreteEnviadoEm = now()` (DESIGN.md §12).
-- [ ] NOT-07 Configurar `vercel.json` com Cron agendando
+- [x] NOT-07 Configurar `vercel.json` com Cron agendando
       `GET /api/cron/lembrete-turno` a cada ~15 minutos (DESIGN.md §12).
-- [ ] NOT-08 Implementar alertas de coordenador gerados em leitura (não job separado):
+- [x] NOT-08 Implementar alertas de coordenador gerados em leitura (não job separado):
       `cadastros_acumulados` (contador da fila pendente), `estoque_critico` (item abaixo
       do mínimo de segurança), `deficit_atendimento` (capacidade de kits abaixo da
       demanda) — idempotentes, uma notificação por condição ativa (BRD §6, DESIGN.md
       §12).
-- [ ] NOT-09 Sino/lista de notificações in-app (contador de não lidas via índice
+- [x] NOT-09 Sino/lista de notificações in-app (contador de não lidas via índice
       `notificacao(destinatarioUserId, lida)`) no header/shell da área `(staff)`.
 
 ---
