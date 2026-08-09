@@ -14,6 +14,7 @@ import {
     PackagePlus,
     Trash2,
     TriangleAlert,
+    UserCheck,
     Users,
     X
 } from 'lucide-react'
@@ -35,6 +36,7 @@ type ItemNav = { href: string; label: string; icone: ReactNode }
 const NAV: ItemNav[] = [
     { href: '/dashboard', label: 'Painel', icone: <LayoutDashboard aria-hidden className="size-5" /> },
     { href: '/cadastros-pendentes', label: 'Cadastros pendentes', icone: <Users aria-hidden className="size-5" /> },
+    { href: '/voluntarios', label: 'Voluntários', icone: <UserCheck aria-hidden className="size-5" /> },
     { href: '/atividades', label: 'Atividades', icone: <ClipboardList aria-hidden className="size-5" /> },
     { href: '/estoque/entrada', label: 'Entrada de doações', icone: <PackagePlus aria-hidden className="size-5" /> },
     { href: '/estoque/saida', label: 'Saída de itens', icone: <PackageMinus aria-hidden className="size-5" /> },

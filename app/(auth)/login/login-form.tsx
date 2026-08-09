@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
 import { Alert, Button, Input } from '@/src/shared/ui'
 
