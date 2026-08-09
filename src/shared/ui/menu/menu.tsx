@@ -3,7 +3,7 @@
 import { Menu as Ark } from '@ark-ui/react/menu'
 import { Portal } from '@ark-ui/react/portal'
 import type { ReactNode } from 'react'
-import { ANEL_FOCO, cn } from '../cn'
+import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 
 /**
  * Menu sobre o primitivo Ark (DESIGN_SYSTEM.md §4.10).
@@ -36,12 +36,9 @@ export function Menu({ gatilho, itens, posicao = 'bottom-end' }: MenuProps) {
         >
             <Ark.Trigger asChild>{gatilho}</Ark.Trigger>
             <Portal>
-                <Ark.Positioner>
+                <Ark.Positioner className={CLASSE_FLUTUANTE}>
                     <Ark.Content
-                        className={cn(
-                            'z-50 min-w-48 rounded-xl border border-border bg-surface p-1 shadow-md',
-                            ANEL_FOCO
-                        )}
+                        className={cn('min-w-48 rounded-xl border border-border bg-surface p-1 shadow-md', ANEL_FOCO)}
                     >
                         {itens.map((item) => (
                             <Ark.Item

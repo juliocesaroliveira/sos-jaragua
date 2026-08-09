@@ -15,3 +15,14 @@ export const CACHE_LIFE = {
 } as const
 
 export type PerfilCacheLife = (typeof CACHE_LIFE)[keyof typeof CACHE_LIFE]
+
+/**
+ * Perfil passado a `revalidateTag(tag, perfil)` — semântica
+ * stale-while-revalidate: a leitura defasada é servida enquanto a nova é
+ * buscada em segundo plano (DESIGN.md §7).
+ *
+ * Usado onde uma pequena defasagem é aceitável (ex.: recalcular o dashboard
+ * após uma entrada registrada em outro terminal). Quando a mudança precisa
+ * aparecer na **mesma** resposta, a Server Action usa `updateTag` em vez disto.
+ */
+export const PERFIL_REVALIDACAO = CACHE_LIFE.curto

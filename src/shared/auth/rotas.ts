@@ -25,6 +25,7 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
 
     // Triagem, atividades e dashboard
     { prefixo: '/cadastros-pendentes', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
+    { prefixo: '/voluntarios', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/atividades', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/dashboard', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/crise', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },

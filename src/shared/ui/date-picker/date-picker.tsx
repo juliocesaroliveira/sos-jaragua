@@ -5,7 +5,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { parseDate } from '@internationalized/date'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { ALTURA_POR_TAMANHO, ANEL_FOCO, cn } from '../cn'
+import { ALTURA_POR_TAMANHO, ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 
 /**
@@ -130,8 +130,8 @@ export function DatePicker({
                 </Ark.Control>
 
                 <Portal>
-                    <Ark.Positioner>
-                        <Ark.Content className="z-50 rounded-xl border border-border bg-surface p-3 shadow-md">
+                    <Ark.Positioner className={CLASSE_FLUTUANTE}>
+                        <Ark.Content className="rounded-xl border border-border bg-surface p-3 shadow-md">
                             <Ark.View view="day">
                                 <Ark.Context>
                                     {(api) => (

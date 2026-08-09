@@ -4,7 +4,7 @@ import { Combobox as Ark, createListCollection } from '@ark-ui/react/combobox'
 import { Portal } from '@ark-ui/react/portal'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ANEL_FOCO, cn } from '../cn'
+import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 
 /**
@@ -114,10 +114,10 @@ export function Combobox({
                     {carregando && <Loader2 aria-hidden className="mr-3 size-5 animate-spin text-neutral-400" />}
                 </Ark.Control>
                 <Portal>
-                    <Ark.Positioner>
+                    <Ark.Positioner className={CLASSE_FLUTUANTE}>
                         <Ark.Content
                             className={cn(
-                                'z-50 max-h-72 min-w-(--reference-width) overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-md',
+                                'max-h-72 min-w-(--reference-width) overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-md',
                                 ANEL_FOCO
                             )}
                         >

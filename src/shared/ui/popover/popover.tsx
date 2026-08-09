@@ -4,7 +4,7 @@ import { Popover as Ark } from '@ark-ui/react/popover'
 import { Portal } from '@ark-ui/react/portal'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { ANEL_FOCO, cn } from '../cn'
+import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 
 /**
  * Popover sobre o primitivo Ark (DESIGN_SYSTEM.md §4.10).
@@ -23,8 +23,8 @@ export function Popover({ gatilho, titulo, descricao, children, posicao = 'botto
         <Ark.Root positioning={{ placement: posicao }} lazyMount unmountOnExit>
             <Ark.Trigger asChild>{gatilho}</Ark.Trigger>
             <Portal>
-                <Ark.Positioner>
-                    <Ark.Content className="z-50 w-[min(90vw,20rem)] rounded-xl border border-border bg-surface p-4 shadow-md">
+                <Ark.Positioner className={CLASSE_FLUTUANTE}>
+                    <Ark.Content className="w-[min(90vw,20rem)] rounded-xl border border-border bg-surface p-4 shadow-md">
                         {titulo && (
                             <div className="mb-2 flex items-start justify-between gap-2">
                                 <div className="flex flex-col gap-0.5">

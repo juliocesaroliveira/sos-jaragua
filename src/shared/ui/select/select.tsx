@@ -4,7 +4,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { Select as Ark, createListCollection } from '@ark-ui/react/select'
 import { Check, ChevronsUpDown } from 'lucide-react'
 import { useMemo } from 'react'
-import { ANEL_FOCO, cn } from '../cn'
+import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 
 /**
@@ -86,10 +86,10 @@ export function Select({
                     </Ark.Trigger>
                 </Ark.Control>
                 <Portal>
-                    <Ark.Positioner>
+                    <Ark.Positioner className={CLASSE_FLUTUANTE}>
                         <Ark.Content
                             className={cn(
-                                'z-50 max-h-72 min-w-(--reference-width) overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-md',
+                                'max-h-72 min-w-(--reference-width) overflow-y-auto rounded-xl border border-border bg-surface p-1 shadow-md',
                                 ANEL_FOCO
                             )}
                         >
