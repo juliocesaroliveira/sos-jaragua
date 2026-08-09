@@ -232,18 +232,62 @@ Não afeta produção (a Vercel resolve SRV normalmente).
 
 ---
 
-## 12. Degradação graciosa da auditoria: implementada, não verificada em execução
+## 12. ~~Degradação graciosa da auditoria~~ — RESOLVIDO
 
-**Contexto.** `DESIGN.md` §13 define que, se a escrita em `audit_logs` falhar, a
-operação Postgres original **prossegue** e a falha vira log estruturado.
+Coberto por teste automatizado na Seção 11
+(`src/modules/auditoria/auditoria.test.ts`): o escritor é injetado e falha de
+verdade, provando que a operação de negócio prossegue. O teste cobre falha na
+escrita do log, falha na leitura de `dadosAnteriores`, falha em `extrair` e —
+importante — que um erro da **própria operação** continua subindo, para a
+auditoria não virar um `try/catch` geral que engole falhas de negócio.
 
-**Estado atual.** O código está implementado (try/catch, 1 retry, log
-estruturado com o registro completo) e o caminho **feliz** foi verificado ponta a
-ponta contra o Atlas real. A degradação em si **não** foi comprovada em execução:
-a tentativa de teste foi inválida porque o cliente Mongo fica em cache global
-(`globalThis._mongoClient`, proposital para o HMR), então trocar a variável de
-ambiente não derrubou a conexão já aberta.
+Pode ser removido deste arquivo.
 
-**Ação necessária.** Cobrir com teste automatizado na Seção 11 (TESTES),
-injetando um escritor que lança, e verificando que o caso de uso retorna `ok`
-mesmo assim.
+
+---
+
+## 13. DEPLOY-01 e DEPLOY-02 — dependem de um deploy real na Vercel
+
+**Contexto.** DEPLOY-01 pede as variáveis de `DESIGN.md` §17 configuradas no
+projeto Vercel (produção e preview); DEPLOY-02 pede a validação do cron de
+lembrete de turno rodando em produção.
+
+**Estado atual.** Nenhum dos dois foi feito — são ações no painel da Vercel, não
+código. O que existe pronto:
+
+- `.env.example` lista **todas** as variáveis necessárias, incluindo as três de
+  limiar de alerta;
+- `vercel.json` já agenda `GET /api/cron/lembrete-turno` a cada 15 minutos;
+- a rota do cron foi verificada localmente (401 sem token, 200 com o token, e
+  dedupe correto entre execuções).
+
+**Ação necessária.**
+
+1. Configurar no projeto Vercel todas as variáveis do `.env.example`. Atenção a
+   `CRON_SECRET`: sem ela, a rota do cron recusa **toda** requisição (fecha por
+   padrão, de propósito).
+2. Após o primeiro deploy, conferir no painel de Cron Jobs da Vercel que a
+   execução está retornando 200 e acompanhar o Log Stream na primeira janela em
+   que houver turno começando em ~2h.
+
+---
+
+## 14. DEPLOY-06 — verificação end-to-end parcial
+
+**Contexto.** DEPLOY-06 pede percorrer cada BR-code do BRD §3–§7 com um usuário
+de cada role.
+
+**Estado atual.** Verificado com **`administrador`** (fluxos completos de
+candidatura, triagem, atividades, alocação, estoque, kits, saída com e sem
+déficit, descarte, painel, notificações, relatórios e contingência) e com
+**`membro_defesa_civil`** (matriz de acesso às 13 rotas protegidas, conferida
+contra o BRD §2).
+
+**Não verificados com usuário próprio:** `coordenador`, `voluntario` e `usuario`.
+Pelo código, `coordenador` tem exatamente as permissões testadas com
+`administrador` menos a área `/admin` (que não existe — ver §9); `voluntario` e
+`usuario` só alcançam `/voluntariado/*` e a candidatura pública.
+
+**Ação necessária.** Criar um usuário de cada role restante e repetir o roteiro,
+principalmente para confirmar que o timeout de inatividade (§4) se aplica a
+`coordenador` e **não** a `voluntario`.
