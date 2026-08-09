@@ -5,20 +5,31 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint .",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "db:generate": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs generate",
+        "db:migrate": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate",
+        "db:push": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push",
+        "db:studio": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs studio",
+        "db:seed": "tsx --env-file=.env.local db/seed.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.38.1",
         "@hookform/resolvers": "^5.7.1",
         "@neondatabase/serverless": "^1.1.0",
         "@tanstack/react-query": "^5.101.4",
+        "@tanstack/react-table": "^9.1.2",
         "@vercel/analytics": "^2.0.1",
         "@vercel/speed-insights": "^2.0.0",
+        "better-auth": "^1.6.26",
+        "drizzle-orm": "^0.45.2",
+        "lucide-react": "^1.31.0",
         "mongodb": "^6.19.0",
         "next": "16.3.0",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "react-hook-form": "^7.85.0",
+        "resend": "^6.18.1",
+        "xlsx": "^0.18.5",
         "zod": "^4.4.3"
     },
     "devDependencies": {
@@ -27,10 +38,12 @@
         "@types/node": "^24.3.0",
         "@types/react": "^19.1.1",
         "@types/react-dom": "^19.1.1",
+        "drizzle-kit": "^0.31.10",
         "eslint": "^9.39.5",
         "eslint-config-next": "16.3.0",
         "prettier": "^3.9.6",
         "tailwindcss": "^4.1.12",
+        "tsx": "^4.23.11",
         "typescript": "^5.9.2"
     },
     "prettier": {
