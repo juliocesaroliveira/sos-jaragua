@@ -117,13 +117,16 @@ e-mail (Resend). O catálogo de eventos (BRD §6) pressupõe e-mail para
 `triagem_concluida`, `atividade_atribuida`, `alteracao_atividade` e
 `broadcast_urgencia`.
 
-**Estado atual.** Apenas o canal **in-plataforma** está implementado — as
-notificações são gravadas em `notificacao` + `notificacao_envio`. O adapter
-Resend é a task NOT-03, ainda pendente. `RESEND_API_KEY` está vazio no ambiente
-de desenvolvimento.
+**Estado atual.** Os **dois** adapters estão implementados (NOT-03). Sem
+`RESEND_API_KEY` configurada, o canal de e-mail degrada graciosamente: a
+notificação continua sendo gravada e aparece no sino, e `notificacao_envio`
+registra `canal='email', status='falhou'` para reconciliação posterior —
+comportamento já verificado em desenvolvimento.
+
+Ou seja: **nada está quebrado**, mas hoje nenhum voluntário recebe e-mail.
 
 **Ação necessária.** Criar a conta Resend, verificar o domínio remetente e
-preencher `RESEND_API_KEY` / `RESEND_FROM` antes de NOT-03.
+preencher `RESEND_API_KEY` / `RESEND_FROM`.
 
 ---
 
@@ -150,17 +153,27 @@ mínimo de segurança") e `deficit_atendimento` ("capacidade X% abaixo da
 demanda"). `DESIGN.md` §12 define que são gerados **em leitura**, de forma
 idempotente.
 
-**Estado atual.** Nenhum limiar numérico está definido em lugar nenhum da spec,
-e o schema não tem campo de "estoque mínimo de segurança" por item.
+**Estado atual.** A **mecânica está implementada e funcionando** (NOT-08): os
+três alertas são gerados em leitura, são idempotentes (uma emissão por condição
+ativa a cada 12h) e vão só pelo canal in-app. O que continua indefinido são os
+**valores** — hoje lidos de variável de ambiente, com defaults provisórios:
+
+| Variável                     | Default | Alerta                 |
+| ---------------------------- | ------- | ---------------------- |
+| `ALERTA_CADASTROS_PENDENTES` | `10`    | `cadastros_acumulados` |
+| `ALERTA_ESTOQUE_MINIMO`      | `5`     | `estoque_critico`      |
+| `ALERTA_DEFICIT_PERCENTUAL`  | `80`    | `deficit_atendimento`  |
 
 **Ação necessária.** Definir, com a Defesa Civil:
 
-- quantos cadastros pendentes disparam `cadastros_acumulados`;
-- o que é "estoque mínimo de segurança" — valor fixo global, por categoria, ou
-  uma coluna nova em `item` (implicaria migration);
-- qual percentual de déficit dispara `deficit_atendimento`.
+- os três valores acima;
+- principalmente: se "estoque mínimo de segurança" deve ser **por item** (o BRD
+  diz "O item [Nome] atingiu o estoque mínimo"), o que exigiria uma coluna nova
+  em `item` e uma migration. Hoje o limiar é **global** — 5 unidades de arroz e
+  5 unidades de cobertor disparam o mesmo alerta, o que provavelmente não é o
+  que a operação quer.
 
-**Bloqueia:** NOT-08.
+**Não bloqueia mais NOT-08**, mas o limiar global é a limitação conhecida.
 
 ---
 
