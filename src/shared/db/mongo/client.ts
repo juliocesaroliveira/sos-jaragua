@@ -5,13 +5,13 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI
-const options = { appName: 'devrel.template.nextjs' }
+const options = { appName: 'sos-jaragua.auditoria' }
 
 let client: MongoClient
 
 if (process.env.NODE_ENV === 'development') {
-    // In development mode, use a global variable so that the value
-    // is preserved across module reloads caused by HMR (Hot Module Replacement).
+    // Em desenvolvimento, usa uma variável global para preservar a conexão
+    // entre reloads de módulo causados pelo HMR (Hot Module Replacement).
     let globalWithMongo = global as typeof globalThis & {
         _mongoClient?: MongoClient
     }
@@ -21,11 +21,12 @@ if (process.env.NODE_ENV === 'development') {
     }
     client = globalWithMongo._mongoClient
 } else {
-    // In production mode, it's best to not use a global variable.
     client = new MongoClient(uri, options)
 }
 
-// Export a module-scoped MongoClient. By doing this in a
-// separate module, the client can be shared across functions.
-
+/**
+ * Cliente Mongo escopado exclusivamente para o log de auditoria imutável
+ * (BR-AUD-01). Não é uma fonte de dados de negócio — ver DESIGN.md §13 e
+ * DB_SCHEMA.md §9.
+ */
 export default client
