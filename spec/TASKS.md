@@ -186,40 +186,40 @@ decidida ad-hoc.
 
 ## 5. ESTOQUE/DOAÇÕES — Item, Entrada, Kits, Saída, Descarte, Saldo
 
-- [ ] EST-01 Modelar `item`, `saldo_estoque` em `db/schema/estoque.ts` com índice
+- [x] EST-01 Modelar `item`, `saldo_estoque` em `db/schema/estoque.ts` com índice
       GIN/trigram (`pg_trgm`) em `item.nome` e gerar/aplicar migration (DB_SCHEMA.md §6.1,
       §6.6, §12).
-- [ ] EST-02 Modelar `entrada` em `db/schema/estoque.ts` com todos os campos de BRD §4.1
+- [x] EST-02 Modelar `entrada` em `db/schema/estoque.ts` com todos os campos de BRD §4.1
       (categoria/condição/unidade como enums fixos, `kitDestinoId` apenas informativo)
       (DB_SCHEMA.md §6.2).
-- [ ] EST-03 Implementar Combobox de "Nome do Item" com autocomplete via índice trigram
+- [x] EST-03 Implementar Combobox de "Nome do Item" com autocomplete via índice trigram
       (debounce 200–300ms), reusando DS-06, para evitar duplicidade de cadastro
       (BR-EST-01).
-- [ ] EST-04 UseCase `RegistrarEntradaUseCase`: valida `dataValidade` obrigatória e não
+- [x] EST-04 UseCase `RegistrarEntradaUseCase`: valida `dataValidade` obrigatória e não
       retroativa quando `perecivel = true` (domínio); em uma transação, cria `entrada` e
       incrementa `saldo_estoque.quantidadeAtual` (DESIGN.md §9.1). Página
       `(staff)/estoque/entrada/page.tsx`.
-- [ ] EST-05 Modelar `kit`, `kit_receita_item` em `db/schema/estoque.ts`
+- [x] EST-05 Modelar `kit`, `kit_receita_item` em `db/schema/estoque.ts`
       (`unique(kitId, itemId)`) e gerar/aplicar migration (DB_SCHEMA.md §6.3).
-- [ ] EST-06 CRUD de Kits (nome, descrição, ativo) + composição da receita
+- [x] EST-06 CRUD de Kits (nome, descrição, ativo) + composição da receita
       (kit + item + quantidade por unidade de kit) — página `(staff)/estoque/kits/page.tsx`
       (BR-EST-02, BR-EST-03).
-- [ ] EST-07 Modelar `saida`, `saida_item` em `db/schema/estoque.ts` e gerar/aplicar
+- [x] EST-07 Modelar `saida`, `saida_item` em `db/schema/estoque.ts` e gerar/aplicar
       migration (DB_SCHEMA.md §6.4).
-- [ ] EST-08 UseCase `RegistrarSaidaUseCase` (uma única Server Action, payload em lote):
+- [x] EST-08 UseCase `RegistrarSaidaUseCase` (uma única Server Action, payload em lote):
       para saída de kit, expande a receita × quantidade e consolida por item; lê
       `saldo_estoque` com `FOR UPDATE`; valida saldo suficiente por item; se déficit,
       aborta a transação e retorna erro específico por item ("Saída bloqueada. Faltam
       X {unidade} de {item}..."); se ok, insere `saida`/`saida_item` e decrementa o saldo
       — tudo na mesma transação (BR-EST-04, DESIGN.md §9.3, pseudocódigo completo).
-- [ ] EST-09 Página `(staff)/estoque/saida/page.tsx`: formulário com seleção
+- [x] EST-09 Página `(staff)/estoque/saida/page.tsx`: formulário com seleção
       Avulso/Kit, quantidade, destino (texto livre), responsável pelo transporte;
       exibição do erro de déficit por item vindo do UseCase.
-- [ ] EST-10 Modelar `descarte` em `db/schema/estoque.ts` e gerar/aplicar migration
+- [x] EST-10 Modelar `descarte` em `db/schema/estoque.ts` e gerar/aplicar migration
       (tabela dedicada, nunca flag em `saida`) (DB_SCHEMA.md §6.5, DESIGN.md §9.4).
-- [ ] EST-11 UseCase `RegistrarDescarteUseCase` + página
+- [x] EST-11 UseCase `RegistrarDescarteUseCase` + página
       `(staff)/estoque/descarte/page.tsx` (BR-EST-05).
-- [ ] EST-12 Listagem paginada de estoque (TanStack Table, server-side pagination,
+- [x] EST-12 Listagem paginada de estoque (TanStack Table, server-side pagination,
       filtro por categoria/condição), com leitura de listagem respeitando o requisito de
       <300ms via cache (`estoque:listagem`) (DESIGN.md §7, NFR §4.1).
 
