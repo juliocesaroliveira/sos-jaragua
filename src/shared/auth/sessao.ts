@@ -1,6 +1,7 @@
 import 'server-only'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { comAtor } from '@/src/shared/contexto/ator'
 import { auth } from './auth'
 import { expirouPorInatividade } from './inatividade'
 import { ehRole, type Role } from './roles'
@@ -69,4 +70,27 @@ export async function exigirRoles(roles: readonly Role[], destinoPosLogin?: stri
     const ator = await exigirSessao(destinoPosLogin)
     if (!roles.includes(ator.role)) redirect('/sem-permissao')
     return ator
+}
+
+/**
+ * Executa `fn` com a identidade do ator disponível via `AsyncLocalStorage`
+ * (DESIGN.md §13) — é o que permite ao `withAudit` saber quem agiu sem que
+ * cada camada precise repassar `actor` manualmente.
+ *
+ * `ip` e `userAgent` alimentam `audit_logs.metadata` (DB_SCHEMA.md §9).
+ */
+export async function comAtorDaSessao<T>(ator: SessaoAtor, fn: () => Promise<T>): Promise<T> {
+    const cabecalhos = await headers()
+
+    return comAtor(
+        {
+            userId: ator.userId,
+            role: ator.role,
+            // `x-forwarded-for` pode trazer a cadeia de proxies; o primeiro é o
+            // cliente original.
+            ip: cabecalhos.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined,
+            userAgent: cabecalhos.get('user-agent') ?? undefined
+        },
+        fn
+    )
 }
