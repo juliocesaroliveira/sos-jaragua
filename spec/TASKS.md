@@ -32,109 +32,109 @@ decidida ad-hoc.
 
 ## 1. SETUP — Infraestrutura Base
 
-- [ ] SETUP-01 Adicionar dependências novas ao `package.json`: `drizzle-orm`,
+- [x] SETUP-01 Adicionar dependências novas ao `package.json`: `drizzle-orm`,
       `drizzle-kit`, `better-auth`, `xlsx`, `resend`, `lucide-react` (DESIGN.md §16).
-- [ ] SETUP-02 Criar `.env.example` com todas as variáveis de `DESIGN.md` §17
+- [x] SETUP-02 Criar `.env.example` com todas as variáveis de `DESIGN.md` §17
       (`DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `MONGODB_URI`, `BETTER_AUTH_SECRET`,
       `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID/SECRET`, `FACEBOOK_CLIENT_ID/SECRET`,
       `RESEND_API_KEY`, `CRON_SECRET`, `STAFF_INACTIVITY_TIMEOUT_MINUTES`).
-- [ ] SETUP-03 Criar `db/schema/index.ts` (barrel) e `drizzle.config.ts` apontando para
+- [x] SETUP-03 Criar `db/schema/index.ts` (barrel) e `drizzle.config.ts` apontando para
       `DATABASE_URL_UNPOOLED`, `casing: 'snake_case'` (DB_SCHEMA.md §2, §11).
-- [ ] SETUP-04 Criar cliente Drizzle runtime em `src/shared/db/postgres/` usando
+- [x] SETUP-04 Criar cliente Drizzle runtime em `src/shared/db/postgres/` usando
       `@neondatabase/serverless` + `DATABASE_URL` (pooled) (DESIGN.md §5, §11).
-- [ ] SETUP-05 Habilitar `cacheComponents: true` em `next.config.ts` (DESIGN.md §7).
-- [ ] SETUP-06 Criar `src/shared/kernel/` com `Result<T, E>`, `Entity` base, `UseCase`
+- [x] SETUP-05 Habilitar `cacheComponents: true` em `next.config.ts` (DESIGN.md §7).
+- [x] SETUP-06 Criar `src/shared/kernel/` com `Result<T, E>`, `Entity` base, `UseCase`
       base e `DomainError` (DESIGN.md §5).
-- [ ] SETUP-07 Criar esqueleto de pastas por módulo em `src/modules/` (`identidade`,
+- [x] SETUP-07 Criar esqueleto de pastas por módulo em `src/modules/` (`identidade`,
       `voluntariado`, `estoque`, `logistica`, `notificacoes`, `auditoria`, `contingencia`),
       cada um com `domain/`, `application/{use-cases,ports}`, `infrastructure/`,
       `presentation/{actions,queries}` (DESIGN.md §5).
-- [ ] SETUP-08 Criar `src/shared/cache/` com constantes de `cacheTag` e perfis de
+- [x] SETUP-08 Criar `src/shared/cache/` com constantes de `cacheTag` e perfis de
       `cacheLife` usados na tabela de DESIGN.md §7.
 
 ---
 
 ## 2. IDENTIDADE — Autenticação, Sessão, Perfil de Voluntário
 
-- [ ] ID-01 Configurar `better-auth` em `src/shared/auth/`: `emailAndPassword` habilitado,
+- [x] ID-01 Configurar `better-auth` em `src/shared/auth/`: `emailAndPassword` habilitado,
       `socialProviders: { google, facebook }` (Instagram fora do MVP), `role` e `ativo`
       como `additionalFields` em `user`, `lastActivityAt` em `session` (DESIGN.md §6.1,
       DB_SCHEMA.md §4.1).
-- [ ] ID-02 Rodar `npx @better-auth/cli generate` para gerar `user`, `session`, `account`,
+- [x] ID-02 Rodar `npx @better-auth/cli generate` para gerar `user`, `session`, `account`,
       `verification` em `db/schema/identidade.ts` e aumentar manualmente com os
       `additionalFields` de ID-01.
-- [ ] ID-03 Criar handler `app/api/auth/[...all]/route.ts` do better-auth.
-- [ ] ID-04 Rodar migration inicial (`drizzle-kit generate` + aplicar) para as tabelas de
+- [x] ID-03 Criar handler `app/api/auth/[...all]/route.ts` do better-auth.
+- [x] ID-04 Rodar migration inicial (`drizzle-kit generate` + aplicar) para as tabelas de
       Identidade.
-- [ ] ID-05 Implementar `proxy.ts` (Node runtime): checagem de sessão via cookie
+- [x] ID-05 Implementar `proxy.ts` (Node runtime): checagem de sessão via cookie
       (`getSessionCookie`), mapa rota→roles de DESIGN.md §6.2, `config.matcher` excluindo
       `/api/auth/*`/assets/landing pública.
 - [ ] ID-06 Implementar timeout de inatividade customizado (DESIGN.md §6.3):
       `lastActivityAt` atualizado em `proxy.ts` para `membro_defesa_civil`/`coordenador`;
       checagem de expiração por `STAFF_INACTIVITY_TIMEOUT_MINUTES` forçando novo login via
       `auth.api.signOut`.
-- [ ] ID-07 Criar `(staff)/layout.tsx` com re-checagem de sessão/role via
+- [x] ID-07 Criar `(staff)/layout.tsx` com re-checagem de sessão/role via
       `auth.api.getSession` no servidor (defesa em profundidade, DESIGN.md §6.2).
-- [ ] ID-08 Modelar `habilidade` e `voluntario_habilidade` em
+- [x] ID-08 Modelar `habilidade` e `voluntario_habilidade` em
       `db/schema/voluntariado.ts` (tabela lookup livre + join N:N) e seed inicial
       (Motosserra, CNH D/E, Embarcação, Primeiros Socorros) (DB_SCHEMA.md §4.3, §14).
-- [ ] ID-09 Modelar `voluntario_perfil` em `db/schema/voluntariado.ts` com todos os
+- [x] ID-09 Modelar `voluntario_perfil` em `db/schema/voluntariado.ts` com todos os
       campos de DB_SCHEMA.md §4.2 (incluindo índice único de `cpf`).
-- [ ] ID-10 Implementar validações de domínio em `src/modules/identidade/domain/` (ou
+- [x] ID-10 Implementar validações de domínio em `src/modules/identidade/domain/` (ou
       `voluntariado/domain/`, conforme DESIGN.md §3): maioridade (≥18 anos a partir de
       `dataNascimento`), dígito verificador de CPF, formato de e-mail/telefone.
-- [ ] ID-11 Criar script/seed de bootstrap de um usuário `administrador` inicial fora do
+- [x] ID-11 Criar script/seed de bootstrap de um usuário `administrador` inicial fora do
       fluxo de candidatura pública (DB_SCHEMA.md §14).
-- [ ] ID-12 Páginas `(auth)/login/page.tsx` com e-mail/senha + botões de login social
+- [x] ID-12 Páginas `(auth)/login/page.tsx` com e-mail/senha + botões de login social
       (Google/Facebook).
 
 ---
 
 ## 3. DESIGN SYSTEM — Tema e Componentes Ark UI
 
-- [ ] DS-01 Aplicar tokens de cor (`primary`, `neutral`, `success`, `warning`, `danger`,
+- [x] DS-01 Aplicar tokens de cor (`primary`, `neutral`, `success`, `warning`, `danger`,
       `info`, `surface`, `surface-muted`, `border`, `border-strong`,
       `primary-foreground`) em `app/globals.css`, extendendo `@theme inline` e os blocos
       `:root`/`:root.dark` existentes (DESIGN_SYSTEM.md §1.1, §2).
-- [ ] DS-02 Adicionar `lucide-react` e definir convenções de tamanho/stroke-width
+- [x] DS-02 Adicionar `lucide-react` e definir convenções de tamanho/stroke-width
       (DESIGN_SYSTEM.md §1.8).
-- [ ] DS-03 Implementar componentes primitivos de formulário: `Button`, `IconButton`
+- [x] DS-03 Implementar componentes primitivos de formulário: `Button`, `IconButton`
       (DESIGN_SYSTEM.md §4.1) em `src/shared/ui/button/`, `src/shared/ui/icon-button/`.
-- [ ] DS-04 Implementar `Input`, `Textarea`, `NumberInput` (Ark UI `NumberInput`) em
+- [x] DS-04 Implementar `Input`, `Textarea`, `NumberInput` (Ark UI `NumberInput`) em
       `src/shared/ui/{input,textarea,number-input}/` com estado de erro
       (`aria-invalid`/`aria-describedby`) (DESIGN_SYSTEM.md §4.2).
-- [ ] DS-05 Implementar `Select` (Ark UI) em `src/shared/ui/select/`
+- [x] DS-05 Implementar `Select` (Ark UI) em `src/shared/ui/select/`
       (DESIGN_SYSTEM.md §4.3).
-- [ ] DS-06 Implementar `Combobox` (Ark UI) em `src/shared/ui/combobox/`, genérico o
+- [x] DS-06 Implementar `Combobox` (Ark UI) em `src/shared/ui/combobox/`, genérico o
       suficiente para ser reusado no autocomplete de item de estoque (DESIGN_SYSTEM.md
       §4.4).
-- [ ] DS-07 Implementar `CheckboxGroup`, `RadioGroup`, `Switch` (Ark UI) em
+- [x] DS-07 Implementar `CheckboxGroup`, `RadioGroup`, `Switch` (Ark UI) em
       `src/shared/ui/{checkbox-group,radio-group,switch}/` (DESIGN_SYSTEM.md §4.5).
-- [ ] DS-08 Implementar `DatePicker` (Ark UI, locale pt-BR, formato `dd/mm/aaaa`) em
+- [x] DS-08 Implementar `DatePicker` (Ark UI, locale pt-BR, formato `dd/mm/aaaa`) em
       `src/shared/ui/date-picker/` (DESIGN_SYSTEM.md §4.6).
-- [ ] DS-09 Implementar `Dialog`/`Drawer` (Ark UI) em `src/shared/ui/{dialog,drawer}/`
+- [x] DS-09 Implementar `Dialog`/`Drawer` (Ark UI) em `src/shared/ui/{dialog,drawer}/`
       (DESIGN_SYSTEM.md §4.7).
-- [ ] DS-10 Implementar `Toast` (Ark UI `createToaster`) em `src/shared/ui/toast/`
+- [x] DS-10 Implementar `Toast` (Ark UI `createToaster`) em `src/shared/ui/toast/`
       (DESIGN_SYSTEM.md §4.8).
-- [ ] DS-11 Implementar `Tabs`, `Accordion` (Ark UI) em
+- [x] DS-11 Implementar `Tabs`, `Accordion` (Ark UI) em
       `src/shared/ui/{tabs,accordion}/` (DESIGN_SYSTEM.md §4.9).
-- [ ] DS-12 Implementar `Tooltip`, `Popover`, `Menu` (Ark UI) em
+- [x] DS-12 Implementar `Tooltip`, `Popover`, `Menu` (Ark UI) em
       `src/shared/ui/{tooltip,popover,menu}/` (DESIGN_SYSTEM.md §4.10).
-- [ ] DS-13 Implementar `Avatar` (Ark UI) e `Badge`/Tag próprio (cores da tabela §3) em
+- [x] DS-13 Implementar `Avatar` (Ark UI) e `Badge`/Tag próprio (cores da tabela §3) em
       `src/shared/ui/{avatar,badge}/` (DESIGN_SYSTEM.md §4.11, §3).
-- [ ] DS-14 Implementar `Progress`/`ProgressCircle` (Ark UI) e `StatCard` próprio em
+- [x] DS-14 Implementar `Progress`/`ProgressCircle` (Ark UI) e `StatCard` próprio em
       `src/shared/ui/{progress,stat-card}/` (DESIGN_SYSTEM.md §4.12).
-- [ ] DS-15 Implementar `Pagination` (Ark UI, server-side) e `Table` (wrapper sobre
+- [x] DS-15 Implementar `Pagination` (Ark UI, server-side) e `Table` (wrapper sobre
       TanStack Table headless) em `src/shared/ui/{pagination,table}/`
       (DESIGN_SYSTEM.md §4.13).
-- [ ] DS-16 Implementar `Alert`/Banner próprio em `src/shared/ui/alert/`
+- [x] DS-16 Implementar `Alert`/Banner próprio em `src/shared/ui/alert/`
       (DESIGN_SYSTEM.md §4.14).
-- [ ] DS-17 Implementar `Skeleton` próprio em `src/shared/ui/skeleton/`
+- [x] DS-17 Implementar `Skeleton` próprio em `src/shared/ui/skeleton/`
       (DESIGN_SYSTEM.md §4.15).
-- [ ] DS-18 Implementar `KanbanCard`/`KanbanColumn` próprios (sem drag-and-drop) em
+- [x] DS-18 Implementar `KanbanCard`/`KanbanColumn` próprios (sem drag-and-drop) em
       `src/shared/ui/kanban/`, com destaque de déficit por turno (DESIGN_SYSTEM.md §4.16,
       §3).
-- [ ] DS-19 Validar todos os componentes DS-03..DS-18 em claro/escuro e em duas larguras
+- [x] DS-19 Validar todos os componentes DS-03..DS-18 em claro/escuro e em duas larguras
       (mobile ~375px, desktop ~1280px) antes de integrá-los a telas de negócio
       (DESIGN_SYSTEM.md §6, §7).
 
