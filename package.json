@@ -1,42 +1,43 @@
 {
-    "type": "module",
-    "scripts": {
-        "dev": "next dev",
-        "build": "next build",
-        "start": "next start",
-        "lint": "eslint .",
-        "format": "prettier --write ."
-    },
-    "dependencies": {
-        "@ark-ui/react": "^5.38.1",
-        "@hookform/resolvers": "^5.7.1",
-        "@neondatabase/serverless": "^1.1.0",
-        "@tanstack/react-query": "^5.101.4",
-        "mongodb": "^6.19.0",
-        "next": "16.3.0",
-        "react": "^19.1.1",
-        "react-dom": "^19.1.1",
-        "react-hook-form": "^7.85.0",
-        "zod": "^4.4.3"
-    },
-    "devDependencies": {
-        "@tailwindcss/postcss": "^4.1.12",
-        "@tanstack/eslint-plugin-query": "^5.101.4",
-        "@types/node": "^24.3.0",
-        "@types/react": "^19.1.1",
-        "@types/react-dom": "^19.1.1",
-        "eslint": "^9.39.5",
-        "eslint-config-next": "16.3.0",
-        "prettier": "^3.9.6",
-        "tailwindcss": "^4.1.12",
-        "typescript": "^5.9.2"
-    },
-    "prettier": {
-        "semi": false,
-        "singleQuote": true,
-        "printWidth": 120,
-        "tabWidth": 4,
-        "trailingComma": "none",
-        "bracketSpacing": true
-    }
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@ark-ui/react": "^5.38.1",
+    "@hookform/resolvers": "^5.7.1",
+    "@neondatabase/serverless": "^1.1.0",
+    "@tanstack/react-query": "^5.101.4",
+    "@vercel/speed-insights": "^2.0.0",
+    "mongodb": "^6.19.0",
+    "next": "16.3.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-hook-form": "^7.85.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.12",
+    "@tanstack/eslint-plugin-query": "^5.101.4",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "16.3.0",
+    "prettier": "^3.9.6",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 120,
+    "tabWidth": 4,
+    "trailingComma": "none",
+    "bracketSpacing": true
+  }
 }
