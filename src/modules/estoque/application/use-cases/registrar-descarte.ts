@@ -1,4 +1,5 @@
 import { DomainError, ValidacaoError, falha, ok, type Result, type UseCase } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import { ABREVIACAO_UNIDADE } from '../../domain/item'
 import { ehQuantidadePositiva, formatarQuantidade } from '../../domain/quantidade'
 import type { DescarteRepository } from '../ports/estoque-repository'
@@ -33,7 +34,21 @@ export class RegistrarDescarteUseCase implements UseCase<EntradaRegistrarDescart
             )
         }
 
-        const resultado = await this.descartes.registrar(entrada)
+        const resultado = await withAudit(
+            {
+                entidade: 'Doacao',
+                acao: 'create',
+                tabela: 'descarte',
+                extrair: (descarte) => ({
+                    entidadeId: 'descarteId' in descarte ? descarte.descarteId : 'bloqueado',
+                    dadosNovos:
+                        'descarteId' in descarte
+                            ? { ...entrada }
+                            : { bloqueado: true, deficits: descarte.deficits, solicitado: entrada }
+                })
+            },
+            () => this.descartes.registrar(entrada)
+        )
 
         if ('deficits' in resultado) {
             const d = resultado.deficits[0]

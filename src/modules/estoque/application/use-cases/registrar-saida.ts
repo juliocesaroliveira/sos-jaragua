@@ -1,4 +1,5 @@
 import { DomainError, ValidacaoError, falha, ok, type Result, type UseCase } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import { ABREVIACAO_UNIDADE, type TipoSaida } from '../../domain/item'
 import { formatarQuantidade } from '../../domain/quantidade'
 import { consolidarAvulsos, expandirKits, type ComponenteReceita, type ItemConsolidado } from '../../domain/receita-kit'
@@ -59,13 +60,37 @@ export class RegistrarSaidaUseCase implements UseCase<EntradaRegistrarSaida, { s
             )
         }
 
-        const resultado = await this.saidas.registrar({
-            tipo: entrada.tipo,
-            destino: entrada.destino.trim(),
-            responsavelTransporte: entrada.responsavelTransporte.trim(),
-            registradoPor: entrada.registradoPor,
-            itens
-        })
+        const resultado = await withAudit(
+            {
+                entidade: 'Doacao',
+                acao: 'create',
+                tabela: 'saida',
+                extrair: (saida) => ({
+                    // Saída bloqueada por déficit não gerou linha — registramos
+                    // a tentativa mesmo assim: saber o que *não* saiu, e por
+                    // quê, é parte da prestação de contas.
+                    entidadeId: 'saidaId' in saida ? saida.saidaId : 'bloqueada',
+                    dadosNovos:
+                        'saidaId' in saida
+                            ? {
+                                  tipo: entrada.tipo,
+                                  destino: entrada.destino.trim(),
+                                  responsavelTransporte: entrada.responsavelTransporte.trim(),
+                                  registradoPor: entrada.registradoPor,
+                                  itens
+                              }
+                            : { bloqueada: true, deficits: saida.deficits, itensSolicitados: itens }
+                })
+            },
+            () =>
+                this.saidas.registrar({
+                    tipo: entrada.tipo,
+                    destino: entrada.destino.trim(),
+                    responsavelTransporte: entrada.responsavelTransporte.trim(),
+                    registradoPor: entrada.registradoPor,
+                    itens
+                })
+        )
 
         if ('deficits' in resultado) {
             return falha(

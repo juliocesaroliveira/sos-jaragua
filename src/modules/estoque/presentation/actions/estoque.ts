@@ -4,9 +4,11 @@ import { revalidateTag, updateTag } from 'next/cache'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import type { Role } from '@/src/shared/auth/roles'
-import { obterSessao } from '@/src/shared/auth/sessao'
+import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { CATEGORIAS_ITEM, CONDICOES_ITEM, UNIDADES_MEDIDA } from '../../domain/item'
+import type { Kit } from '../../application/ports/estoque-repository'
 import {
     descarteRepository,
     entradaRepository,
@@ -86,7 +88,7 @@ export async function registrarEntrada(
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
     const useCase = new RegistrarEntradaUseCase(entradaRepository)
-    const resultado = await useCase.executar({ ...parse.data, registradoPor: ator.userId })
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar({ ...parse.data, registradoPor: ator.userId }))
 
     if (resultado.ok) {
         invalidarSaldo()
@@ -133,14 +135,16 @@ export async function registrarSaida(entrada: EntradaFormularioSaida): Promise<R
     )
 
     const useCase = new RegistrarSaidaUseCase(saidaRepository)
-    const resultado = await useCase.executar({
-        tipo: parse.data.tipo,
-        destino: parse.data.destino,
-        responsavelTransporte: parse.data.responsavelTransporte,
-        registradoPor: ator.userId,
-        avulsos: parse.data.avulsos,
-        kits: kitsComReceita
-    })
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            tipo: parse.data.tipo,
+            destino: parse.data.destino,
+            responsavelTransporte: parse.data.responsavelTransporte,
+            registradoPor: ator.userId,
+            avulsos: parse.data.avulsos,
+            kits: kitsComReceita
+        })
+    )
 
     if (resultado.ok) invalidarSaldo()
 
@@ -165,7 +169,7 @@ export async function registrarDescarte(
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
     const useCase = new RegistrarDescarteUseCase(descarteRepository)
-    const resultado = await useCase.executar({ ...parse.data, registradoPor: ator.userId })
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar({ ...parse.data, registradoPor: ator.userId }))
 
     if (resultado.ok) invalidarSaldo()
 
@@ -200,13 +204,38 @@ export async function salvarKit(entrada: EntradaFormularioKit): Promise<Resultad
         return erroAction('validacao', 'Há itens repetidos na receita do kit.')
     }
 
-    const kit = id
-        ? await kitRepository.atualizar({ id, nome, descricao, ativo: ativo ?? true })
-        : await kitRepository.criar({ nome, descricao })
+    // Receita de kit entra na auditoria de `Doacao` (DB_SCHEMA.md §10): mudar a
+    // receita muda o que é deduzido do estoque em cada saída.
+    const kit = await comAtorDaSessao(ator, () =>
+        // Genérico explícito: `withAudit` recebe as opções antes de `fn`, então
+        // o TypeScript não tem como inferir o tipo do resultado a partir delas.
+        withAudit<Kit | null>(
+            {
+                entidade: 'Doacao',
+                acao: id ? 'update' : 'create',
+                tabela: 'kit',
+                dadosAnteriores: async () => {
+                    if (!id) return null
+                    const anterior = await kitRepository.buscarPorId(id)
+                    if (!anterior) return null
+                    return { ...anterior, receita: await kitRepository.receita(id) }
+                },
+                extrair: (salvo) => ({
+                    entidadeId: salvo?.id ?? id ?? 'desconhecido',
+                    dadosNovos: salvo ? { ...salvo, receita: componentes } : null
+                })
+            },
+            async () => {
+                const salvo = id
+                    ? await kitRepository.atualizar({ id, nome, descricao, ativo: ativo ?? true })
+                    : await kitRepository.criar({ nome, descricao })
+                if (salvo) await kitRepository.definirReceita(salvo.id, componentes)
+                return salvo
+            }
+        )
+    )
 
     if (!kit) return erroAction('nao_encontrado', 'Kit não encontrado.')
-
-    await kitRepository.definirReceita(kit.id, componentes)
 
     updateTag(CACHE_TAGS.estoqueKits)
     // Mudar a receita muda quantos kits são montáveis (BR-INT-02).

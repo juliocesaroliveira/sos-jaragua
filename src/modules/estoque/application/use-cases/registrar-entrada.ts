@@ -1,4 +1,5 @@
 import { DomainError, ok, type Result, type UseCase } from '@/src/shared/kernel'
+import { withAudit } from '@/src/modules/auditoria'
 import { validarEntrada, type DadosEntrada } from '../../domain/entrada'
 import type { EntradaRepository } from '../ports/estoque-repository'
 
@@ -23,10 +24,26 @@ export class RegistrarEntradaUseCase implements UseCase<
         const validacao = validarEntrada(entrada)
         if (!validacao.ok) return validacao
 
-        const registrada = await this.entradas.registrar({
-            ...validacao.valor,
-            registradoPor: entrada.registradoPor
-        })
+        const registrada = await withAudit(
+            {
+                entidade: 'Doacao',
+                acao: 'create',
+                tabela: 'entrada',
+                extrair: (resultado) => ({
+                    entidadeId: resultado.entradaId,
+                    dadosNovos: {
+                        ...validacao.valor,
+                        itemId: resultado.itemId,
+                        registradoPor: entrada.registradoPor
+                    }
+                })
+            },
+            () =>
+                this.entradas.registrar({
+                    ...validacao.valor,
+                    registradoPor: entrada.registradoPor
+                })
+        )
 
         return ok(registrada)
     }
