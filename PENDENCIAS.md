@@ -188,3 +188,62 @@ ativa a cada 12h) e vão só pelo canal in-app. O que continua indefinido são o
 
 **Ação necessária.** Confirmar se a gestão de usuários entra no MVP. Não há task
 correspondente no `TASKS.md` — se entrar, precisa ser adicionada.
+
+---
+
+## 10. AUD-02 — grants do usuário do Atlas ainda não restritos
+
+**Contexto.** BR-AUD-01 exige que o log de auditoria "não seja apagável".
+`DB_SCHEMA.md` §9 garante isso em duas camadas: (1) o repositório da aplicação
+nunca expõe update/delete sobre `audit_logs` — **implementado**; e (2) o usuário
+do Atlas usado pela aplicação deve ter grant de insert/find, mas **não** de
+update/delete. O RBAC do Postgres não tem jurisdição sobre o Mongo.
+
+**Estado atual.** A camada (1) está pronta. A camada (2) **não** — o usuário
+atual (`Vercel-Admin-atlas-sos-jrg`) é administrativo e pode apagar documentos.
+`npm run mongo:setup` imprime o lembrete ao final.
+
+**Ação necessária.** No Atlas: criar um usuário dedicado à aplicação com um
+custom role que conceda apenas `find` e `insert` na coleção `audit_logs`, e
+trocar o `MONGODB_URI` de produção para esse usuário. É um passo de console, não
+de código.
+
+---
+
+## 11. Resolução DNS SRV bloqueada na rede de desenvolvimento
+
+**Contexto.** `MONGODB_URI` usa o formato `mongodb+srv://`, que exige consulta
+DNS do tipo SRV.
+
+**Estado atual.** O resolvedor DNS desta máquina **recusa** consultas SRV
+(`ECONNREFUSED`), embora o registro exista e resolva normalmente por um DNS
+público (8.8.8.8). Consequência: em desenvolvimento local a auditoria falha e
+degrada graciosamente — as operações de negócio funcionam, mas nada é gravado em
+`audit_logs`.
+
+Não afeta produção (a Vercel resolve SRV normalmente).
+
+**Ação necessária.** Para desenvolver com auditoria funcionando, uma das opções:
+
+- trocar o DNS da máquina/roteador para um que responda SRV (8.8.8.8, 1.1.1.1);
+- ou usar em `.env.local` a connection string **não-SRV** do Atlas (a mesma
+  credencial, com os três hosts do shard explícitos) — equivalente, e é assim
+  que a verificação desta seção foi feita.
+
+---
+
+## 12. Degradação graciosa da auditoria: implementada, não verificada em execução
+
+**Contexto.** `DESIGN.md` §13 define que, se a escrita em `audit_logs` falhar, a
+operação Postgres original **prossegue** e a falha vira log estruturado.
+
+**Estado atual.** O código está implementado (try/catch, 1 retry, log
+estruturado com o registro completo) e o caminho **feliz** foi verificado ponta a
+ponta contra o Atlas real. A degradação em si **não** foi comprovada em execução:
+a tentativa de teste foi inválida porque o cliente Mongo fica em cache global
+(`globalThis._mongoClient`, proposital para o HMR), então trocar a variável de
+ambiente não derrubou a conexão já aberta.
+
+**Ação necessária.** Cobrir com teste automatizado na Seção 11 (TESTES),
+injetando um escritor que lança, e verificando que o caso de uso retorna `ok`
+mesmo assim.
