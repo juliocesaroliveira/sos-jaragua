@@ -10,7 +10,8 @@
         "db:migrate": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs migrate",
         "db:push": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push",
         "db:studio": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs studio",
-        "db:seed": "tsx --env-file=.env.local db/seed.ts"
+        "db:seed": "tsx --env-file=.env.local db/seed.ts",
+        "mongo:setup": "tsx --env-file=.env.local db/mongo-setup.ts"
     },
     "dependencies": {
         "@ark-ui/react": "^5.38.1",
