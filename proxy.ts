@@ -1,0 +1,94 @@
+import { NextResponse, type NextRequest } from 'next/server'
+import { getCookieCache, getSessionCookie } from 'better-auth/cookies'
+import { eq } from 'drizzle-orm'
+import { db } from '@/src/shared/db/postgres'
+import { session as sessionTable } from '@/db/schema/identidade'
+import { ehRole, type Role } from '@/src/shared/auth/roles'
+import { expirouPorInatividade, sujeitoATimeout } from '@/src/shared/auth/inatividade'
+import { rolesExigidas } from '@/src/shared/auth/rotas'
+
+/**
+ * Gate de autenticação/autorização (DESIGN.md §6.2). Roda no runtime Node
+ * (Next 16 não suporta Edge em `proxy.ts`).
+ *
+ * Esta é a **barreira rápida**: decide a partir do cookie, sem hit ao banco no
+ * caminho feliz. A fonte de verdade continua sendo a re-checagem via
+ * `auth.api.getSession` em `(staff)/layout.tsx` e em cada Server Action —
+ * cookies podem estar forjados ou defasados entre o proxy e o render.
+ */
+
+/** Intervalo mínimo entre gravações de `lastActivityAt` (DESIGN.md §6.3). */
+const INTERVALO_MINIMO_ATUALIZACAO_MS = 60_000
+
+export async function proxy(request: NextRequest) {
+    const { pathname } = request.nextUrl
+    const exigidas = rolesExigidas(pathname)
+
+    // Rota não protegida: nada a fazer.
+    if (!exigidas) return NextResponse.next()
+
+    // 1. Presença de sessão via cookie — sem consulta ao banco.
+    if (!getSessionCookie(request)) return redirecionarParaLogin(request)
+
+    // 2. Role a partir do cache de sessão assinado (também sem banco). Quando o
+    //    cache não está disponível, deixamos passar: o layout/Server Action faz
+    //    a checagem autoritativa logo em seguida.
+    const cache = await getCookieCache(request, {
+        secret: process.env.BETTER_AUTH_SECRET,
+        isSecure: process.env.NODE_ENV === 'production'
+    })
+    if (!cache) return NextResponse.next()
+
+    if (cache.user.ativo === false) return redirecionarParaLogin(request)
+
+    const role: Role | undefined = ehRole(cache.user.role) ? cache.user.role : undefined
+    // `lastActivityAt` é um additionalField: chega como string ISO no cache.
+    const carimbo = cache.session.lastActivityAt as string | Date | null | undefined
+    const ultimaAtividade = carimbo ? new Date(carimbo) : null
+
+    // 3. Timeout de inatividade de staff (NFR §3, DESIGN.md §6.3).
+    if (expirouPorInatividade(role, ultimaAtividade)) {
+        return redirecionarParaLogin(request, 'expirado')
+    }
+
+    if (!role || !exigidas.includes(role)) {
+        return NextResponse.redirect(new URL('/sem-permissao', request.url))
+    }
+
+    // 4. Renova o carimbo de atividade para as roles sujeitas ao timeout.
+    //    Throttled: uma gravação por minuto, no máximo.
+    if (sujeitoATimeout(role)) {
+        const precisaAtualizar =
+            !ultimaAtividade || Date.now() - ultimaAtividade.getTime() > INTERVALO_MINIMO_ATUALIZACAO_MS
+        if (precisaAtualizar) await registrarAtividade(cache.session.token)
+    }
+
+    return NextResponse.next()
+}
+
+function redirecionarParaLogin(request: NextRequest, motivo?: 'expirado') {
+    const url = new URL('/login', request.url)
+    url.searchParams.set('redirecionar', request.nextUrl.pathname + request.nextUrl.search)
+    if (motivo) url.searchParams.set('motivo', motivo)
+    return NextResponse.redirect(url)
+}
+
+/**
+ * Falha aqui não pode derrubar a navegação: no pior caso o carimbo fica
+ * defasado e o usuário é deslogado mais cedo do que o necessário.
+ */
+async function registrarAtividade(token: string) {
+    try {
+        await db.update(sessionTable).set({ lastActivityAt: new Date() }).where(eq(sessionTable.token, token))
+    } catch (erro) {
+        console.error('[proxy] falha ao atualizar lastActivityAt', erro)
+    }
+}
+
+export const config = {
+    matcher: [
+        // Tudo, exceto o handler do better-auth, assets estáticos, arquivos de
+        // metadata e a landing pública (DESIGN.md §6.2, item 4).
+        '/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js)$).*)'
+    ]
+}
