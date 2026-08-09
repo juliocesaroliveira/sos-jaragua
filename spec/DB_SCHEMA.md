@@ -74,25 +74,25 @@ padrão do adapter (não necessariamente `criadoEm`/`atualizadoEm`).
 
 **`user`**
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid/string, pk | gerado pelo better-auth |
-| `email` | text, único | |
-| `emailVerified` | boolean | padrão better-auth |
-| `name` | text | padrão better-auth |
-| `image` | text, nullable | padrão better-auth |
-| `role` | enum(`usuario,voluntario,membro_defesa_civil,coordenador,administrador`) | **additionalField**, default `usuario` |
-| `ativo` | boolean | **additionalField**, default `true` — permite desativar acesso sem apagar histórico |
-| `createdAt` / `updatedAt` | timestamptz | padrão better-auth |
+| Campo                     | Tipo                                                                     | Regras                                                                              |
+| ------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `id`                      | uuid/string, pk                                                          | gerado pelo better-auth                                                             |
+| `email`                   | text, único                                                              |                                                                                     |
+| `emailVerified`           | boolean                                                                  | padrão better-auth                                                                  |
+| `name`                    | text                                                                     | padrão better-auth                                                                  |
+| `image`                   | text, nullable                                                           | padrão better-auth                                                                  |
+| `role`                    | enum(`usuario,voluntario,membro_defesa_civil,coordenador,administrador`) | **additionalField**, default `usuario`                                              |
+| `ativo`                   | boolean                                                                  | **additionalField**, default `true` — permite desativar acesso sem apagar histórico |
+| `createdAt` / `updatedAt` | timestamptz                                                              | padrão better-auth                                                                  |
 
 **`session`**
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid/string, pk | |
-| `userId` | fk → `user.id` | |
-| `expiresAt`, `token`, `ipAddress`, `userAgent` | — | padrão better-auth |
-| `lastActivityAt` | timestamptz, nullable | **additionalField** — atualizado por `proxy.ts` a cada requisição de staff; base do timeout de inatividade (DESIGN.md §6.3) |
+| Campo                                          | Tipo                  | Regras                                                                                                                      |
+| ---------------------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `id`                                           | uuid/string, pk       |                                                                                                                             |
+| `userId`                                       | fk → `user.id`        |                                                                                                                             |
+| `expiresAt`, `token`, `ipAddress`, `userAgent` | —                     | padrão better-auth                                                                                                          |
+| `lastActivityAt`                               | timestamptz, nullable | **additionalField** — atualizado por `proxy.ts` a cada requisição de staff; base do timeout de inatividade (DESIGN.md §6.3) |
 
 **`account`** (vínculos OAuth) — padrão better-auth, um registro por provider vinculado ao
 `user`. Providers habilitados: `credential` (e-mail/senha), `google`, `facebook`.
@@ -105,26 +105,26 @@ Extensão 1:1 de `user` com os dados específicos do domínio de voluntariado �
 separada de `user` para não poluir a tabela de autenticação com campos de negócio, e para
 que a "fila de Cadastros Pendentes" (BR-VOL-01) seja uma query simples sobre esta tabela.
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `userId` | uuid, fk → `user.id`, único | Sim | 1:1 com `user` |
-| `nomeCompleto` | text | Sim | |
-| `dataNascimento` | date | Sim | Validação de maioridade (≥18) no `domain` |
-| `cpf` | text, único | Sim | Validação de dígito verificador no `domain`; índice único |
-| `telefone` | text | Sim | WhatsApp |
-| `cep` | text | Sim | |
-| `bairro` | text | Sim | |
-| `profissao` | text | Sim | |
-| `restricoesSaude` | text | Não | Alergias, limitações físicas |
-| `veiculoProprio` | boolean | Sim | |
-| `tipoVeiculo` | enum(`carro,caminhonete,moto,barco`) | Condicional | Obrigatório se `veiculoProprio = true` (validado no `domain`) |
-| `disponibilidade` | enum-array(`integral,manha,tarde,noite,fim_de_semana`) | Sim | |
-| `status` | enum(`pendente,aprovado,rejeitado`) | Sim | default `pendente`; **é** a fila de Cadastros Pendentes via `status = 'pendente'` |
-| `aprovadoPor` | uuid, fk → `user.id`, nullable | | Sobrescrito a cada nova decisão de triagem |
-| `aprovadoEm` | timestamptz, nullable | | |
-| `motivoRejeicao` | text, nullable | | |
-| `criadoEm` / `atualizadoEm` | timestamptz | | |
+| Campo                       | Tipo                                                   | Obrigatório | Regras                                                                            |
+| --------------------------- | ------------------------------------------------------ | ----------- | --------------------------------------------------------------------------------- |
+| `id`                        | uuid, pk                                               |             |                                                                                   |
+| `userId`                    | uuid, fk → `user.id`, único                            | Sim         | 1:1 com `user`                                                                    |
+| `nomeCompleto`              | text                                                   | Sim         |                                                                                   |
+| `dataNascimento`            | date                                                   | Sim         | Validação de maioridade (≥18) no `domain`                                         |
+| `cpf`                       | text, único                                            | Sim         | Validação de dígito verificador no `domain`; índice único                         |
+| `telefone`                  | text                                                   | Sim         | WhatsApp                                                                          |
+| `cep`                       | text                                                   | Sim         |                                                                                   |
+| `bairro`                    | text                                                   | Sim         |                                                                                   |
+| `profissao`                 | text                                                   | Sim         |                                                                                   |
+| `restricoesSaude`           | text                                                   | Não         | Alergias, limitações físicas                                                      |
+| `veiculoProprio`            | boolean                                                | Sim         |                                                                                   |
+| `tipoVeiculo`               | enum(`carro,caminhonete,moto,barco`)                   | Condicional | Obrigatório se `veiculoProprio = true` (validado no `domain`)                     |
+| `disponibilidade`           | enum-array(`integral,manha,tarde,noite,fim_de_semana`) | Sim         |                                                                                   |
+| `status`                    | enum(`pendente,aprovado,rejeitado`)                    | Sim         | default `pendente`; **é** a fila de Cadastros Pendentes via `status = 'pendente'` |
+| `aprovadoPor`               | uuid, fk → `user.id`, nullable                         |             | Sobrescrito a cada nova decisão de triagem                                        |
+| `aprovadoEm`                | timestamptz, nullable                                  |             |                                                                                   |
+| `motivoRejeicao`            | text, nullable                                         |             |                                                                                   |
+| `criadoEm` / `atualizadoEm` | timestamptz                                            |             |                                                                                   |
 
 **Reenvio de candidatura rejeitada** (decisão confirmada): uma nova submissão do mesmo CPF
 atualiza a linha existente — `status` volta a `pendente`, dados substituídos,
@@ -138,20 +138,20 @@ deploy (decisão confirmada — substitui a lista fechada do BRD, que era exempl
 
 **`habilidade`**
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `nome` | text, único | |
-| `criadoEm` | timestamptz | |
+| Campo      | Tipo        | Regras |
+| ---------- | ----------- | ------ |
+| `id`       | uuid, pk    |        |
+| `nome`     | text, único |        |
+| `criadoEm` | timestamptz |        |
 
 **`voluntario_habilidade`** (join, N:N)
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` | |
-| `habilidadeId` | uuid, fk → `habilidade.id` | |
-| — | | `unique(voluntarioPerfilId, habilidadeId)`; indexado para o filtro por habilidade na alocação (§5) |
+| Campo                | Tipo                              | Regras                                                                                             |
+| -------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `id`                 | uuid, pk                          |                                                                                                    |
+| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` |                                                                                                    |
+| `habilidadeId`       | uuid, fk → `habilidade.id`        |                                                                                                    |
+| —                    |                                   | `unique(voluntarioPerfilId, habilidadeId)`; indexado para o filtro por habilidade na alocação (§5) |
 
 ---
 
@@ -162,47 +162,47 @@ deploy (decisão confirmada — substitui a lista fechada do BRD, que era exempl
 Tabela lookup livre (decisão confirmada, substitui a lista exemplificativa do BRD:
 "Separação de itens, Montagem de kits, Apoio logístico, etc.").
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `nome` | text, único | |
-| `criadoEm` | timestamptz | |
+| Campo      | Tipo        | Regras |
+| ---------- | ----------- | ------ |
+| `id`       | uuid, pk    |        |
+| `nome`     | text, único |        |
+| `criadoEm` | timestamptz |        |
 
 ### 5.2. `atividade`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `titulo` | text | Sim | |
-| `categoriaId` | uuid, fk → `atividade_categoria.id` | Sim | |
-| `local` | text | Sim | |
-| `status` | enum(`aberta,encerrada,cancelada`) | Sim | default `aberta` |
-| `criadoPor` | uuid, fk → `user.id` | Sim | Coordenador |
-| `criadoEm` / `atualizadoEm` | timestamptz | | |
+| Campo                       | Tipo                                | Obrigatório | Regras           |
+| --------------------------- | ----------------------------------- | ----------- | ---------------- |
+| `id`                        | uuid, pk                            |             |                  |
+| `titulo`                    | text                                | Sim         |                  |
+| `categoriaId`               | uuid, fk → `atividade_categoria.id` | Sim         |                  |
+| `local`                     | text                                | Sim         |                  |
+| `status`                    | enum(`aberta,encerrada,cancelada`)  | Sim         | default `aberta` |
+| `criadoPor`                 | uuid, fk → `user.id`                | Sim         | Coordenador      |
+| `criadoEm` / `atualizadoEm` | timestamptz                         |             |                  |
 
 ### 5.3. `turno`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `atividadeId` | uuid, fk → `atividade.id` | Sim | |
-| `inicio` | timestamptz | Sim | Bloco de 4h validado no `domain` (BR-VOL-04) |
-| `fim` | timestamptz | Sim | |
-| `vagas` | integer | Sim | > 0 |
-| `criadoEm` | timestamptz | | |
+| Campo         | Tipo                      | Obrigatório | Regras                                       |
+| ------------- | ------------------------- | ----------- | -------------------------------------------- |
+| `id`          | uuid, pk                  |             |                                              |
+| `atividadeId` | uuid, fk → `atividade.id` | Sim         |                                              |
+| `inicio`      | timestamptz               | Sim         | Bloco de 4h validado no `domain` (BR-VOL-04) |
+| `fim`         | timestamptz               | Sim         |                                              |
+| `vagas`       | integer                   | Sim         | > 0                                          |
+| `criadoEm`    | timestamptz               |             |                                              |
 
 ### 5.4. `alocacao`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `turnoId` | uuid, fk → `turno.id` | Sim | |
-| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` | Sim | |
-| `status` | enum(`confirmado,cancelado`) | Sim | default `confirmado` |
-| `alocadoPor` | uuid, fk → `user.id` | Sim | Coordenador |
-| `lembreteEnviadoEm` | timestamptz, nullable | | Flag de dedupe do cron de lembrete (DESIGN.md §12) |
-| `criadoEm` | timestamptz | | |
-| — | | | `unique(turnoId, voluntarioPerfilId)` — mesmo voluntário não pode ser alocado duas vezes ao mesmo turno |
+| Campo                | Tipo                              | Obrigatório | Regras                                                                                                  |
+| -------------------- | --------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `id`                 | uuid, pk                          |             |                                                                                                         |
+| `turnoId`            | uuid, fk → `turno.id`             | Sim         |                                                                                                         |
+| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` | Sim         |                                                                                                         |
+| `status`             | enum(`confirmado,cancelado`)      | Sim         | default `confirmado`                                                                                    |
+| `alocadoPor`         | uuid, fk → `user.id`              | Sim         | Coordenador                                                                                             |
+| `lembreteEnviadoEm`  | timestamptz, nullable             |             | Flag de dedupe do cron de lembrete (DESIGN.md §12)                                                      |
+| `criadoEm`           | timestamptz                       |             |                                                                                                         |
+| —                    |                                   |             | `unique(turnoId, voluntarioPerfilId)` — mesmo voluntário não pode ser alocado duas vezes ao mesmo turno |
 
 ---
 
@@ -215,94 +215,94 @@ reagregar o ledger inteiro a cada leitura, atendendo ao NFR de <300ms.
 
 ### 6.1. `item`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `nome` | text | Sim | Índice trigram (`pg_trgm`) para autocomplete-dedup (BR-EST-01) |
-| `categoria` | enum(`agua,alimentacao,higiene,limpeza,acomodacao,materiais_construcao,vestuario,outros`) | Sim | Lista fechada do BRD §4.1 |
-| `unidadeMedida` | enum(`unidade,kg,litro,fardo,caixa`) | Sim | |
-| `criadoEm` | timestamptz | | |
+| Campo           | Tipo                                                                                      | Obrigatório | Regras                                                         |
+| --------------- | ----------------------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------- |
+| `id`            | uuid, pk                                                                                  |             |                                                                |
+| `nome`          | text                                                                                      | Sim         | Índice trigram (`pg_trgm`) para autocomplete-dedup (BR-EST-01) |
+| `categoria`     | enum(`agua,alimentacao,higiene,limpeza,acomodacao,materiais_construcao,vestuario,outros`) | Sim         | Lista fechada do BRD §4.1                                      |
+| `unidadeMedida` | enum(`unidade,kg,litro,fardo,caixa`)                                                      | Sim         |                                                                |
+| `criadoEm`      | timestamptz                                                                               |             |                                                                |
 
 ### 6.2. `entrada`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `itemId` | uuid, fk → `item.id` | Sim | |
-| `quantidade` | numeric | Sim | > 0 |
-| `condicao` | enum(`novo,usado_bom_estado,necessita_higienizacao`) | Sim | |
-| `perecivel` | boolean | Sim | |
-| `dataValidade` | date, nullable | Condicional | Obrigatório se `perecivel = true`; não pode ser data passada (validado no `domain`) |
-| `kitDestinoId` | uuid, fk → `kit.id`, nullable | Não | **Apenas informativo** (decisão confirmada) — não reserva saldo; item entra no saldo geral |
-| `registradoPor` | uuid, fk → `user.id` | Sim | |
-| `criadoEm` | timestamptz | | |
+| Campo           | Tipo                                                 | Obrigatório | Regras                                                                                     |
+| --------------- | ---------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------ |
+| `id`            | uuid, pk                                             |             |                                                                                            |
+| `itemId`        | uuid, fk → `item.id`                                 | Sim         |                                                                                            |
+| `quantidade`    | numeric                                              | Sim         | > 0                                                                                        |
+| `condicao`      | enum(`novo,usado_bom_estado,necessita_higienizacao`) | Sim         |                                                                                            |
+| `perecivel`     | boolean                                              | Sim         |                                                                                            |
+| `dataValidade`  | date, nullable                                       | Condicional | Obrigatório se `perecivel = true`; não pode ser data passada (validado no `domain`)        |
+| `kitDestinoId`  | uuid, fk → `kit.id`, nullable                        | Não         | **Apenas informativo** (decisão confirmada) — não reserva saldo; item entra no saldo geral |
+| `registradoPor` | uuid, fk → `user.id`                                 | Sim         |                                                                                            |
+| `criadoEm`      | timestamptz                                          |             |                                                                                            |
 
 ### 6.3. `kit` e `kit_receita_item`
 
 **`kit`**
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `nome` | text | |
-| `descricao` | text, nullable | |
-| `ativo` | boolean | default `true` |
-| `criadoEm` / `atualizadoEm` | timestamptz | |
+| Campo                       | Tipo           | Regras         |
+| --------------------------- | -------------- | -------------- |
+| `id`                        | uuid, pk       |                |
+| `nome`                      | text           |                |
+| `descricao`                 | text, nullable |                |
+| `ativo`                     | boolean        | default `true` |
+| `criadoEm` / `atualizadoEm` | timestamptz    |                |
 
 **`kit_receita_item`** (a "receita" — BR-EST-03)
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `kitId` | uuid, fk → `kit.id` | |
-| `itemId` | uuid, fk → `item.id` | |
-| `quantidade` | numeric | Quantidade do item por unidade de kit |
-| — | | `unique(kitId, itemId)` |
+| Campo        | Tipo                 | Regras                                |
+| ------------ | -------------------- | ------------------------------------- |
+| `id`         | uuid, pk             |                                       |
+| `kitId`      | uuid, fk → `kit.id`  |                                       |
+| `itemId`     | uuid, fk → `item.id` |                                       |
+| `quantidade` | numeric              | Quantidade do item por unidade de kit |
+| —            |                      | `unique(kitId, itemId)`               |
 
 ### 6.4. `saida` e `saida_item`
 
 **`saida`**
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `tipo` | enum(`avulso,kit`) | Sim | |
-| `destino` | text | Sim | Bairro/abrigo/família (texto livre) |
-| `responsavelTransporte` | text | Sim | |
-| `registradoPor` | uuid, fk → `user.id` | Sim | |
-| `criadoEm` | timestamptz | | |
+| Campo                   | Tipo                 | Obrigatório | Regras                              |
+| ----------------------- | -------------------- | ----------- | ----------------------------------- |
+| `id`                    | uuid, pk             |             |                                     |
+| `tipo`                  | enum(`avulso,kit`)   | Sim         |                                     |
+| `destino`               | text                 | Sim         | Bairro/abrigo/família (texto livre) |
+| `responsavelTransporte` | text                 | Sim         |                                     |
+| `registradoPor`         | uuid, fk → `user.id` | Sim         |                                     |
+| `criadoEm`              | timestamptz          |             |                                     |
 
 **`saida_item`** (itens efetivamente deduzidos — populado tanto para saída avulsa quanto
 para a expansão da receita de kits, BR-EST-04)
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `saidaId` | uuid, fk → `saida.id` | |
-| `itemId` | uuid, fk → `item.id` | |
-| `quantidade` | numeric | Quantidade efetivamente deduzida do saldo |
+| Campo        | Tipo                  | Regras                                    |
+| ------------ | --------------------- | ----------------------------------------- |
+| `id`         | uuid, pk              |                                           |
+| `saidaId`    | uuid, fk → `saida.id` |                                           |
+| `itemId`     | uuid, fk → `item.id`  |                                           |
+| `quantidade` | numeric               | Quantidade efetivamente deduzida do saldo |
 
 ### 6.5. `descarte`
 
 Tabela dedicada (BR-EST-05) — não uma flag em `saida`, para exclusão estrutural dos
 relatórios de "itens entregues à população".
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `itemId` | uuid, fk → `item.id` | Sim | |
-| `quantidade` | numeric | Sim | |
-| `motivo` | text, nullable | Não | |
-| `registradoPor` | uuid, fk → `user.id` | Sim | |
-| `criadoEm` | timestamptz | | |
+| Campo           | Tipo                 | Obrigatório | Regras |
+| --------------- | -------------------- | ----------- | ------ |
+| `id`            | uuid, pk             |             |        |
+| `itemId`        | uuid, fk → `item.id` | Sim         |        |
+| `quantidade`    | numeric              | Sim         |        |
+| `motivo`        | text, nullable       | Não         |        |
+| `registradoPor` | uuid, fk → `user.id` | Sim         |        |
+| `criadoEm`      | timestamptz          |             |        |
 
 ### 6.6. `saldo_estoque` (read-model materializado)
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `itemId` | uuid, pk, fk → `item.id` | 1:1 com `item` |
-| `quantidadeAtual` | numeric | Atualizado transacionalmente por `entrada` (+), `saida_item` (-), `descarte` (-) |
-| `atualizadoEm` | timestamptz | |
+| Campo             | Tipo                     | Regras                                                                           |
+| ----------------- | ------------------------ | -------------------------------------------------------------------------------- |
+| `itemId`          | uuid, pk, fk → `item.id` | 1:1 com `item`                                                                   |
+| `quantidadeAtual` | numeric                  | Atualizado transacionalmente por `entrada` (+), `saida_item` (-), `descarte` (-) |
+| `atualizadoEm`    | timestamptz              |                                                                                  |
 
 ---
 
@@ -314,24 +314,24 @@ Linhas **append-only** — a mais recente (`atualizadoEm` mais alto) representa 
 vigente; histórico preservado de graça, sem necessidade de tabela de auditoria separada
 para esta entidade.
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `totalFamiliasAfetadas` | integer | Sim | |
-| `totalPessoasAfetadas` | integer | Sim | |
-| `atualizadoPor` | uuid, fk → `user.id` | Sim | |
-| `atualizadoEm` | timestamptz | | |
+| Campo                   | Tipo                 | Obrigatório | Regras |
+| ----------------------- | -------------------- | ----------- | ------ |
+| `id`                    | uuid, pk             |             |        |
+| `totalFamiliasAfetadas` | integer              | Sim         |        |
+| `totalPessoasAfetadas`  | integer              | Sim         |        |
+| `atualizadoPor`         | uuid, fk → `user.id` | Sim         |        |
+| `atualizadoEm`          | timestamptz          |             |        |
 
 ### 7.2. `metrica_kit`
 
 Configuração da proporção usada no cálculo de demanda (BR-INT-01).
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `kitId` | uuid, fk → `kit.id` | |
-| `baseDemanda` | enum(`por_familia,por_pessoa_desabrigada`) | |
-| `proporcao` | numeric | Ex.: `1` = 1 kit por família/pessoa |
+| Campo         | Tipo                                       | Regras                              |
+| ------------- | ------------------------------------------ | ----------------------------------- |
+| `id`          | uuid, pk                                   |                                     |
+| `kitId`       | uuid, fk → `kit.id`                        |                                     |
+| `baseDemanda` | enum(`por_familia,por_pessoa_desabrigada`) |                                     |
+| `proporcao`   | numeric                                    | Ex.: `1` = 1 kit por família/pessoa |
 
 ---
 
@@ -339,30 +339,30 @@ Configuração da proporção usada no cálculo de demanda (BR-INT-01).
 
 ### 8.1. `notificacao`
 
-| Campo | Tipo | Obrigatório | Regras |
-|---|---|---|---|
-| `id` | uuid, pk | | |
-| `destinatarioUserId` | uuid, fk → `user.id` | Sim | |
-| `tipo` | enum(`triagem_concluida,atividade_atribuida,alteracao_atividade,lembrete_turno,broadcast_urgencia,cadastros_acumulados,estoque_critico,deficit_atendimento`) | Sim | Espelha a matriz de comunicação do BRD §6 |
-| `titulo` | text | Sim | |
-| `mensagem` | text | Sim | |
-| `lida` | boolean | Sim | default `false` |
-| `contexto` | jsonb, nullable | Não | Payload adicional (ex.: id da atividade/turno referenciado) |
-| `criadoEm` | timestamptz | | |
+| Campo                | Tipo                                                                                                                                                         | Obrigatório | Regras                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ----------------------------------------------------------- |
+| `id`                 | uuid, pk                                                                                                                                                     |             |                                                             |
+| `destinatarioUserId` | uuid, fk → `user.id`                                                                                                                                         | Sim         |                                                             |
+| `tipo`               | enum(`triagem_concluida,atividade_atribuida,alteracao_atividade,lembrete_turno,broadcast_urgencia,cadastros_acumulados,estoque_critico,deficit_atendimento`) | Sim         | Espelha a matriz de comunicação do BRD §6                   |
+| `titulo`             | text                                                                                                                                                         | Sim         |                                                             |
+| `mensagem`           | text                                                                                                                                                         | Sim         |                                                             |
+| `lida`               | boolean                                                                                                                                                      | Sim         | default `false`                                             |
+| `contexto`           | jsonb, nullable                                                                                                                                              | Não         | Payload adicional (ex.: id da atividade/turno referenciado) |
+| `criadoEm`           | timestamptz                                                                                                                                                  |             |                                                             |
 
 ### 8.2. `notificacao_envio`
 
 Separado de `notificacao` para que falha de entrega em um canal (ex.: bounce de e-mail)
 não corrompa o estado lido/não-lido in-app.
 
-| Campo | Tipo | Regras |
-|---|---|---|
-| `id` | uuid, pk | |
-| `notificacaoId` | uuid, fk → `notificacao.id` | |
-| `canal` | enum(`email,plataforma`) | Sem push real no MVP (decisão confirmada) |
-| `status` | enum(`pendente,enviado,falhou`) | default `pendente` |
-| `enviadoEm` | timestamptz, nullable | |
-| `erro` | text, nullable | |
+| Campo           | Tipo                            | Regras                                    |
+| --------------- | ------------------------------- | ----------------------------------------- |
+| `id`            | uuid, pk                        |                                           |
+| `notificacaoId` | uuid, fk → `notificacao.id`     |                                           |
+| `canal`         | enum(`email,plataforma`)        | Sem push real no MVP (decisão confirmada) |
+| `status`        | enum(`pendente,enviado,falhou`) | default `pendente`                        |
+| `enviadoEm`     | timestamptz, nullable           |                                           |
+| `erro`          | text, nullable                  |                                           |
 
 ---
 
@@ -402,18 +402,18 @@ de delete/update** nesta coleção, já que RBAC do Postgres não tem jurisdiç�
 O BRD referencia auditoria para as entidades abstratas "Doacao", "Voluntario" e
 "Atividade" — nenhuma delas existe como tabela única no schema físico. Mapeamento:
 
-| Entidade do BRD | Tabelas Postgres correspondentes |
-|---|---|
-| **Voluntario** | `voluntario_perfil` (especialmente transições de `status`) |
-| **Atividade** | `atividade`, `turno`, `alocacao` |
-| **Doacao** | `entrada`, `saida` / `saida_item`, `descarte`, `kit` / `kit_receita_item` (mudanças de receita incluídas, por afetarem diretamente a capacidade de montagem de kits) |
+| Entidade do BRD | Tabelas Postgres correspondentes                                                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Voluntario**  | `voluntario_perfil` (especialmente transições de `status`)                                                                                                           |
+| **Atividade**   | `atividade`, `turno`, `alocacao`                                                                                                                                     |
+| **Doacao**      | `entrada`, `saida` / `saida_item`, `descarte`, `kit` / `kit_receita_item` (mudanças de receita incluídas, por afetarem diretamente a capacidade de montagem de kits) |
 
 ---
 
 ## 11. Drizzle — Tooling
 
 - Schema organizado em `db/schema/{identidade,voluntariado,estoque,logistica,notificacoes}.ts`
-  + `index.ts` (barrel usado por `drizzle.config.ts` e pelo cliente runtime).
+    - `index.ts` (barrel usado por `drizzle.config.ts` e pelo cliente runtime).
 - `drizzle.config.ts` aponta para `DATABASE_URL_UNPOOLED` (conexão direta) — necessário
   para `drizzle-kit generate`/`push`, seguindo a recomendação do skill `neon-postgres` deste
   projeto (conexões pooled via PgBouncer em modo transação não suportam bem operações de
@@ -427,15 +427,15 @@ O BRD referencia auditoria para as entidades abstratas "Doacao", "Voluntario" e
 
 ## 12. Estratégia de Índices
 
-| Índice | Motivo |
-|---|---|
-| `item.nome` — GIN/trigram (`pg_trgm`) | Autocomplete-dedup na Entrada (BR-EST-01) |
-| `voluntario_perfil.status` | Query da fila de Cadastros Pendentes |
-| `voluntario_perfil.cpf` — único | Regra de negócio (documento único por voluntário) |
-| `alocacao(turnoId, voluntarioPerfilId)` — único | Impede alocação duplicada |
+| Índice                                                                                                                     | Motivo                                               |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `item.nome` — GIN/trigram (`pg_trgm`)                                                                                      | Autocomplete-dedup na Entrada (BR-EST-01)            |
+| `voluntario_perfil.status`                                                                                                 | Query da fila de Cadastros Pendentes                 |
+| `voluntario_perfil.cpf` — único                                                                                            | Regra de negócio (documento único por voluntário)    |
+| `alocacao(turnoId, voluntarioPerfilId)` — único                                                                            | Impede alocação duplicada                            |
 | `entrada(itemId, criadoEm)`, `saida_item(itemId, criadoEm)` (via `saidaId`→`saida.criadoEm`), `descarte(itemId, criadoEm)` | Agregações de relatório/histórico por item e período |
-| `notificacao(destinatarioUserId, lida)` | Contagem de não-lidas por usuário |
-| `atividade_categoria.nome`, `habilidade.nome` — único | Evita duplicidade nas tabelas lookup livres |
+| `notificacao(destinatarioUserId, lida)`                                                                                    | Contagem de não-lidas por usuário                    |
+| `atividade_categoria.nome`, `habilidade.nome` — único                                                                      | Evita duplicidade nas tabelas lookup livres          |
 
 ---
 
