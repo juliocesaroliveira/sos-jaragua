@@ -217,3 +217,75 @@ export async function saldoPorItem(): Promise<Map<string, number>> {
 
     return new Map(linhas.map((l) => [l.itemId, paraNumero(l.quantidadeAtual)]))
 }
+
+// -- Leituras para exportação (BR-REL-01, BR-CON-01) --------------------------
+
+export type LinhaSaidaPlana = {
+    saidaId: string
+    criadoEm: string
+    tipo: 'avulso' | 'kit'
+    destino: string
+    responsavelTransporte: string
+    item: string
+    categoria: CategoriaItem
+    quantidade: number
+    unidadeMedida: UnidadeMedida
+}
+
+/**
+ * Histórico de saídas **achatado**: uma linha por item entregue.
+ *
+ * É a forma que planilha entende — a estrutura aninhada de `saida` +
+ * `saida_item` da tela não se transporta para CSV. Por vir de `saida_item`, o
+ * descarte fica de fora por construção (BR-EST-05).
+ *
+ * Sem cache: o relatório precisa refletir o estado exato do momento do
+ * download, e é uma leitura pontual, não de tela.
+ */
+export async function saidasParaExportacao(): Promise<LinhaSaidaPlana[]> {
+    const linhas = await db
+        .select({
+            saidaId: saida.id,
+            criadoEm: saida.criadoEm,
+            tipo: saida.tipo,
+            destino: saida.destino,
+            responsavelTransporte: saida.responsavelTransporte,
+            item: item.nome,
+            categoria: item.categoria,
+            quantidade: saidaItem.quantidade,
+            unidadeMedida: item.unidadeMedida
+        })
+        .from(saidaItem)
+        .innerJoin(saida, eq(saida.id, saidaItem.saidaId))
+        .innerJoin(item, eq(item.id, saidaItem.itemId))
+        .orderBy(desc(saida.criadoEm), asc(item.nome))
+
+    return linhas.map((l) => ({
+        ...l,
+        tipo: l.tipo as 'avulso' | 'kit',
+        criadoEm: l.criadoEm.toISOString(),
+        quantidade: paraNumero(l.quantidade),
+        categoria: l.categoria as CategoriaItem,
+        unidadeMedida: l.unidadeMedida as UnidadeMedida
+    }))
+}
+
+/**
+ * Inventário completo, sem paginação e sem cache — o pacote de contingência
+ * precisa do saldo **exato** no instante do download (DESIGN.md §15).
+ */
+export async function inventarioParaExportacao(): Promise<ItemComSaldo[]> {
+    const linhas = await db
+        .select({
+            id: item.id,
+            nome: item.nome,
+            categoria: item.categoria,
+            unidadeMedida: item.unidadeMedida,
+            saldo: saldoEstoque.quantidadeAtual
+        })
+        .from(item)
+        .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
+        .orderBy(asc(item.nome))
+
+    return linhas.map((l) => ({ ...l, saldo: paraNumero(l.saldo ?? '0') })) as ItemComSaldo[]
+}
