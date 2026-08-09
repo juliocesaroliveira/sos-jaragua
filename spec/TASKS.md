@@ -282,19 +282,19 @@ decidida ad-hoc.
 
 ## 8. AUDITORIA — Log Imutável (BR-AUD-01)
 
-- [ ] AUD-01 Criar coleção `audit_logs` no MongoDB Atlas (reusando
+- [x] AUD-01 Criar coleção `audit_logs` no MongoDB Atlas (reusando
       `src/shared/db/mongo/client.ts` já existente) com os índices de DB_SCHEMA.md §9:
       `{entidade,entidadeId,timestamp}`, `{userId,timestamp}`, `{timestamp}`.
 - [ ] AUD-02 Configurar usuário do Atlas usado pela aplicação sem grant de
       delete/update na coleção `audit_logs` (recomendação operacional de DB_SCHEMA.md §9).
-- [ ] AUD-03 Implementar `AsyncLocalStorage` para propagar `{userId, role}` do ator uma
+- [x] AUD-03 Implementar `AsyncLocalStorage` para propagar `{userId, role}` do ator uma
       vez por requisição, populado a partir da sessão autenticada (DESIGN.md §13).
-- [ ] AUD-04 Implementar wrapper `withAudit(actor, entidade, acao, fn)` em
+- [x] AUD-04 Implementar wrapper `withAudit(actor, entidade, acao, fn)` em
       `src/modules/auditoria/`: captura `dadosAnteriores` (leitura pré-mutação) e
       `dadosNovos` (resultado da mutação), grava em `audit_logs`; falha degrada
       graciosamente (operação Postgres original prossegue) com 1 retry automático antes
       de logar a falha (DESIGN.md §13).
-- [ ] AUD-05 Integrar `withAudit` em todos os UseCases de escrita de `voluntario_perfil`
+- [x] AUD-05 Integrar `withAudit` em todos os UseCases de escrita de `voluntario_perfil`
       (transições de status), `atividade`/`turno`/`alocacao`, e
       `entrada`/`saida`/`saida_item`/`descarte`/`kit`/`kit_receita_item` (DB_SCHEMA.md
       §10 — mapeamento BR-AUD-01 → tabelas concretas).
