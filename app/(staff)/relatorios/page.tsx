@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { inventarioParaExportacao, saidasParaExportacao } from '@/src/modules/estoque/presentation/queries/estoque'
@@ -27,6 +28,12 @@ export default function RelatoriosPage() {
 }
 
 async function Conteudo() {
+    // Relatório é retrato do **momento** — por isso as queries não são
+    // cacheadas. Sem `connection()`, o Next tentaria prerenderizar isto e
+    // falharia no `randomBytes` do handshake WebSocket do driver Neon;
+    // declarar a renderização em tempo de requisição é o correto aqui.
+    await connection()
+
     const [inventario, saidas] = await Promise.all([inventarioParaExportacao(), saidasParaExportacao()])
     return <PainelRelatorios inventario={inventario} saidas={saidas} />
 }
