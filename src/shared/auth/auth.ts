@@ -15,8 +15,12 @@ import { ROLE_PADRAO } from './roles'
  *   `session`, refletidos manualmente em `db/schema/identidade.ts`.
  */
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL,
     secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: {
+        allowedHosts: [process.env.BETTER_AUTH_URL!.replace('https://', ''), '*.vercel.app', 'localhost:3000'],
+        protocol: 'https',
+        fallback: process.env.BETTER_AUTH_URL!
+    },
 
     database: drizzleAdapter(db, {
         provider: 'pg',
