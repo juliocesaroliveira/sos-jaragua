@@ -38,6 +38,12 @@ export interface ComboboxProps {
     /** Texto exibido quando a busca não retorna nada. */
     mensagemVazia?: string
     debounceMs?: number
+    /**
+     * Mantém no input o texto digitado que não corresponde a nenhuma opção.
+     * Sem isto o primitivo descarta o texto ao fechar a lista — o que impede
+     * cadastrar um registro novo a partir do que foi digitado.
+     */
+    permitirValorLivre?: boolean
 }
 
 export function Combobox({
@@ -57,18 +63,31 @@ export function Combobox({
     disabled,
     placeholder = 'Digite para buscar…',
     mensagemVazia = 'Nenhum resultado encontrado.',
-    debounceMs = 250
+    debounceMs = 250,
+    permitirValorLivre = false
 }: ComboboxProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     const [termo, setTermo] = useState(defaultInputValue ?? '')
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+    /**
+     * `onBuscar` fica numa ref, e **não** nas dependências do efeito: a tela
+     * costuma declarar a função inline, e o `setState` do resultado da busca
+     * recria essa função a cada render. Como dependência, isso vira um laço —
+     * busca dispara render, render recria a função, o efeito roda de novo — e o
+     * campo fica inutilizável, buscando sem parar enquanto se digita.
+     */
+    const buscarRef = useRef(onBuscar)
     useEffect(() => {
-        if (!onBuscar) return
+        buscarRef.current = onBuscar
+    })
+
+    useEffect(() => {
+        if (!buscarRef.current) return
         clearTimeout(timeoutRef.current)
-        timeoutRef.current = setTimeout(() => onBuscar(termo), debounceMs)
+        timeoutRef.current = setTimeout(() => buscarRef.current?.(termo), debounceMs)
         return () => clearTimeout(timeoutRef.current)
-    }, [termo, debounceMs, onBuscar])
+    }, [termo, debounceMs])
 
     const collection = useMemo(
         () =>
@@ -94,6 +113,7 @@ export function Combobox({
                 }}
                 onValueChange={(detalhe) => onValueChange?.(detalhe.value, detalhe.items as OpcaoCombobox[])}
                 disabled={disabled}
+                allowCustomValue={permitirValorLivre}
                 // A filtragem acontece no servidor (índice trigram); o
                 // componente só exibe o que recebeu.
                 openOnClick

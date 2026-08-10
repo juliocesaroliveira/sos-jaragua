@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useCallback, useState, useTransition } from 'react'
 import { Alert, Button, Combobox, DatePicker, NumberInput, Select, Switch, avisar } from '@/src/shared/ui'
 import {
     CATEGORIAS_ITEM,
@@ -54,14 +54,14 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
      * por todas as chamadas, e uma busca pendente deixaria o botão "Registrar
      * entrada" desabilitado enquanto o operador digita.
      */
-    async function buscar(termo: string) {
+    const buscar = useCallback(async (termo: string) => {
         setBuscando(true)
         try {
             setSugestoes((await buscarItens(termo)) as ItemEncontrado[])
         } finally {
             setBuscando(false)
         }
-    }
+    }, [])
 
     function limpar() {
         setItemSelecionado(null)
@@ -127,6 +127,9 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
                     descricao: `${ROTULO_CATEGORIA_ITEM[i.categoria]} · ${ROTULO_UNIDADE_MEDIDA[i.unidadeMedida]}`
                 }))}
                 carregando={buscando}
+                // Nome não encontrado é o caso normal de item novo: o texto
+                // digitado precisa permanecer no campo para virar o cadastro.
+                permitirValorLivre
                 onBuscar={buscar}
                 onInputValueChange={(termo) => {
                     setNomeDigitado(termo)
