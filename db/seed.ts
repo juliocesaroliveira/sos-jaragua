@@ -8,6 +8,9 @@
  * `ADMIN_EMAIL`/`ADMIN_PASSWORD` estiverem presentes, cria o usuário
  * `administrador` de bootstrap — fora do fluxo de candidatura pública.
  *
+ * Opcionalmente cria uma conta por perfil de acesso para validação manual
+ * (`SEED_TESTE_PASSWORD`) — ver `garantirContasDeTeste`.
+ *
  * Usa imports relativos (e não o alias `@/`) porque roda fora do bundler do
  * Next, via `tsx`.
  */
@@ -18,6 +21,9 @@ import { eq } from 'drizzle-orm'
 import { hashPassword } from 'better-auth/crypto'
 import { account, user } from './schema/identidade'
 import { atividadeCategoria, habilidade } from './schema/voluntariado'
+
+/** Derivado do próprio schema — não repete a lista de roles. */
+type RoleDb = NonNullable<(typeof user.$inferInsert)['role']>
 
 if (typeof WebSocket !== 'undefined') {
     neonConfig.webSocketConstructor = WebSocket
@@ -45,6 +51,7 @@ async function main() {
         console.log(`✓ categorias de atividade: ${CATEGORIAS_INICIAIS.length} garantidas`)
 
         await garantirAdministrador(db)
+        await garantirContasDeTeste(db)
     } finally {
         await pool.end()
     }
@@ -61,20 +68,67 @@ async function garantirAdministrador(db: ReturnType<typeof drizzle>) {
     }
     if (senha.length < 8) throw new Error('ADMIN_PASSWORD precisa ter ao menos 8 caracteres.')
 
-    const [existente] = await db.select({ id: user.id }).from(user).where(eq(user.email, email)).limit(1)
-    if (existente) {
-        await db.update(user).set({ role: 'administrador', ativo: true }).where(eq(user.id, existente.id))
-        console.log(`✓ administrador já existia (${email}) — role reafirmada`)
+    const criado = await garantirUsuario(db, { email, nome, senha, role: 'administrador' })
+    console.log(criado ? `✓ administrador criado: ${email}` : `✓ administrador já existia (${email}) — role reafirmada`)
+}
+
+const CONTAS_DE_TESTE: ReadonlyArray<{ role: RoleDb; nome: string }> = [
+    { role: 'usuario', nome: 'Usuário de Teste' },
+    { role: 'voluntario', nome: 'Voluntário de Teste' },
+    { role: 'membro_defesa_civil', nome: 'Defesa Civil de Teste' },
+    { role: 'coordenador', nome: 'Coordenador de Teste' },
+    { role: 'administrador', nome: 'Administrador de Teste' }
+]
+
+/**
+ * Uma conta por perfil de acesso, para validação manual da matriz de
+ * navegação (specs/002-role-based-app-shell/quickstart.md).
+ *
+ * **Opt-in explícito**: só roda com `SEED_TESTE_PASSWORD` definido, e nunca em
+ * produção — são contas de senha conhecida, incluindo uma `administrador`.
+ * Criá-las por omissão seria plantar credenciais previsíveis num sistema que
+ * coordena resposta a desastres.
+ */
+async function garantirContasDeTeste(db: ReturnType<typeof drizzle>) {
+    const senha = process.env.SEED_TESTE_PASSWORD
+    if (!senha) {
+        console.log('· SEED_TESTE_PASSWORD não definido — contas de teste por perfil ignoradas.')
         return
+    }
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error('SEED_TESTE_PASSWORD não pode ser usado com NODE_ENV=production.')
+    }
+    if (senha.length < 8) throw new Error('SEED_TESTE_PASSWORD precisa ter ao menos 8 caracteres.')
+
+    for (const { role, nome } of CONTAS_DE_TESTE) {
+        const email = `${role.replace(/_/g, '-')}@teste.local`
+        const criado = await garantirUsuario(db, { email, nome, senha, role })
+        console.log(`  ${criado ? '+' : '·'} ${email} (${role})`)
+    }
+    console.log(`✓ contas de teste: ${CONTAS_DE_TESTE.length} garantidas`)
+}
+
+/**
+ * Cria o usuário com credencial de e-mail/senha, ou reafirma `role`/`ativo` se
+ * já existir. Retorna `true` quando criou. Idempotente.
+ */
+async function garantirUsuario(
+    db: ReturnType<typeof drizzle>,
+    dados: { email: string; nome: string; senha: string; role: RoleDb }
+): Promise<boolean> {
+    const [existente] = await db.select({ id: user.id }).from(user).where(eq(user.email, dados.email)).limit(1)
+    if (existente) {
+        await db.update(user).set({ role: dados.role, ativo: true }).where(eq(user.id, existente.id))
+        return false
     }
 
     const userId = randomUUID()
     await db.insert(user).values({
         id: userId,
-        name: nome,
-        email,
+        name: dados.nome,
+        email: dados.email,
         emailVerified: true,
-        role: 'administrador',
+        role: dados.role,
         ativo: true
     })
 
@@ -85,10 +139,10 @@ async function garantirAdministrador(db: ReturnType<typeof drizzle>) {
         accountId: userId,
         providerId: 'credential',
         userId,
-        password: await hashPassword(senha)
+        password: await hashPassword(dados.senha)
     })
 
-    console.log(`✓ administrador criado: ${email}`)
+    return true
 }
 
 await main()

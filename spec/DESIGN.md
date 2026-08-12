@@ -100,22 +100,28 @@ Server Action (presentation/actions/aprovarCandidatura.ts)
 
 ```
 app/                                    # roteamento/composição — sem lógica de negócio
-  (public)/
+  (publico)/                            # pré-autenticação — SEM shell
     page.tsx                            # landing
-    voluntariado/candidatura/page.tsx   # formulário público de candidatura
-  (auth)/
     login/page.tsx
-  (staff)/
-    layout.tsx                          # re-checagem de sessão/role (defesa em profundidade)
-    cadastros-pendentes/page.tsx
-    atividades/page.tsx
-    atividades/[id]/page.tsx            # Kanban de turnos
-    estoque/entrada/page.tsx
-    estoque/saida/page.tsx
-    estoque/descarte/page.tsx
-    estoque/kits/page.tsx
-    dashboard/page.tsx
-    relatorios/page.tsx
+    cadastro/page.tsx
+  (interno)/                            # TODA página autenticada — COM shell
+    layout.tsx                          # exigirSessao() + <AppShell> + sino de notificações
+    sino-notificacoes.tsx
+    sem-permissao/page.tsx
+    design-system/page.tsx              # ferramenta de dev; exige sessão, fora do menu
+    voluntariado/candidatura/page.tsx
+    voluntariado/minhas-atividades/page.tsx
+    (staff)/                            # grupo aninhado — só o gate de role
+      layout.tsx                        # exigirRoles(ROLES_STAFF) (defesa em profundidade)
+      cadastros-pendentes/page.tsx
+      atividades/page.tsx
+      atividades/[id]/page.tsx          # Kanban de turnos
+      estoque/entrada/page.tsx
+      estoque/saida/page.tsx
+      estoque/descarte/page.tsx
+      estoque/kits/page.tsx
+      dashboard/page.tsx
+      relatorios/page.tsx
   api/
     auth/[...all]/route.ts              # handler do better-auth
     cron/lembrete-turno/route.ts        # alvo do Vercel Cron
@@ -248,6 +254,43 @@ customizado, implementado em `src/shared/auth/`:
   decisão final, para manter `cpf` indexável/buscável sem complexidade extra de key
   management, já que o at-rest do Neon atende literalmente o requisito NFR "criptografia em
   repouso".
+
+### 6.5. Shell de navegação por perfil
+
+Decisão registrada em `specs/002-role-based-app-shell/`.
+
+**Estrutura de route groups** — a fronteira "tem shell / não tem shell" é o diretório, não uma
+lista de rotas, para que uma página nova nasça do lado certo sem ninguém precisar lembrar:
+
+- `(publico)/` — pré-autenticação, sem shell.
+- `(interno)/` — o layout aplica `exigirSessao()` e renderiza `<AppShell>`. Toda página
+  autenticada herda gate e navegação por construção.
+- `(interno)/(staff)/` — grupo aninhado que só acrescenta `exigirRoles(ROLES_STAFF)`.
+
+Isto fechou uma lacuna de defesa em profundidade: as páginas de `usuario`/`voluntario` não
+tinham **nenhuma** re-checagem no render, dependendo apenas do `proxy.ts`.
+
+Ambos os layouts declaram `instant = false` — o segmento que lê a sessão precisa declarar por
+si, não herda do pai. E `obterSessao` é **memoizada por request** (`cache` do React): com dois
+níveis de gate no mesmo render, sem a memoização cada página de staff dispararia dois
+`auth.api.getSession` por navegação. A checagem em camadas é decisão de autorização; pagar dois
+hits ao banco por isso não é.
+
+**Registro de navegação** (`src/shared/auth/navegacao.ts`) — fonte única dos itens do menu,
+co-locado com `rotas.ts` porque os dois descrevem a mesma matriz de atores. Cada item declara
+suas roles explicitamente, e `navegacao.test.ts` trava a **igualdade** entre `item.roles` e
+`rolesExigidas(href)` sempre que houver regra em `REGRAS_DE_ROTA` — divergir quebra `npm test`.
+
+Declaração explícita, e não derivação de `podeAcessar`, porque `podeAcessar` retorna `true`
+para rota ausente do mapa: derivar mostraria "Quero ser voluntário" a coordenador e
+administrador. Igualdade e não subconjunto porque subconjunto esconderia um destino de quem
+tem direito a ele, sem quebrar nada.
+
+**Esconder um item não é autorização.** O menu é ergonomia; o acesso continua barrado pelo
+`proxy.ts` e pelos gates de layout, inclusive por URL direta.
+
+O grupo `administracao` existe e está vazio: `/admin` tem regra de rota mas ainda não tem
+página, e exibir link para 404 violaria o critério de "nenhum item leva a negativa de acesso".
 
 ---
 

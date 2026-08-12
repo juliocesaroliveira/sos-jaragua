@@ -54,3 +54,5 @@ export { KanbanCard, type KanbanCardProps } from './kanban/kanban-card'
 
 export { ThemeProvider, themeInitScript } from './theme/theme-provider'
 export { ThemeToggle } from './theme/theme-toggle'
+
+export { AppShell, type AppShellProps } from './shell/app-shell'

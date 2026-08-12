@@ -1,19 +1,21 @@
 import { notFound } from 'next/navigation'
-import { ThemeToggle } from '@/src/shared/ui'
 import { Galeria } from './galeria'
 
 /**
  * Galeria do design system (DS-19) — ferramenta de desenvolvimento, não uma
  * tela do produto. Fora de desenvolvimento a rota simplesmente não existe.
+ *
+ * Fica sob `(interno)` porque o `proxy.ts` já exige sessão para ela (modelo
+ * deny-by-default); herdar o shell mantém a regra "toda página autenticada tem
+ * navegação" sem exceção. Não entra no menu: não é destino de produto.
  */
 export default function DesignSystemPage() {
     if (process.env.NODE_ENV !== 'development') notFound()
 
     return (
-        <div className="min-h-dvh">
-            <header className="flex items-center justify-between gap-4 border-b border-border p-4">
+        <div>
+            <header className="mb-4 border-b border-border pb-4">
                 <h1 className="text-xl font-semibold text-foreground">Design System — validação</h1>
-                <ThemeToggle />
             </header>
             <Galeria />
         </div>

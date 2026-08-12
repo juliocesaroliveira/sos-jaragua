@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { comAtor } from '@/src/shared/contexto/ator'
@@ -23,8 +24,18 @@ export type SessaoAtor = {
  * Retorna `null` quando não há sessão, quando o usuário foi desativado
  * (`user.ativo = false`) ou quando a sessão de staff expirou por inatividade
  * (DESIGN.md §6.3) — neste último caso a sessão também é invalidada.
+ *
+ * **Memoizada por request** (`cache` do React). A defesa em profundidade exige
+ * que vários pontos releiam a sessão no mesmo render — `(interno)/layout.tsx`
+ * exige sessão, `(staff)/layout.tsx` exige role, e Server Actions relêem o ator
+ * — mas isso é uma decisão de *autorização*, não um motivo para bater no banco
+ * uma vez por checagem. Sem a memoização, cada página de staff dispara dois
+ * `getSession` por navegação.
+ *
+ * A memoização vale só dentro de um request; ela não atravessa requests, então
+ * não há risco de servir sessão de um usuário a outro.
  */
-export async function obterSessao(): Promise<SessaoAtor | null> {
+export const obterSessao = cache(async function obterSessao(): Promise<SessaoAtor | null> {
     const cabecalhos = await headers()
     const sessao = await auth.api.getSession({ headers: cabecalhos })
     if (!sessao) return null
@@ -49,7 +60,7 @@ export async function obterSessao(): Promise<SessaoAtor | null> {
         ativo: sessao.user.ativo,
         sessionToken: sessao.session.token
     }
-}
+})
 
 /** Exige sessão válida; redireciona para `/login` caso contrário. */
 export async function exigirSessao(destinoPosLogin?: string): Promise<SessaoAtor> {

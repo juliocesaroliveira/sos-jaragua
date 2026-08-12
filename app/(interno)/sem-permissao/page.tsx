@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  */
 export default function SemPermissaoPage() {
     return (
-        <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center gap-4 p-4 text-center">
+        <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-4 py-16 text-center">
             <ShieldAlert aria-hidden className="size-12 text-warning-600 dark:text-warning-400" />
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Acesso não permitido</h1>
             <p className="text-base text-neutral-500 dark:text-neutral-400">
@@ -23,6 +23,6 @@ export default function SemPermissaoPage() {
             <Link href="/" className="font-medium text-primary-600 underline dark:text-primary-400">
                 Voltar para a página inicial
             </Link>
-        </main>
+        </div>
     )
 }

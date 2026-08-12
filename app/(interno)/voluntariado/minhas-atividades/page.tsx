@@ -1,14 +1,6 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { Suspense } from 'react'
-import {
-    Alert,
-    Badge,
-    COR_STATUS_ATIVIDADE,
-    ROTULO_STATUS_ATIVIDADE,
-    SkeletonLista,
-    ThemeToggle
-} from '@/src/shared/ui'
+import { Alert, Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE, SkeletonLista } from '@/src/shared/ui'
 import { exigirRoles } from '@/src/shared/auth/sessao'
 import { listarMinhasAtividades } from '@/src/modules/voluntariado/presentation/queries/atividades'
 
@@ -17,8 +9,9 @@ export const metadata: Metadata = {
 }
 
 /**
- * Área do voluntário (VOL-13, BRD §2). Fora do shell `(staff)`: um voluntário
- * não tem acesso ao painel interno, só aos próprios turnos.
+ * Área do voluntário (VOL-13, BRD §2). Um voluntário não tem acesso ao painel
+ * interno, só aos próprios turnos — mas tem o mesmo shell de navegação que os
+ * demais perfis, com os itens do seu perfil.
  *
  * A leitura depende de quem está autenticado, então o segmento não é
  * prerenderizável (DESIGN.md §7 — dados derivados de sessão nunca são cacheados).
@@ -27,26 +20,17 @@ export const instant = false
 
 export default function MinhasAtividadesPage() {
     return (
-        <div className="flex min-h-dvh flex-col">
-            <header className="flex items-center justify-between gap-4 border-b border-border p-4">
-                <Link href="/" className="text-lg font-semibold text-foreground">
-                    SOS Jaraguá
-                </Link>
-                <ThemeToggle />
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
+            <header className="flex flex-col gap-1">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Minhas atividades</h1>
+                <p className="text-base text-neutral-500 dark:text-neutral-400">
+                    Turnos em que você está escalado, do mais próximo ao mais distante.
+                </p>
             </header>
 
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 py-8">
-                <header className="flex flex-col gap-1">
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Minhas atividades</h1>
-                    <p className="text-base text-neutral-500 dark:text-neutral-400">
-                        Turnos em que você está escalado, do mais próximo ao mais distante.
-                    </p>
-                </header>
-
-                <Suspense fallback={<SkeletonLista linhas={3} altura="h-24" />}>
-                    <Lista />
-                </Suspense>
-            </main>
+            <Suspense fallback={<SkeletonLista linhas={3} altura="h-24" />}>
+                <Lista />
+            </Suspense>
         </div>
     )
 }

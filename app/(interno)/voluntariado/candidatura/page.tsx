@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { obterSessao } from '@/src/shared/auth/sessao'
-import { Alert, SkeletonLista, ThemeToggle } from '@/src/shared/ui'
+import { Alert, SkeletonLista } from '@/src/shared/ui'
 import { listarHabilidades } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { buscarMinhaCandidatura } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import { CandidaturaForm } from './candidatura-form'
@@ -12,38 +12,30 @@ export const metadata: Metadata = {
 }
 
 /**
- * Formulário público de candidatura (VOL-02, BRD §3.1).
+ * Formulário de candidatura (VOL-02, BRD §3.1).
  *
- * A página é pública, mas o envio exige conta: `voluntario_perfil` é uma
- * extensão 1:1 de `user` (DB_SCHEMA.md §4.2), e é o `user.id` que a triagem
- * promove a `voluntario`. Quem chega deslogado vê o convite a entrar/criar
- * conta em vez de um formulário que não teria como ser salvo.
+ * O envio exige conta: `voluntario_perfil` é uma extensão 1:1 de `user`
+ * (DB_SCHEMA.md §4.2), e é o `user.id` que a triagem promove a `voluntario`.
+ * O caminho de visitante deslogado permanece como defesa, mas hoje não é
+ * alcançável: a rota está sob `(interno)`, e o `proxy.ts` já a protegia pelo
+ * modelo deny-by-default.
+ *
+ * Topbar e navegação vêm do `(interno)/layout.tsx` — a página é só conteúdo.
  */
 export default function CandidaturaPage() {
     return (
-        <div className="flex min-h-dvh flex-col">
-            <header className="flex items-center justify-between gap-4 border-b border-border p-4">
-                <Link href="/" className="text-lg font-semibold text-foreground">
-                    SOS Jaraguá
-                </Link>
-                <ThemeToggle />
-            </header>
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 py-4">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Quero ser voluntário</h1>
+                <p className="text-base text-neutral-600 dark:text-neutral-300">
+                    Preencha seus dados. A Defesa Civil de Jaraguá do Sul faz a triagem e entra em contato pelo e-mail
+                    cadastrado.
+                </p>
+            </div>
 
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 py-8">
-                <div className="flex flex-col gap-2">
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-                        Quero ser voluntário
-                    </h1>
-                    <p className="text-base text-neutral-600 dark:text-neutral-300">
-                        Preencha seus dados. A Defesa Civil de Jaraguá do Sul faz a triagem e entra em contato pelo
-                        e-mail cadastrado.
-                    </p>
-                </div>
-
-                <Suspense fallback={<SkeletonLista linhas={6} altura="h-16" />}>
-                    <ConteudoCandidatura />
-                </Suspense>
-            </main>
+            <Suspense fallback={<SkeletonLista linhas={6} altura="h-16" />}>
+                <ConteudoCandidatura />
+            </Suspense>
         </div>
     )
 }
