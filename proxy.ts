@@ -5,7 +5,7 @@ import { db } from '@/src/shared/db/postgres'
 import { session as sessionTable } from '@/db/schema/identidade'
 import { ehRole, type Role } from '@/src/shared/auth/roles'
 import { expirouPorInatividade, sujeitoATimeout } from '@/src/shared/auth/inatividade'
-import { rolesExigidas } from '@/src/shared/auth/rotas'
+import { ehRotaPublica, rolesExigidas } from '@/src/shared/auth/rotas'
 
 /**
  * Gate de autenticação/autorização (DESIGN.md §6.2). Roda no runtime Node
@@ -22,11 +22,11 @@ const INTERVALO_MINIMO_ATUALIZACAO_MS = 60_000
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
-    const exigidas = rolesExigidas(pathname)
 
-    // Rota não protegida: nada a fazer.
-    if (!exigidas) return NextResponse.next()
+    // Rota pública (só `/login`): nada a checar, mesmo sem sessão.
+    if (ehRotaPublica(pathname)) return NextResponse.next()
 
+    // Deny-by-default: toda outra rota exige sessão válida (FR-001/FR-002).
     // 1. Presença de sessão via cookie — sem consulta ao banco.
     if (!getSessionCookie(request)) return redirecionarParaLogin(request)
 
@@ -51,11 +51,15 @@ export async function proxy(request: NextRequest) {
         return redirecionarParaLogin(request, 'expirado')
     }
 
-    if (!role || !exigidas.includes(role)) {
+    // 4. Role específica, quando a rota exigir uma (mapa em rotas.ts). Rotas
+    //    ausentes do mapa só exigem sessão válida (qualquer role), já
+    //    garantida acima.
+    const exigidas = rolesExigidas(pathname)
+    if (exigidas && (!role || !exigidas.includes(role))) {
         return NextResponse.redirect(new URL('/sem-permissao', request.url))
     }
 
-    // 4. Renova o carimbo de atividade para as roles sujeitas ao timeout.
+    // 5. Renova o carimbo de atividade para as roles sujeitas ao timeout.
     //    Throttled: uma gravação por minuto, no máximo.
     if (sujeitoATimeout(role)) {
         const precisaAtualizar =
@@ -87,8 +91,9 @@ async function registrarAtividade(token: string) {
 
 export const config = {
     matcher: [
-        // Tudo, exceto o handler do better-auth, assets estáticos, arquivos de
-        // metadata e a landing pública (DESIGN.md §6.2, item 4).
+        // Tudo, exceto o handler do better-auth, assets estáticos e arquivos
+        // de metadata (DESIGN.md §6.2, item 4). A única rota de navegação
+        // isenta de sessão é `/login` (`ehRotaPublica`, checado no corpo).
         '/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js)$).*)'
     ]
 }

@@ -183,11 +183,17 @@ importa apenas a fatia de `db/schema/` referente ao seu próprio módulo — nun
 
 ### 6.2. `proxy.ts` — gate de autenticação/autorização
 
-Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Responsabilidades:
+Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Modelo **deny-by-default**: toda
+rota exige sessão válida, exceto `/login` (`ROTA_PUBLICA`/`ehRotaPublica` em
+`src/shared/auth/rotas.ts`) — uma rota nova sob `app/` nasce protegida, sem precisar de
+entrada explícita em nenhum mapa. Responsabilidades:
 
-1. Checagem rápida de presença de sessão via cookie (`getSessionCookie`) — redireciona para
-   `/login` se ausente, sem hit ao banco.
-2. Mapa rota → roles permitidas, espelhando a matriz de atores do BRD §2:
+1. Se a rota é `/login` → segue sem nenhuma checagem.
+2. Checagem rápida de presença de sessão via cookie (`getSessionCookie`) para toda outra
+   rota — redireciona para `/login` se ausente, sem hit ao banco.
+3. Mapa rota → roles adicionalmente permitidas (aplicado **depois** de confirmada a sessão),
+   espelhando a matriz de atores do BRD §2. Rotas ausentes deste mapa exigem apenas sessão
+   válida (qualquer role):
 
     | Prefixo de rota                                                             | Roles permitidas                                      |
     | --------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -199,9 +205,18 @@ Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Responsabilidades:
     | `/(staff)/admin/*` (gestão de usuários/permissões)                          | `administrador`                                       |
     | `/voluntariado/minhas-atividades`                                           | `voluntario` e acima                                  |
 
-3. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
+    Rotas como `/`, `/cadastro`, `/voluntariado/candidatura`, `/design-system` e
+    `/sem-permissao` não têm entrada no mapa — exigem apenas sessão válida, sem role
+    específica. A candidatura pública de voluntário deixou de ser acessível sem conta (ver
+    `specs/001-unified-login-flow/spec.md`, decisão de escopo): o pré-requisito passou a ser
+    criar conta (`/cadastro`) ou entrar antes de candidatar-se.
+4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).
-4. `config.matcher` exclui `/api/auth/*`, assets estáticos e a landing pública.
+5. `config.matcher` exclui `/api/auth/*` e assets estáticos — não exclui mais nenhuma rota de
+   navegação; a landing (`/`) passou a exigir sessão junto com o restante da aplicação.
+
+Um usuário já autenticado que acessa `/login` diretamente é redirecionado para a área padrão
+do seu papel (`areaPadraoPorRole`, `app/(auth)/login/page.tsx`) em vez de ver o formulário.
 
 A checagem de role em `proxy.ts` é a **barreira rápida**; a fonte de verdade fica em cada
 `(staff)/layout.tsx`, que re-valida via `auth.api.getSession` no servidor (defesa em

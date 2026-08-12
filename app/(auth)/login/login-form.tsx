@@ -15,18 +15,27 @@ const esquema = z.object({
 
 type Formulario = z.infer<typeof esquema>
 
+/**
+ * Dois estados de exibição, sem navegação entre eles (FR-011): `'opcoes'` é o
+ * estado inicial (Google/Facebook/usuário e senha); `'credenciais'` é o
+ * formulário de e-mail/senha com Voltar/Acessar.
+ */
+type ModoLogin = 'opcoes' | 'credenciais'
+
 export function LoginForm() {
     const router = useRouter()
     const params = useSearchParams()
     const destino = params.get('redirecionar') ?? '/dashboard'
     const expirouPorInatividade = params.get('motivo') === 'expirado'
 
+    const [modo, setModo] = useState<ModoLogin>('opcoes')
     const [erroServidor, setErroServidor] = useState<string | null>(null)
     const [carregandoSocial, setCarregandoSocial] = useState<'google' | 'facebook' | null>(null)
 
     const {
         register,
         handleSubmit,
+        reset,
         formState: { errors, isSubmitting }
     } = useForm<Formulario>({ resolver: zodResolver(esquema) })
 
@@ -52,6 +61,18 @@ export function LoginForm() {
         }
     }
 
+    function usarUsuarioESenha() {
+        setErroServidor(null)
+        setModo('credenciais')
+    }
+
+    /** Retorna ao estado inicial e descarta os campos preenchidos (FR-007). */
+    function voltar() {
+        setErroServidor(null)
+        reset()
+        setModo('opcoes')
+    }
+
     return (
         <div className="flex flex-col gap-6">
             {expirouPorInatividade && (
@@ -63,57 +84,61 @@ export function LoginForm() {
 
             {erroServidor && <Alert tom="danger" titulo={erroServidor} />}
 
-            <form onSubmit={handleSubmit(entrar)} className="flex flex-col gap-4" noValidate>
-                <Input
-                    id="email"
-                    label="E-mail"
-                    type="email"
-                    autoComplete="email"
-                    inputMode="email"
-                    obrigatorio
-                    erro={errors.email?.message}
-                    {...register('email')}
-                />
-                <Input
-                    id="senha"
-                    label="Senha"
-                    type="password"
-                    autoComplete="current-password"
-                    obrigatorio
-                    erro={errors.senha?.message}
-                    {...register('senha')}
-                />
-                <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
-                    Entrar
-                </Button>
-            </form>
-
-            <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-sm text-neutral-500">ou continue com</span>
-                <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-                <Button
-                    variant="secondary"
-                    size="lg"
-                    fullWidth
-                    loading={carregandoSocial === 'google'}
-                    onClick={() => entrarComRedeSocial('google')}
-                >
-                    Google
-                </Button>
-                <Button
-                    variant="secondary"
-                    size="lg"
-                    fullWidth
-                    loading={carregandoSocial === 'facebook'}
-                    onClick={() => entrarComRedeSocial('facebook')}
-                >
-                    Facebook
-                </Button>
-            </div>
+            {modo === 'opcoes' ? (
+                <div className="flex flex-col gap-3">
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        loading={carregandoSocial === 'google'}
+                        onClick={() => entrarComRedeSocial('google')}
+                    >
+                        Acessar com Google
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="lg"
+                        fullWidth
+                        loading={carregandoSocial === 'facebook'}
+                        onClick={() => entrarComRedeSocial('facebook')}
+                    >
+                        Acessar com Facebook
+                    </Button>
+                    <Button variant="ghost" size="lg" fullWidth onClick={usarUsuarioESenha}>
+                        Usar usuário e senha
+                    </Button>
+                </div>
+            ) : (
+                <form onSubmit={handleSubmit(entrar)} className="flex flex-col gap-4" noValidate>
+                    <Input
+                        id="email"
+                        label="E-mail"
+                        type="email"
+                        autoComplete="email"
+                        inputMode="email"
+                        obrigatorio
+                        erro={errors.email?.message}
+                        {...register('email')}
+                    />
+                    <Input
+                        id="senha"
+                        label="Senha"
+                        type="password"
+                        autoComplete="current-password"
+                        obrigatorio
+                        erro={errors.senha?.message}
+                        {...register('senha')}
+                    />
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button type="button" variant="secondary" size="lg" fullWidth onClick={voltar}>
+                            Voltar
+                        </Button>
+                        <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
+                            Acessar
+                        </Button>
+                    </div>
+                </form>
+            )}
         </div>
     )
 }

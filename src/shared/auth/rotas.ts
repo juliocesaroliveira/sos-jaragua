@@ -1,9 +1,25 @@
 import type { Role } from './roles'
 
 /**
+ * Única rota de navegação acessível sem sessão válida (DESIGN.md §6.2). Toda
+ * rota fora desta é protegida por padrão — modelo *deny-by-default*: uma rota
+ * nova sob `app/` nasce protegida, sem precisar de entrada explícita aqui.
+ */
+export const ROTA_PUBLICA = '/login'
+
+/** `true` somente para a rota pública de navegação (`ROTA_PUBLICA`). */
+export function ehRotaPublica(pathname: string): boolean {
+    return pathname === ROTA_PUBLICA
+}
+
+/**
  * Mapa rota → roles permitidas, espelhando a matriz de atores do BRD §2
  * (DESIGN.md §6.2). Os prefixos são os **paths públicos**: o route group
  * `(staff)` não aparece na URL.
+ *
+ * Aplica-se **depois** de confirmado que existe sessão válida — define quais
+ * papéis, dentre os autenticados, podem acessar cada rota. Uma rota ausente
+ * daqui exige apenas sessão válida (qualquer papel), não role específica.
  *
  * A ordem importa — o primeiro prefixo que casar decide. Rotas mais
  * específicas (`/estoque/descarte`) vêm antes das mais genéricas
@@ -40,7 +56,7 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     }
 ]
 
-/** Roles exigidas para `pathname`, ou `null` se a rota não é protegida. */
+/** Roles exigidas para `pathname`, ou `null` se basta sessão válida (sem role específica). */
 export function rolesExigidas(pathname: string): readonly Role[] | null {
     const regra = REGRAS_DE_ROTA.find((r) => pathname === r.prefixo || pathname.startsWith(`${r.prefixo}/`))
     return regra?.roles ?? null
@@ -50,4 +66,23 @@ export function podeAcessar(pathname: string, role: Role | undefined): boolean {
     const exigidas = rolesExigidas(pathname)
     if (!exigidas) return true
     return role !== undefined && exigidas.includes(role)
+}
+
+/**
+ * Área autenticada padrão para onde um usuário já logado é enviado — usada
+ * quando ele acessa `/login` diretamente (FR-003) e não há
+ * `?redirecionar=` explícito a honrar.
+ */
+export function areaPadraoPorRole(role: Role): string {
+    switch (role) {
+        case 'coordenador':
+        case 'membro_defesa_civil':
+        case 'administrador':
+            return '/dashboard'
+        case 'voluntario':
+            return '/voluntariado/minhas-atividades'
+        case 'usuario':
+        default:
+            return '/voluntariado/candidatura'
+    }
 }
