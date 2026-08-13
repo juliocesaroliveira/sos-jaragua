@@ -23,11 +23,11 @@ ainda não custa retrabalho.
 
 **Opções.**
 
-| Opção                                                  | Prós                                                       | Contras                                                                   |
-| ------------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------- |
-| a) Instalar do CDN do SheetJS (versão corrigida)       | Mantém a decisão da spec; sem CVE                          | Dependência fora do registro público; exige `.npmrc`/lockfile diferenciado |
-| b) Trocar por `exceljs`                                | Publicado no npm, mantido, API rica                        | Diverge da spec; pacote maior                                             |
-| c) Manter `xlsx@0.18.5` como está                      | Zero trabalho                                              | Vulnerabilidade conhecida em código que processa arquivo gerado no servidor |
+| Opção                                            | Prós                                | Contras                                                                     |
+| ------------------------------------------------ | ----------------------------------- | --------------------------------------------------------------------------- |
+| a) Instalar do CDN do SheetJS (versão corrigida) | Mantém a decisão da spec; sem CVE   | Dependência fora do registro público; exige `.npmrc`/lockfile diferenciado  |
+| b) Trocar por `exceljs`                          | Publicado no npm, mantido, API rica | Diverge da spec; pacote maior                                               |
+| c) Manter `xlsx@0.18.5` como está                | Zero trabalho                       | Vulnerabilidade conhecida em código que processa arquivo gerado no servidor |
 
 **Recomendação.** (a) — é a que respeita a spec e elimina o CVE. O vetor de
 ataque é baixo aqui (só **geramos** planilhas, não lemos arquivo de terceiro),
@@ -67,7 +67,7 @@ fora do fluxo público. O seed (`npm run db:seed`) cria esse usuário a partir d
 
 **Estado atual.** No banco de desenvolvimento existe
 `admin@sosjaragua.local` com a senha `TrocarEssaSenha123`, usada para validar os
-fluxos.
+fluxos. Credenciais: e-mails usuario1@teste.local … defesa-civil1@teste.local (tabela completa no quickstart.md), senha SosJaragua@2026.
 
 **Ação necessária.** Definir a credencial real do administrador em produção e
 trocar/remover a de desenvolvimento. Não versionar a senha.
@@ -242,7 +242,6 @@ importante — que um erro da **própria operação** continua subindo, para a
 auditoria não virar um `try/catch` geral que engole falhas de negócio.
 
 Pode ser removido deste arquivo.
-
 
 ---
 
