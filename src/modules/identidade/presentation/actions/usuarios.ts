@@ -4,10 +4,12 @@ import { revalidateTag, updateTag } from 'next/cache'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
+import { normalizarPaginacao, type PaginaDe } from '@/src/shared/paginacao/esquema'
 import { ROLES } from '@/src/shared/auth/roles'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { autenticacaoService } from '../../infrastructure/better-auth/autenticacao-service'
 import { criarUsuarioRepository } from '../../infrastructure/drizzle/usuario-repository'
+import { listarUsuarios, type LinhaUsuario } from '../queries/usuarios'
 import { CriarUsuarioUseCase } from '../../application/use-cases/criar-usuario'
 import { EditarUsuarioUseCase } from '../../application/use-cases/editar-usuario'
 
@@ -76,4 +78,25 @@ export async function editarUsuario(entrada: unknown): Promise<ResultadoAction<{
     }
 
     return serializar(resultado)
+}
+
+/**
+ * Leitura paginada consumida pelo TanStack Query no cliente
+ * (007-datatable-server-pagination, US1).
+ *
+ * A checagem de sessão/role acontece **aqui** e não dentro de `listarUsuarios`
+ * por dois motivos que se somam: uma função `'use cache'` não pode ler
+ * `cookies()`/`headers()`, e Server Actions não herdam o gate da página
+ * (contracts/leituras-paginadas.md L-02).
+ *
+ * A entrada é **saneada**, não rejeitada: `page=abc` ou `pageSize=7` viram os
+ * valores válidos mais próximos (FR-012).
+ */
+export async function listarUsuariosAction(entrada: unknown): Promise<ResultadoAction<PaginaDe<LinhaUsuario>>> {
+    const ator = await obterSessao()
+    if (!ator || ator.role !== 'administrador') {
+        return erroAction('nao_autorizado', 'Você não tem permissão para consultar contas.')
+    }
+
+    return { ok: true, valor: await listarUsuarios(normalizarPaginacao(entrada)) }
 }

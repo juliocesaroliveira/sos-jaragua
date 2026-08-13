@@ -1,43 +1,34 @@
 'use client'
 
+import { useQueryClient } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { Button, IconButton, Pagination, Table, type ColunaTabela } from '@/src/shared/ui'
+import { Alert, Button, IconButton, Table, type ColunaTabela } from '@/src/shared/ui'
+import { RAIZ_USUARIOS, chaveUsuarios, useListagemPaginada } from '@/src/shared/query'
 import { ROTULO_ROLE } from '@/src/shared/auth/roles'
+import { listarUsuariosAction } from '@/src/modules/identidade/presentation/actions/usuarios'
 import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries/usuarios'
 import { UsuarioFormDialog } from './usuario-form-dialog'
 
 /**
  * Listagem paginada de contas (006-user-management-page, US1) + cadastro
- * (US2) + edição (US3). Página vive na URL, não em estado local: a
- * paginação é server-side (NFR §2.1), mesmo padrão de `tabela-voluntarios.tsx`.
+ * (US2) + edição (US3).
+ *
+ * A paginação é server-side (NFR §2.1) e cada página é buscada pela Server
+ * Function via TanStack Query (007-datatable-server-pagination): a primeira vem
+ * hidratada do Server Component, as seguintes não recarregam a rota. Página e
+ * tamanho continuam vivendo na URL, então a visão segue compartilhável.
  */
-export function TabelaUsuarios({
-    rows,
-    totalCount,
-    page,
-    pageSize
-}: {
-    rows: LinhaUsuario[]
-    totalCount: number
-    page: number
-    pageSize: number
-}) {
-    const router = useRouter()
-    const searchParams = useSearchParams()
+export function TabelaUsuarios() {
+    const queryClient = useQueryClient()
     const [dialogoAberto, setDialogoAberto] = useState(false)
     // `null` = modo cadastro; uma linha = modo edição, pré-preenchido (E-04).
     const [usuarioEditando, setUsuarioEditando] = useState<LinhaUsuario | null>(null)
 
-    function navegar(mudancas: Record<string, string | undefined>) {
-        const params = new URLSearchParams(searchParams.toString())
-        for (const [chave, valor] of Object.entries(mudancas)) {
-            if (valor) params.set(chave, valor)
-            else params.delete(chave)
-        }
-        router.push(`/admin?${params.toString()}`)
-    }
+    const { rows, carregando, atualizando, erro, refetch, paginacao } = useListagemPaginada<LinhaUsuario>({
+        chave: chaveUsuarios,
+        buscar: listarUsuariosAction
+    })
 
     function abrirCadastro() {
         setUsuarioEditando(null)
@@ -79,21 +70,38 @@ export function TabelaUsuarios({
                 <Button onClick={abrirCadastro}>Nova conta</Button>
             </div>
 
-            <Table titulo="Contas cadastradas" colunas={colunas} dados={rows} vazio="Nenhuma conta cadastrada." />
-
-            <Pagination
-                aria-label="Paginação de usuários"
-                totalCount={totalCount}
-                pageSize={pageSize}
-                page={page}
-                onPageChange={(p) => navegar({ page: String(p) })}
-            />
+            {erro ? (
+                <Alert tom="danger" titulo="Não foi possível carregar as contas">
+                    <div className="flex flex-col items-start gap-3">
+                        <p>{erro.message}</p>
+                        <Button variant="secondary" onClick={() => void refetch()}>
+                            Tentar novamente
+                        </Button>
+                    </div>
+                </Alert>
+            ) : (
+                <Table
+                    titulo="Contas cadastradas"
+                    colunas={colunas}
+                    dados={rows}
+                    carregando={carregando}
+                    atualizando={atualizando}
+                    vazio="Nenhuma conta cadastrada."
+                    paginacao={paginacao}
+                />
+            )}
 
             <UsuarioFormDialog
                 open={dialogoAberto}
                 onOpenChange={setDialogoAberto}
                 usuario={usuarioEditando ?? undefined}
-                onSucesso={() => router.refresh()}
+                onSucesso={() => {
+                    // A Server Action de escrita já invalidou a tag no servidor;
+                    // isto invalida o espelho no cliente. Substitui o
+                    // `router.refresh()`, que recarregava a rota inteira só para
+                    // atualizar a lista.
+                    void queryClient.invalidateQueries({ queryKey: RAIZ_USUARIOS })
+                }}
             />
         </div>
     )

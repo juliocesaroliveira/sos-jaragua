@@ -1,6 +1,10 @@
+import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
+import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
+import { chaveVoluntarios } from '@/src/shared/query'
+import { estadoHidratado } from '@/src/shared/query/hidratacao'
 import {
     listarVoluntarios,
     type StatusVoluntarioFiltro
@@ -12,11 +16,10 @@ export const metadata: Metadata = {
     title: 'Voluntários — SOS Jaraguá'
 }
 
-const TAMANHO_PAGINA = 20
 const STATUS_VALIDOS = ['pendente', 'aprovado', 'rejeitado'] as const
 
 type Props = {
-    searchParams: Promise<{ page?: string; status?: string; habilidade?: string }>
+    searchParams: Promise<{ page?: string; pageSize?: string; status?: string; habilidade?: string }>
 }
 
 /** VOL-12 — base de voluntários com paginação server-side e filtros. */
@@ -37,27 +40,25 @@ export default function VoluntariosPage({ searchParams }: Props) {
     )
 }
 
+/**
+ * Primeira página resolvida no servidor e hidratada no cache do cliente com a
+ * mesma `queryKey` do `useQuery` — filtros incluídos, senão abrir a tela já
+ * filtrada dispararia um POST redundante (L-05.2).
+ */
 async function Conteudo({ searchParams }: Props) {
     const params = await searchParams
 
-    const page = Math.max(1, Number(params.page) || 1)
     const status = STATUS_VALIDOS.includes(params.status as StatusVoluntarioFiltro)
         ? (params.status as StatusVoluntarioFiltro)
         : undefined
+    const filtros = { status, habilidadeId: params.habilidade }
+    const consulta = { ...normalizarPaginacao(params), ...filtros }
 
-    const [{ rows, totalCount }, habilidades] = await Promise.all([
-        listarVoluntarios({ page, pageSize: TAMANHO_PAGINA, status, habilidadeId: params.habilidade }),
-        listarHabilidades()
-    ])
+    const [pagina, habilidades] = await Promise.all([listarVoluntarios(consulta), listarHabilidades()])
 
     return (
-        <TabelaVoluntarios
-            rows={rows}
-            totalCount={totalCount}
-            page={page}
-            pageSize={TAMANHO_PAGINA}
-            habilidades={habilidades}
-            filtros={{ status, habilidadeId: params.habilidade }}
-        />
+        <HydrationBoundary state={estadoHidratado([{ chave: chaveVoluntarios(consulta), dados: pagina }])}>
+            <TabelaVoluntarios habilidades={habilidades} filtros={filtros} />
+        </HydrationBoundary>
     )
 }

@@ -46,6 +46,7 @@ export {
 export { Progress, ProgressCircle, type ProgressProps } from './progress/progress'
 export { StatCard, type StatCardProps } from './stat-card/stat-card'
 export { Table, type TableProps, type ColunaTabela } from './table/table'
+export { TableFooter, type PaginacaoTabela } from './table/table-footer'
 export { Pagination, type PaginationProps } from './pagination/pagination'
 export { Alert, type AlertProps, type TomAlerta } from './alert/alert'
 export { Skeleton, SkeletonLista, type SkeletonProps } from './skeleton/skeleton'

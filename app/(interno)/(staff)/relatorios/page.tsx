@@ -1,10 +1,14 @@
+import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { podeAcessar } from '@/src/shared/auth/rotas'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
-import { inventarioParaExportacao, saidasParaExportacao } from '@/src/modules/estoque/presentation/queries/estoque'
+import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
+import { chaveEstoque, chaveSaidas } from '@/src/shared/query'
+import { estadoHidratado } from '@/src/shared/query/hidratacao'
+import { listarEstoque, listarSaidas } from '@/src/modules/estoque/presentation/queries/estoque'
 import { PainelRelatorios } from './painel-relatorios'
 
 export const metadata: Metadata = {
@@ -12,7 +16,16 @@ export const metadata: Metadata = {
 }
 
 /** BR-REL-01 (REL-03) + BR-CON-01 (CON-02). */
-export default function RelatoriosPage() {
+type Props = {
+    searchParams: Promise<{
+        invPage?: string
+        invPageSize?: string
+        saidasPage?: string
+        saidasPageSize?: string
+    }>
+}
+
+export default function RelatoriosPage({ searchParams }: Props) {
     return (
         <div className="flex flex-col gap-6">
             <header className="flex flex-col gap-1">
@@ -23,13 +36,13 @@ export default function RelatoriosPage() {
             </header>
 
             <Suspense fallback={<SkeletonLista linhas={6} />}>
-                <Conteudo />
+                <Conteudo searchParams={searchParams} />
             </Suspense>
         </div>
     )
 }
 
-async function Conteudo() {
+async function Conteudo({ searchParams }: Props) {
     // Relatório é retrato do **momento** — por isso as queries não são
     // cacheadas. Sem `connection()`, o Next tentaria prerenderizar isto e
     // falharia no `randomBytes` do handshake WebSocket do driver Neon;
@@ -46,6 +59,26 @@ async function Conteudo() {
     const ator = await exigirAcessoA('/relatorios')
     const podeGerarContingencia = podeAcessar('/api/contingencia/export', ator.role)
 
-    const [inventario, saidas] = await Promise.all([inventarioParaExportacao(), saidasParaExportacao()])
-    return <PainelRelatorios inventario={inventario} saidas={saidas} podeGerarContingencia={podeGerarContingencia} />
+    // As tabelas de tela usam as leituras **paginadas**; as de exportação
+    // (`inventarioParaExportacao`/`saidasParaExportacao`) continuam existindo,
+    // servindo só ao Route Handler de download, que precisa do conjunto inteiro.
+    const params = await searchParams
+    const consultaInventario = normalizarPaginacao({ page: params.invPage, pageSize: params.invPageSize })
+    const consultaSaidas = normalizarPaginacao({ page: params.saidasPage, pageSize: params.saidasPageSize })
+
+    const [inventario, saidas] = await Promise.all([
+        listarEstoque(consultaInventario),
+        listarSaidas(consultaSaidas)
+    ])
+
+    return (
+        <HydrationBoundary
+            state={estadoHidratado([
+                { chave: chaveEstoque(consultaInventario), dados: inventario },
+                { chave: chaveSaidas(consultaSaidas), dados: saidas }
+            ])}
+        >
+            <PainelRelatorios podeGerarContingencia={podeGerarContingencia} />
+        </HydrationBoundary>
+    )
 }

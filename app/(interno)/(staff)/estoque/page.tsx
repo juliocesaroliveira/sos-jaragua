@@ -1,6 +1,10 @@
+import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
+import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
+import { chaveEstoque } from '@/src/shared/query'
+import { estadoHidratado } from '@/src/shared/query/hidratacao'
 import { CATEGORIAS_ITEM, type CategoriaItem } from '@/src/modules/estoque/domain/item'
 import { listarEstoque } from '@/src/modules/estoque/presentation/queries/estoque'
 import { TabelaEstoque } from './tabela-estoque'
@@ -9,10 +13,8 @@ export const metadata: Metadata = {
     title: 'Estoque — SOS Jaraguá'
 }
 
-const TAMANHO_PAGINA = 20
-
 type Props = {
-    searchParams: Promise<{ page?: string; categoria?: string }>
+    searchParams: Promise<{ page?: string; pageSize?: string; categoria?: string }>
 }
 
 /** EST-12 — inventário atual, servido pelo saldo materializado (NFR §4.1). */
@@ -35,20 +37,16 @@ export default function EstoquePage({ searchParams }: Props) {
 
 async function Conteudo({ searchParams }: Props) {
     const params = await searchParams
-    const page = Math.max(1, Number(params.page) || 1)
     const categoria = CATEGORIAS_ITEM.includes(params.categoria as CategoriaItem)
         ? (params.categoria as CategoriaItem)
         : undefined
 
-    const { rows, totalCount } = await listarEstoque({ page, pageSize: TAMANHO_PAGINA, categoria })
+    const consulta = { ...normalizarPaginacao(params), categoria }
+    const pagina = await listarEstoque(consulta)
 
     return (
-        <TabelaEstoque
-            rows={rows}
-            totalCount={totalCount}
-            page={page}
-            pageSize={TAMANHO_PAGINA}
-            categoria={categoria}
-        />
+        <HydrationBoundary state={estadoHidratado([{ chave: chaveEstoque(consulta), dados: pagina }])}>
+            <TabelaEstoque categoria={categoria} />
+        </HydrationBoundary>
     )
 }

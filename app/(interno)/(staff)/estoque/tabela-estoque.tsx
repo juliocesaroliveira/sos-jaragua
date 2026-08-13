@@ -1,8 +1,8 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo } from 'react'
-import { Pagination, Select, Table, type ColunaTabela } from '@/src/shared/ui'
+import { Alert, Button, Select, Table, type ColunaTabela } from '@/src/shared/ui'
+import { chaveEstoque, useListagemPaginada } from '@/src/shared/query'
 import {
     ABREVIACAO_UNIDADE,
     CATEGORIAS_ITEM,
@@ -10,37 +10,24 @@ import {
     type CategoriaItem
 } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
+import { listarEstoqueAction } from '@/src/modules/estoque/presentation/actions/listagens'
 import type { ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
 
 /**
  * Listagem paginada de estoque (EST-12). Paginação e filtro vivem na URL — a
  * paginação é server-side (NFR §2.1) e o operador consegue recarregar ou
- * compartilhar a visão em que estava.
+ * compartilhar a visão em que estava. Cada página é buscada pela Server
+ * Function via TanStack Query (007-datatable-server-pagination).
  */
-export function TabelaEstoque({
-    rows,
-    totalCount,
-    page,
-    pageSize,
-    categoria
-}: {
-    rows: ItemComSaldo[]
-    totalCount: number
-    page: number
-    pageSize: number
-    categoria?: CategoriaItem
-}) {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-
-    function navegar(mudancas: Record<string, string | undefined>) {
-        const params = new URLSearchParams(searchParams.toString())
-        for (const [chave, valor] of Object.entries(mudancas)) {
-            if (valor) params.set(chave, valor)
-            else params.delete(chave)
-        }
-        router.push(`/estoque?${params.toString()}`)
-    }
+export function TabelaEstoque({ categoria }: { categoria?: CategoriaItem }) {
+    const { rows, carregando, atualizando, erro, refetch, paginacao, navegar } = useListagemPaginada<
+        ItemComSaldo,
+        { categoria?: CategoriaItem }
+    >({
+        chave: chaveEstoque,
+        buscar: listarEstoqueAction,
+        filtros: { categoria }
+    })
 
     const colunas = useMemo<ColunaTabela<ItemComSaldo>[]>(
         () => [
@@ -78,20 +65,26 @@ export function TabelaEstoque({
                 />
             </div>
 
-            <Table
-                titulo="Itens em estoque"
-                colunas={colunas}
-                dados={rows}
-                vazio="Nenhum item encontrado com este filtro."
-            />
-
-            <Pagination
-                aria-label="Paginação do estoque"
-                totalCount={totalCount}
-                pageSize={pageSize}
-                page={page}
-                onPageChange={(p) => navegar({ page: String(p) })}
-            />
+            {erro ? (
+                <Alert tom="danger" titulo="Não foi possível carregar o estoque">
+                    <div className="flex flex-col items-start gap-3">
+                        <p>{erro.message}</p>
+                        <Button variant="secondary" onClick={() => void refetch()}>
+                            Tentar novamente
+                        </Button>
+                    </div>
+                </Alert>
+            ) : (
+                <Table
+                    titulo="Itens em estoque"
+                    colunas={colunas}
+                    dados={rows}
+                    carregando={carregando}
+                    atualizando={atualizando}
+                    vazio="Nenhum item encontrado com este filtro."
+                    paginacao={paginacao}
+                />
+            )}
         </div>
     )
 }

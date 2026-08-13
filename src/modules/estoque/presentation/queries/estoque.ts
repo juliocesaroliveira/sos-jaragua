@@ -4,6 +4,7 @@ import { asc, count, desc, eq, sql } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
+import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import { paraNumero } from '../../domain/quantidade'
 import type { CategoriaItem, UnidadeMedida } from '../../domain/item'
 
@@ -39,9 +40,7 @@ export async function listarItens(): Promise<ItemComSaldo[]> {
     return linhas.map((l) => ({ ...l, saldo: paraNumero(l.saldo ?? '0') })) as ItemComSaldo[]
 }
 
-export type FiltrosEstoque = {
-    page: number
-    pageSize: number
+export type FiltrosEstoque = ParametrosPaginacao & {
     categoria?: CategoriaItem
     /** Só itens com saldo > 0 — a visão útil na tela de saída. */
     somenteComSaldo?: boolean
@@ -52,11 +51,15 @@ export type FiltrosEstoque = {
  * (read-model materializado), não de uma reagregação do ledger — é o que
  * sustenta o requisito de leitura <300ms do NFR §4.1.
  */
-export async function listarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSaldo[]; totalCount: number }> {
+export async function listarEstoque(filtros: FiltrosEstoque): Promise<PaginaDe<ItemComSaldo>> {
     'use cache'
     cacheTag(CACHE_TAGS.estoqueListagem, CACHE_TAGS.estoqueSaldo)
     cacheLife(CACHE_LIFE.curto)
 
+    return paginarComClamp(filtros, (p) => buscarEstoque({ ...filtros, ...p }))
+}
+
+async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSaldo[]; totalCount: number }> {
     const condicoes = [
         filtros.categoria ? eq(item.categoria, filtros.categoria) : undefined,
         filtros.somenteComSaldo ? sql`coalesce(${saldoEstoque.quantidadeAtual}, 0) > 0` : undefined
@@ -268,6 +271,62 @@ export async function saidasParaExportacao(): Promise<LinhaSaidaPlana[]> {
         categoria: l.categoria as CategoriaItem,
         unidadeMedida: l.unidadeMedida as UnidadeMedida
     }))
+}
+
+/**
+ * Histórico de saídas **paginado**, para a aba "Saídas" de `/relatorios`
+ * (007-datatable-server-pagination, L-03.4).
+ *
+ * Existe separada de `saidasParaExportacao` de propósito: a tela precisa de uma
+ * página por vez (FR-008), o download precisa do conjunto completo. Antes a
+ * tela reusava a leitura de exportação e trazia o histórico inteiro para o
+ * cliente a cada abertura.
+ */
+export async function listarSaidas(filtros: ParametrosPaginacao): Promise<PaginaDe<LinhaSaidaPlana>> {
+    'use cache'
+    cacheTag(CACHE_TAGS.estoqueSaidas)
+    cacheLife(CACHE_LIFE.curto)
+
+    return paginarComClamp(filtros, buscarSaidas)
+}
+
+async function buscarSaidas({
+    page,
+    pageSize
+}: ParametrosPaginacao): Promise<{ rows: LinhaSaidaPlana[]; totalCount: number }> {
+    const [linhas, [total]] = await Promise.all([
+        db
+            .select({
+                saidaId: saida.id,
+                criadoEm: saida.criadoEm,
+                tipo: saida.tipo,
+                destino: saida.destino,
+                responsavelTransporte: saida.responsavelTransporte,
+                item: item.nome,
+                categoria: item.categoria,
+                quantidade: saidaItem.quantidade,
+                unidadeMedida: item.unidadeMedida
+            })
+            .from(saidaItem)
+            .innerJoin(saida, eq(saida.id, saidaItem.saidaId))
+            .innerJoin(item, eq(item.id, saidaItem.itemId))
+            .orderBy(desc(saida.criadoEm), asc(item.nome))
+            .limit(pageSize)
+            .offset((page - 1) * pageSize),
+        db.select({ total: count() }).from(saidaItem)
+    ])
+
+    return {
+        rows: linhas.map((l) => ({
+            ...l,
+            tipo: l.tipo as 'avulso' | 'kit',
+            criadoEm: l.criadoEm.toISOString(),
+            quantidade: paraNumero(l.quantidade),
+            categoria: l.categoria as CategoriaItem,
+            unidadeMedida: l.unidadeMedida as UnidadeMedida
+        })),
+        totalCount: total?.total ?? 0
+    }
 }
 
 /**

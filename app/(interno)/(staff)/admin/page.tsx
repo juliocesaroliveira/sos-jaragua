@@ -1,7 +1,11 @@
+import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
+import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
+import { chaveUsuarios } from '@/src/shared/query'
+import { estadoHidratado } from '@/src/shared/query/hidratacao'
 import { listarUsuarios } from '@/src/modules/identidade/presentation/queries/usuarios'
 import { TabelaUsuarios } from './tabela-usuarios'
 
@@ -15,10 +19,8 @@ export const metadata: Metadata = {
  */
 export const instant = false
 
-const TAMANHO_PAGINA = 20
-
 type Props = {
-    searchParams: Promise<{ page?: string }>
+    searchParams: Promise<{ page?: string; pageSize?: string }>
 }
 
 /**
@@ -47,11 +49,19 @@ export default async function AdminPage({ searchParams }: Props) {
     )
 }
 
+/**
+ * Resolve a primeira página no servidor e a entrega já no cache do cliente
+ * (007-datatable-server-pagination, L-05). A chave usa os parâmetros **da
+ * URL** — fixá-los numa constante faria `?pageSize=5` hidratar uma chave que o
+ * `useQuery` não procura, disparando um POST redundante no primeiro render.
+ */
 async function Conteudo({ searchParams }: Props) {
-    const params = await searchParams
-    const page = Math.max(1, Number(params.page) || 1)
+    const params = normalizarPaginacao(await searchParams)
+    const pagina = await listarUsuarios(params)
 
-    const { rows, totalCount } = await listarUsuarios({ page, pageSize: TAMANHO_PAGINA })
-
-    return <TabelaUsuarios rows={rows} totalCount={totalCount} page={page} pageSize={TAMANHO_PAGINA} />
+    return (
+        <HydrationBoundary state={estadoHidratado([{ chave: chaveUsuarios(params), dados: pagina }])}>
+            <TabelaUsuarios />
+        </HydrationBoundary>
+    )
 }

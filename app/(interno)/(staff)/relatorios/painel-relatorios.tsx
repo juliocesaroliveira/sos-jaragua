@@ -1,9 +1,12 @@
 'use client'
 
 import { Download, FileSpreadsheet, LifeBuoy } from 'lucide-react'
-import { Alert, Table, Tabs, type ColunaTabela } from '@/src/shared/ui'
+import type { RowData } from '@tanstack/react-table'
+import { Alert, Button, Table, Tabs, type ColunaTabela } from '@/src/shared/ui'
+import { chaveEstoque, chaveSaidas, useListagemPaginada } from '@/src/shared/query'
 import { ABREVIACAO_UNIDADE, ROTULO_CATEGORIA_ITEM } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
+import { listarEstoqueAction, listarSaidasAction } from '@/src/modules/estoque/presentation/actions/listagens'
 import type { ItemComSaldo, LinhaSaidaPlana } from '@/src/modules/estoque/presentation/queries/estoque'
 
 /**
@@ -12,17 +15,31 @@ import type { ItemComSaldo, LinhaSaidaPlana } from '@/src/modules/estoque/presen
  * A exportação usa `<a download>` e não `fetch`: o download é um Route Handler
  * binário (DESIGN.md §14), e o link deixa o navegador cuidar do arquivo —
  * inclusive em celular, onde interceptar um blob costuma dar problema.
+ *
+ * As tabelas de tela são paginadas server-side
+ * (007-datatable-server-pagination): antes esta tela consumia as leituras de
+ * **exportação**, trazendo o inventário e o histórico inteiros para o cliente a
+ * cada abertura. O download continua com o conjunto completo — é a única parte
+ * que de fato precisa dele.
+ *
+ * Cada aba tem seu próprio par de parâmetros na URL (`inv*`/`saidas*`) para que
+ * paginar uma não desloque a outra.
  */
-export function PainelRelatorios({
-    inventario,
-    saidas,
-    podeGerarContingencia
-}: {
-    inventario: ItemComSaldo[]
-    saidas: LinhaSaidaPlana[]
+export function PainelRelatorios({ podeGerarContingencia }: {
     /** Decidido no servidor: o pacote de contingência tem autorização própria. */
     podeGerarContingencia: boolean
 }) {
+    const inventario = useListagemPaginada<ItemComSaldo>({
+        chave: chaveEstoque,
+        buscar: listarEstoqueAction,
+        prefixo: 'inv'
+    })
+
+    const saidas = useListagemPaginada<LinhaSaidaPlana>({
+        chave: chaveSaidas,
+        buscar: listarSaidasAction,
+        prefixo: 'saidas'
+    })
     const colunasInventario: ColunaTabela<ItemComSaldo>[] = [
         { accessorKey: 'nome', header: 'Item' },
         { id: 'categoria', header: 'Categoria', cell: ({ row }) => ROTULO_CATEGORIA_ITEM[row.original.categoria] },
@@ -58,11 +75,11 @@ export function PainelRelatorios({
                         label: 'Inventário atual',
                         conteudo: (
                             <div className="flex flex-col gap-4">
-                                <BotoesExportacao tipo="inventario" total={inventario.length} />
-                                <Table
+                                <BotoesExportacao tipo="inventario" total={inventario.totalCount} />
+                                <TabelaRelatorio
                                     titulo="Inventário atual"
                                     colunas={colunasInventario}
-                                    dados={inventario}
+                                    listagem={inventario}
                                     vazio="Nenhum item em estoque."
                                 />
                             </div>
@@ -77,11 +94,11 @@ export function PainelRelatorios({
                                     Itens baixados por descarte ficam fora por construção — este é o histórico do que
                                     foi entregue à população.
                                 </Alert>
-                                <BotoesExportacao tipo="saidas" total={saidas.length} />
-                                <Table
+                                <BotoesExportacao tipo="saidas" total={saidas.totalCount} />
+                                <TabelaRelatorio
                                     titulo="Histórico de saídas"
                                     colunas={colunasSaidas}
-                                    dados={saidas}
+                                    listagem={saidas}
                                     vazio="Nenhuma saída registrada."
                                 />
                             </div>
@@ -95,6 +112,48 @@ export function PainelRelatorios({
     )
 }
 
+/**
+ * As duas abas renderizam a mesma coisa com dados diferentes; extrair evita
+ * que uma ganhe tratamento de erro e a outra não.
+ */
+function TabelaRelatorio<T extends RowData>({
+    titulo,
+    colunas,
+    listagem,
+    vazio
+}: {
+    titulo: string
+    colunas: ColunaTabela<T>[]
+    listagem: ReturnType<typeof useListagemPaginada<T>>
+    vazio: string
+}) {
+    if (listagem.erro) {
+        return (
+            <Alert tom="danger" titulo={`Não foi possível carregar: ${titulo}`}>
+                <div className="flex flex-col items-start gap-3">
+                    <p>{listagem.erro.message}</p>
+                    <Button variant="secondary" onClick={() => void listagem.refetch()}>
+                        Tentar novamente
+                    </Button>
+                </div>
+            </Alert>
+        )
+    }
+
+    return (
+        <Table
+            titulo={titulo}
+            colunas={colunas}
+            dados={listagem.rows}
+            carregando={listagem.carregando}
+            atualizando={listagem.atualizando}
+            vazio={vazio}
+            paginacao={listagem.paginacao}
+        />
+    )
+}
+
+/** `total` é a contagem no servidor — o download leva tudo, não a página. */
 function BotoesExportacao({ tipo, total }: { tipo: 'inventario' | 'saidas'; total: number }) {
     return (
         <div className="flex flex-wrap items-center gap-3">

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { exigirSessao } from '@/src/shared/auth/sessao'
+import { QueryProvider } from '@/src/shared/query'
 import { ShellAutenticado } from '../_shell/shell-autenticado'
 
 /**
@@ -18,6 +19,10 @@ import { ShellAutenticado } from '../_shell/shell-autenticado'
  * A montagem do shell vive em `app/_shell/` porque a página de endereço não
  * encontrado da raiz também precisa dela (specs/003-not-found-page).
  *
+ * 3. **Cache de dados no cliente** — `QueryProvider` (TanStack Query) serve as
+ *    listagens paginadas server-side (007-datatable-server-pagination). Fica
+ *    aqui e não no layout raiz porque `/login` e `/cadastro` não paginam nada.
+ *
  * A área é inteiramente por-usuário: o gate lê a sessão (cookies + banco) e
  * pode redirecionar antes de qualquer render. Não há shell estático a
  * prerenderizar, então o segmento se declara não-instantâneo — as páginas
@@ -28,5 +33,9 @@ export const instant = false
 export default async function InternoLayout({ children }: { children: ReactNode }) {
     const ator = await exigirSessao()
 
-    return <ShellAutenticado ator={ator}>{children}</ShellAutenticado>
+    return (
+        <QueryProvider>
+            <ShellAutenticado ator={ator}>{children}</ShellAutenticado>
+        </QueryProvider>
+    )
 }
