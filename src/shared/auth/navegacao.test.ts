@@ -125,7 +125,6 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/cadastros-pendentes',
             '/voluntarios',
             '/atividades',
-            '/crise',
             '/estoque',
             '/estoque/entrada',
             '/estoque/saida',
@@ -175,10 +174,12 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         }
     })
 
-    it('relatórios pertencem à Defesa Civil, não à coordenação', () => {
-        expect(itensDeNavegacao('membro_defesa_civil').map((i) => i.href)).toContain('/relatorios')
-        expect(itensDeNavegacao('administrador').map((i) => i.href)).toContain('/relatorios')
-        expect(itensDeNavegacao('coordenador').map((i) => i.href)).not.toContain('/relatorios')
+    it('relatórios e variáveis da crise pertencem à Defesa Civil, não à coordenação', () => {
+        for (const destino of ['/relatorios', '/crise']) {
+            expect(itensDeNavegacao('membro_defesa_civil').map((i) => i.href), destino).toContain(destino)
+            expect(itensDeNavegacao('administrador').map((i) => i.href), destino).toContain(destino)
+            expect(itensDeNavegacao('coordenador').map((i) => i.href), destino).not.toContain(destino)
+        }
     })
 })
 
@@ -217,7 +218,6 @@ describe('atalhos — cards de acesso rápido da home', () => {
             '/voluntariado/minhas-atividades',
             '/dashboard',
             '/cadastros-pendentes',
-            '/crise',
             '/estoque/entrada',
             '/estoque/saida',
             '/convocacao'
@@ -249,8 +249,10 @@ describe('atalhos — cards de acesso rápido da home', () => {
                 expect(hrefs, `${role} não pode ter card de ${proibido}`).not.toContain(proibido)
             }
         }
-        // `/relatorios` pertence à Defesa Civil — coordenação não o alcança.
-        expect(atalhosDeNavegacao('coordenador').map((i) => i.href)).not.toContain('/relatorios')
+        // `/relatorios` e `/crise` pertencem à Defesa Civil — coordenação não os alcança.
+        const doCoordenador = atalhosDeNavegacao('coordenador').map((i) => i.href)
+        expect(doCoordenador).not.toContain('/relatorios')
+        expect(doCoordenador).not.toContain('/crise')
     })
 
     it('a home não vira card de si mesma', () => {

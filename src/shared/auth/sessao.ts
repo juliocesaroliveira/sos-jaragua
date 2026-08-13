@@ -3,6 +3,7 @@ import { cache } from 'react'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { comAtor } from '@/src/shared/contexto/ator'
+import { podeAcessar } from './rotas'
 import { auth } from './auth'
 import { expirouPorInatividade } from './inatividade'
 import { ehRole, type Role } from './roles'
@@ -80,6 +81,27 @@ export async function exigirSessao(destinoPosLogin?: string): Promise<SessaoAtor
 export async function exigirRoles(roles: readonly Role[], destinoPosLogin?: string): Promise<SessaoAtor> {
     const ator = await exigirSessao(destinoPosLogin)
     if (!roles.includes(ator.role)) redirect('/sem-permissao')
+    return ator
+}
+
+/**
+ * Exige que o ator possa acessar `pathname`, conforme `REGRAS_DE_ROTA`.
+ *
+ * Existe porque o `proxy.ts` **não** é enforcement suficiente para rotas com
+ * regra granular: ele decide a partir do cache de sessão em cookie e, quando
+ * esse cache não está disponível, deixa passar de propósito — apostando que
+ * "o layout faz a checagem autoritativa em seguida". Para `/dashboard` e afins
+ * isso é verdade (`(staff)/layout.tsx` exige `ROLES_STAFF`), mas para
+ * `/crise`, `/relatorios`, `/estoque/kits`, `/estoque/descarte` e
+ * `/convocacao` não havia nenhuma segunda checagem: um perfil de staff sem
+ * direito à rota específica passava.
+ *
+ * Deriva de `rolesExigidas` em vez de receber a lista, para não criar mais uma
+ * cópia da regra que possa divergir (DESIGN.md §6.2).
+ */
+export async function exigirAcessoA(pathname: string): Promise<SessaoAtor> {
+    const ator = await exigirSessao(pathname)
+    if (!podeAcessar(pathname, ator.role)) redirect('/sem-permissao')
     return ator
 }
 

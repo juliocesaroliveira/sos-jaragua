@@ -245,6 +245,23 @@ customizado, implementado em `src/shared/auth/`:
 - Não se aplica ao `administrador` propositalmente fora do escopo do NFR — mas pode ser
   reavaliado se a operação exigir.
 
+### 6.4.1. Rotas com regra granular exigem checagem na página
+
+O `proxy.ts` **não** é enforcement suficiente para rotas cuja regra é mais estrita que
+`ROLES_STAFF`. Ele decide a partir do cache de sessão em cookie e, quando esse cache não está
+disponível, deixa passar de propósito (`if (!cache) return NextResponse.next()`) — apostando que
+"o layout faz a checagem autoritativa em seguida".
+
+Essa aposta vale para `/dashboard` e afins, onde `(staff)/layout.tsx` exige `ROLES_STAFF`. **Não
+valia** para `/crise`, `/relatorios`, `/estoque/kits`, `/estoque/descarte` e `/convocacao`: um
+perfil de staff sem direito à rota específica passava, porque nenhuma segunda checagem existia.
+Verificado em execução — um `coordenador` abria `/crise` e `/relatorios` mesmo com a regra já
+alterada em `REGRAS_DE_ROTA`.
+
+Correção: cada uma dessas páginas chama `exigirAcessoA('<rota>')`, que deriva de `rolesExigidas`
+e redireciona para `/sem-permissao`. **Toda rota nova com regra granular precisa dessa chamada** —
+o proxy sozinho não a protege.
+
 ### 6.4. Segurança
 
 - Cookies httpOnly, secure, sameSite=lax.
@@ -296,6 +313,17 @@ página, e exibir link para 404 violaria o critério de "nenhum item leva a nega
 `atalhosDeNavegacao(role)`, que filtra `itensDeNavegacao(role)` — derivar da mesma lista já
 filtrada é o que impede um card de apontar para destino que a pessoa não pode abrir. É um
 subconjunto curado (`atalho`), não todos os destinos: acesso rápido com 13 cards não é rápido.
+
+**Variáveis da crise pertencem à Defesa Civil** — `membro_defesa_civil` e `administrador`. As
+três Server Actions de `logistica.ts` (`atualizarVariaveisCrise`, `definirMetricaKit`,
+`removerMetricaKit`) só existem dentro de `/crise` e por isso derivam de `rolesExigidas('/crise')`
+em vez de repetir a lista: separá-las deixaria a coordenação alterando os números sem poder abrir
+a tela — permissão de escrita sem tela é pior que nenhuma.
+
+`/dashboard` **continua** com toda a staff: o coordenador acompanha os números da crise, só não
+os altera. Como o painel tem atalhos para `/crise`, eles são renderizados condicionalmente
+(`podeAcessar('/crise', role)`) — do contrário o coordenador veria links que devolvem
+`/sem-permissao`.
 
 **Relatórios e contingência pertencem à Defesa Civil** — `membro_defesa_civil` e
 `administrador`; `coordenador` **não** tem acesso. São três regras que precisam andar juntas,

@@ -3,7 +3,7 @@ import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { podeAcessar } from '@/src/shared/auth/rotas'
-import { exigirSessao } from '@/src/shared/auth/sessao'
+import { exigirAcessoA } from '@/src/shared/auth/sessao'
 import { inventarioParaExportacao, saidasParaExportacao } from '@/src/modules/estoque/presentation/queries/estoque'
 import { PainelRelatorios } from './painel-relatorios'
 
@@ -40,7 +40,10 @@ async function Conteudo() {
     // da tela: quem abre relatórios não necessariamente pode gerá-lo. Sem esta
     // checagem, o botão apareceria e daria 403 — mostrar ação que leva a
     // negativa é o defeito que a matriz de navegação existe para evitar.
-    const ator = await exigirSessao()
+    // Checagem autoritativa: o `proxy.ts` deixa passar quando o cache de sessão
+    // em cookie não está disponível, e `(staff)/layout.tsx` só exige
+    // ROLES_STAFF (DESIGN.md §6.2).
+    const ator = await exigirAcessoA('/relatorios')
     const podeGerarContingencia = podeAcessar('/api/contingencia/export', ator.role)
 
     const [inventario, saidas] = await Promise.all([inventarioParaExportacao(), saidasParaExportacao()])

@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { listarItens, listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { GestaoKits } from './gestao-kits'
+import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
 export const metadata: Metadata = {
     title: 'Kits — SOS Jaraguá'
@@ -27,6 +28,11 @@ export default function KitsPage() {
 }
 
 async function Conteudo() {
+    // Checagem autoritativa: o `proxy.ts` deixa passar quando o cache de
+    // sessão em cookie não está disponível, e `(staff)/layout.tsx` só exige
+    // ROLES_STAFF (DESIGN.md §6.2).
+    await exigirAcessoA('/estoque/kits')
+
     const [kits, itens] = await Promise.all([listarKitsComReceita(), listarItens()])
     return <GestaoKits kits={kits} itens={itens} />
 }

@@ -4,6 +4,7 @@ import { SkeletonLista } from '@/src/shared/ui'
 import { listarHabilidades } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { listarVoluntarios } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import { ConvocacaoForm } from './convocacao-form'
+import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
 export const metadata: Metadata = {
     title: 'Convocação de urgência — SOS Jaraguá'
@@ -30,6 +31,11 @@ export default function ConvocacaoPage() {
 }
 
 async function Formulario() {
+    // Checagem autoritativa: o `proxy.ts` deixa passar quando o cache de
+    // sessão em cookie não está disponível, e `(staff)/layout.tsx` só exige
+    // ROLES_STAFF (DESIGN.md §6.2).
+    await exigirAcessoA('/convocacao')
+
     const [habilidades, aprovados] = await Promise.all([
         listarHabilidades(),
         listarVoluntarios({ page: 1, pageSize: 1, status: 'aprovado' })

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
+import { podeAcessar } from '@/src/shared/auth/rotas'
+import { exigirSessao } from '@/src/shared/auth/sessao'
 import { listarItens } from '@/src/modules/estoque/presentation/queries/estoque'
 import { projecaoDeCrise } from '@/src/modules/logistica/presentation/queries/dashboard'
 import {
@@ -50,5 +52,12 @@ async function Indicadores() {
         avaliarEstoqueCritico(itens.map((i) => ({ nome: i.nome, saldo: i.saldo })))
     ])
 
-    return <PainelCrise projecao={projecao} />
+    // O painel é visível a toda a staff, mas `/crise` pertence à Defesa Civil.
+    // Sem esta checagem o coordenador veria atalhos para uma tela que lhe
+    // devolveria `/sem-permissao` — mostrar ação que leva a negativa é o defeito
+    // que a matriz de navegação existe para evitar.
+    const ator = await exigirSessao()
+    const podeEditarCrise = podeAcessar('/crise', ator.role)
+
+    return <PainelCrise projecao={projecao} podeEditarCrise={podeEditarCrise} />
 }

@@ -8,6 +8,7 @@ import {
     projecaoDeCrise
 } from '@/src/modules/logistica/presentation/queries/dashboard'
 import { GestaoCrise } from './gestao-crise'
+import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
 export const metadata: Metadata = {
     title: 'Variáveis da crise — SOS Jaraguá'
@@ -32,6 +33,11 @@ export default function CrisePage() {
 }
 
 async function Conteudo() {
+    // Checagem autoritativa: o `proxy.ts` deixa passar quando o cache de
+    // sessão em cookie não está disponível, e `(staff)/layout.tsx` só exige
+    // ROLES_STAFF (DESIGN.md §6.2).
+    await exigirAcessoA('/crise')
+
     const [projecao, historico, kits, metricas] = await Promise.all([
         projecaoDeCrise(),
         historicoDaCrise(),

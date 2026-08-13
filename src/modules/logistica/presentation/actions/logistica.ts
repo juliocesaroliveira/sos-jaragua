@@ -5,17 +5,19 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS } from '@/src/shared/cache'
 import { erroAction, type ResultadoAction } from '@/src/shared/kernel'
 import type { Role } from '@/src/shared/auth/roles'
+import { rolesExigidas } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import { BASES_DEMANDA } from '../../domain/projecao'
 import { criseRepository, metricaKitRepository } from '../../infrastructure/drizzle/logistica-repository'
 
 /**
- * Atualizar os números da crise é atribuição da Defesa Civil em campo
- * (BRD §5), então Membro entra junto de Coordenador e Administrador. Configurar
- * a métrica de demanda é decisão de planejamento — só coordenação.
+ * Atualizar os números da crise e configurar a métrica de demanda são
+ * atribuições da Defesa Civil (BRD §5). As três actions abaixo só existem
+ * dentro da tela `/crise`, então **derivam da regra dessa rota** em vez de
+ * repeti-la: separá-las deixaria a coordenação alterando os números sem poder
+ * abrir a tela, ou a Defesa Civil abrindo uma tela com os botões em erro.
  */
-const ROLES_OPERACAO: readonly Role[] = ['membro_defesa_civil', 'coordenador', 'administrador']
-const ROLES_COORDENACAO: readonly Role[] = ['coordenador', 'administrador']
+const ROLES_CRISE: readonly Role[] = rolesExigidas('/crise') ?? []
 
 async function exigir(roles: readonly Role[]) {
     const ator = await obterSessao()
@@ -33,7 +35,7 @@ export type EntradaVariaveisCrise = z.infer<typeof esquemaCrise>
 export async function atualizarVariaveisCrise(
     entrada: EntradaVariaveisCrise
 ): Promise<ResultadoAction<{ id: string }>> {
-    const ator = await exigir(ROLES_OPERACAO)
+    const ator = await exigir(ROLES_CRISE)
     if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para atualizar os números da crise.')
 
     const parse = esquemaCrise.safeParse(entrada)
@@ -58,8 +60,8 @@ const esquemaMetrica = z.object({
 export async function definirMetricaKit(
     entrada: z.infer<typeof esquemaMetrica>
 ): Promise<ResultadoAction<{ kitId: string }>> {
-    const ator = await exigir(ROLES_COORDENACAO)
-    if (!ator) return erroAction('nao_autorizado', 'Somente coordenação pode configurar métricas de demanda.')
+    const ator = await exigir(ROLES_CRISE)
+    if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para configurar métricas de demanda.')
 
     const parse = esquemaMetrica.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Revise a base de demanda e a proporção.')
@@ -71,8 +73,8 @@ export async function definirMetricaKit(
 }
 
 export async function removerMetricaKit(entrada: { kitId: string }): Promise<ResultadoAction<{ kitId: string }>> {
-    const ator = await exigir(ROLES_COORDENACAO)
-    if (!ator) return erroAction('nao_autorizado', 'Somente coordenação pode remover métricas de demanda.')
+    const ator = await exigir(ROLES_CRISE)
+    if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para remover métricas de demanda.')
 
     const parse = z.object({ kitId: z.uuid() }).safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Kit inválido.')

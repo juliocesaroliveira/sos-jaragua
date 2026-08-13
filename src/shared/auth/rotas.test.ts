@@ -56,17 +56,33 @@ describe('rolesExigidas', () => {
         expect(rolesExigidas('/api/contingencia/export')).toEqual(rolesExigidas('/relatorios'))
     })
 
-    it('coordenador não alcança relatórios nem os downloads da tela', () => {
-        for (const rota of ['/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
+    it('variáveis da crise pertencem à Defesa Civil — coordenação não tem acesso', () => {
+        // As Server Actions de `logistica.ts` derivam desta regra. Separá-las
+        // deixaria a coordenação alterando os números da crise sem poder abrir
+        // a tela — permissão de escrita sem tela é pior que nenhuma.
+        expect(rolesExigidas('/crise')).toEqual(['membro_defesa_civil', 'administrador'])
+    })
+
+    it('coordenador não alcança crise, relatórios nem os downloads da tela', () => {
+        for (const rota of ['/crise', '/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
             expect(podeAcessar(rota, 'coordenador'), rota).toBe(false)
         }
     })
 
-    it('membro_defesa_civil e administrador alcançam a tela e os dois downloads', () => {
+    it('membro_defesa_civil e administrador alcançam crise, a tela e os dois downloads', () => {
         for (const role of ['membro_defesa_civil', 'administrador'] as const) {
-            for (const rota of ['/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
+            for (const rota of ['/crise', '/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
                 expect(podeAcessar(rota, role), `${role} → ${rota}`).toBe(true)
             }
+        }
+    })
+
+    it('o painel segue visível a toda a staff, mesmo a quem não edita a crise', () => {
+        // `/dashboard` continua com STAFF: o coordenador acompanha os números,
+        // só não os altera. É por isso que os atalhos para `/crise` no painel
+        // são renderizados condicionalmente.
+        for (const role of ['membro_defesa_civil', 'coordenador', 'administrador'] as const) {
+            expect(podeAcessar('/dashboard', role), role).toBe(true)
         }
     })
 

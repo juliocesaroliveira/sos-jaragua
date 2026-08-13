@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
 import { listarItens } from '@/src/modules/estoque/presentation/queries/estoque'
 import { DescarteForm } from './descarte-form'
+import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
 export const metadata: Metadata = {
     title: 'Descarte — SOS Jaraguá'
@@ -27,6 +28,11 @@ export default function DescartePage() {
 }
 
 async function Formulario() {
+    // Checagem autoritativa: o `proxy.ts` deixa passar quando o cache de
+    // sessão em cookie não está disponível, e `(staff)/layout.tsx` só exige
+    // ROLES_STAFF (DESIGN.md §6.2).
+    await exigirAcessoA('/estoque/descarte')
+
     const itens = await listarItens()
     return <DescarteForm itens={itens} />
 }

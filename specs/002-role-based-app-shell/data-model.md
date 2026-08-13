@@ -82,7 +82,7 @@ Estado alvo do registro. `✓` = item aparece no menu daquele perfil.
 | Operação | `/cadastros-pendentes` | | | ★ | ★ | ★ |
 | Operação | `/voluntarios` | | | ✓ | ✓ | ✓ |
 | Operação | `/atividades` | | | ✓ | ✓ | ✓ |
-| Operação | `/crise` | | | ★ | ★ | ★ |
+| Operação | `/crise` | | | ★ | | ★ |
 | Operação | `/relatorios` | | | ★ | | ★ |
 | Estoque | `/estoque` | | | ✓ | ✓ | ✓ |
 | Estoque | `/estoque/entrada` | | | ★ | ★ | ★ |
@@ -98,9 +98,9 @@ Estado alvo do registro. `✓` = item aparece no menu daquele perfil.
 
 2. **`/voluntariado/candidatura` não tem regra em `REGRAS_DE_ROTA`** — a trava de igualdade não se aplica, e as roles são declaradas por decisão de produto: quem já é staff não se candidata a voluntário pelo menu. Este é precisamente o caso que `podeAcessar` sozinho decidiria errado (research.md D3).
 
-3. **`administrador` difere de `coordenador` apenas em `/relatorios`.** O grupo "Administração" continua definido e vazio (D4 — a área não existe), então a única distinção real entre os dois perfis hoje vem da mudança descrita no item 4.
+3. **`administrador` difere de `coordenador` em `/crise` e `/relatorios`.** O grupo "Administração" continua definido e vazio (D4 — a área não existe), então a distinção real entre os dois perfis hoje vem inteiramente da mudança descrita no item 4.
 
-4. **`/relatorios` pertence à Defesa Civil, não à coordenação.** Autorização alterada por decisão de produto: `membro_defesa_civil` ganhou acesso, `coordenador` perdeu, `administrador` manteve. A mudança foi aplicada em `REGRAS_DE_ROTA` (tela **e** `/api/relatorios/export`, que andam juntas) e refletida aqui pela trava INV-01. O item saiu do grupo "Coordenação" para "Operação" — mantê-lo no grupo antigo faria a seção "Coordenação" aparecer para quem não coordena.
+4. **`/relatorios` e `/crise` pertencem à Defesa Civil, não à coordenação.** Autorização alterada por decisão de produto: `membro_defesa_civil` ganhou acesso, `coordenador` perdeu, `administrador` manteve. A mudança foi aplicada em `REGRAS_DE_ROTA` e propagada a tudo que só existe dentro de cada tela — os dois downloads de relatórios e as três Server Actions de `/crise` —, refletida aqui pela trava INV-01. `/dashboard` **continua** com toda a staff: o coordenador acompanha os números da crise, só não os altera; por isso os atalhos para `/crise` no painel são renderizados condicionalmente. O item saiu do grupo "Coordenação" para "Operação" — mantê-lo no grupo antigo faria a seção "Coordenação" aparecer para quem não coordena.
 
 5. **A home (`/`) não é card de si mesma.** Ela é item de menu para todos os perfis (é o caminho de volta), mas nunca aparece na própria grade de acesso rápido.
 
@@ -108,7 +108,7 @@ Estado alvo do registro. `✓` = item aparece no menu daquele perfil.
 
 Subconjunto curado dos destinos visíveis — "acesso rápido" com 13 cards deixa de ser rápido. Ficam de fora as telas de consulta e de exceção (`/voluntarios`, `/atividades`, `/estoque`, `/estoque/kits`, `/estoque/descarte`), alcançáveis pelo menu lateral.
 
-Contagem resultante: `usuario` 1 card · `voluntario` 2 · `membro_defesa_civil` 7 · `coordenador` 7 · `administrador` 8.
+Contagem resultante: `usuario` 1 card · `voluntario` 2 · `membro_defesa_civil` 7 · `coordenador` 6 · `administrador` 8.
 
 `atalho` é modelado como objeto (`{ descricao }`) e não como par `atalho: boolean` + `descricao?: string`, para que o **tipo** garanta o que de outro modo exigiria um teste: não existe atalho sem descrição.
 

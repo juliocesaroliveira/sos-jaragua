@@ -52,7 +52,10 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     { prefixo: '/voluntarios', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/atividades', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/dashboard', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
-    { prefixo: '/crise', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
+    // Variáveis da crise: atribuídas à Defesa Civil, não à coordenação. As
+    // Server Actions da tela (`logistica.ts`) derivam desta regra — separá-las
+    // deixaria a coordenação alterando os números sem poder abrir a tela.
+    { prefixo: '/crise', roles: ['membro_defesa_civil', 'administrador'] },
 
     // Área do voluntário
     {

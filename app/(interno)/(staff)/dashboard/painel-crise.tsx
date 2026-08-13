@@ -11,7 +11,12 @@ import { ROTULO_BASE_DEMANDA } from '@/src/modules/logistica/domain/projecao'
  * `dashboard:kits`, e não há interação — enviar isso ao cliente só adicionaria
  * JavaScript sem benefício.
  */
-export function PainelCrise({ projecao }: { projecao: Projecao }) {
+/**
+ * `podeEditarCrise` chega decidido do servidor: `/crise` pertence à Defesa
+ * Civil, mas o painel é visível a toda a staff. Sem esta checagem, o
+ * coordenador veria atalhos para uma tela que lhe devolveria `/sem-permissao`.
+ */
+export function PainelCrise({ projecao, podeEditarCrise }: { projecao: Projecao; podeEditarCrise: boolean }) {
     const { crise, criseAtualizadaEm, kits, totalNecessarios, totalPossiveis, percentualGeral, kitsEmDeficit } =
         projecao
 
@@ -25,12 +30,14 @@ export function PainelCrise({ projecao }: { projecao: Projecao }) {
                     tom="info"
                     titulo="Os números da crise ainda não foram informados"
                     acao={
-                        <Link
-                            href="/crise"
-                            className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-base font-medium text-foreground hover:bg-surface-muted"
-                        >
-                            Informar agora
-                        </Link>
+                        podeEditarCrise ? (
+                            <Link
+                                href="/crise"
+                                className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-base font-medium text-foreground hover:bg-surface-muted"
+                            >
+                                Informar agora
+                            </Link>
+                        ) : undefined
                     }
                 >
                     Sem o total de famílias e pessoas afetadas, a demanda de kits não pode ser projetada.
@@ -160,11 +167,18 @@ export function PainelCrise({ projecao }: { projecao: Projecao }) {
 
                 {comMetrica.length === 0 && kits.length > 0 && (
                     <Alert tom="warning" titulo="Nenhum kit tem métrica de demanda configurada">
-                        Sem métrica, o kit não entra no total de &quot;Kits necessários&quot;. Configure em{' '}
-                        <Link href="/crise" className="underline">
-                            Variáveis da crise
-                        </Link>
-                        .
+                        Sem métrica, o kit não entra no total de &quot;Kits necessários&quot;.{' '}
+                        {podeEditarCrise ? (
+                            <>
+                                Configure em{' '}
+                                <Link href="/crise" className="underline">
+                                    Variáveis da crise
+                                </Link>
+                                .
+                            </>
+                        ) : (
+                            'A configuração é feita pela Defesa Civil, em Variáveis da crise.'
+                        )}
                     </Alert>
                 )}
             </section>

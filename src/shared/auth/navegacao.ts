@@ -81,8 +81,11 @@ export const GRUPOS: Readonly<Record<IdGrupo, GrupoNavegacao>> = {
 /** Atalhos para os conjuntos de roles que se repetem, evitando divergência por digitação. */
 const STAFF: readonly Role[] = ['membro_defesa_civil', 'coordenador', 'administrador']
 const COORDENACAO: readonly Role[] = ['coordenador', 'administrador']
-/** Relatórios pertencem à Defesa Civil — coordenação não tem acesso. */
-const RELATORIOS: readonly Role[] = ['membro_defesa_civil', 'administrador']
+/**
+ * Atribuições da Defesa Civil — coordenação **não** tem acesso. Cobre
+ * `/crise` e `/relatorios`, que saíram da coordenação por decisão de produto.
+ */
+const DEFESA_CIVIL: readonly Role[] = ['membro_defesa_civil', 'administrador']
 
 /**
  * Ordem de declaração = ordem de exibição dentro de cada grupo.
@@ -146,7 +149,7 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         rotulo: 'Variáveis da crise',
         icone: 'TriangleAlert',
         grupo: 'operacao',
-        roles: STAFF,
+        roles: DEFESA_CIVIL,
         atalho: { descricao: 'Atualize famílias e pessoas afetadas pela ocorrência.' }
     },
     {
@@ -157,7 +160,7 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         // coordenação quando passou para a Defesa Civil. Mantê-lo no grupo
         // antigo faria a seção "Coordenação" aparecer para quem não coordena.
         grupo: 'operacao',
-        roles: RELATORIOS,
+        roles: DEFESA_CIVIL,
         atalho: { descricao: 'Exporte dados de estoque, saídas e voluntariado.' }
     },
 
