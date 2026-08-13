@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { RotateCcw } from 'lucide-react'
 import { Alert, Button, Select, Table, type ColunaTabela } from '@/src/shared/ui'
 import { chaveEstoque, useListagemPaginada } from '@/src/shared/query'
 import {
@@ -69,7 +70,11 @@ export function TabelaEstoque({ categoria }: { categoria?: CategoriaItem }) {
                 <Alert tom="danger" titulo="Não foi possível carregar o estoque">
                     <div className="flex flex-col items-start gap-3">
                         <p>{erro.message}</p>
-                        <Button variant="secondary" onClick={() => void refetch()}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<RotateCcw className="size-4" />}
+                            onClick={() => void refetch()}
+                        >
                             Tentar novamente
                         </Button>
                     </div>

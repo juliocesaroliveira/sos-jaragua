@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { ArrowLeft, LogIn, LockOpen } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
@@ -109,7 +110,13 @@ export function LoginForm() {
                     >
                         Acessar com Facebook
                     </Button>
-                    <Button variant="ghost" size="lg" fullWidth onClick={usarUsuarioESenha}>
+                    <Button
+                        variant="ghost"
+                        iconeInicio={<LockOpen className="size-4" />}
+                        size="lg"
+                        fullWidth
+                        onClick={usarUsuarioESenha}
+                    >
                         Usar usuário e senha
                     </Button>
                 </div>
@@ -135,10 +142,23 @@ export function LoginForm() {
                         {...register('senha')}
                     />
                     <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button type="button" variant="secondary" size="lg" fullWidth onClick={voltar}>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            iconeInicio={<ArrowLeft className="size-4" />}
+                            size="lg"
+                            fullWidth
+                            onClick={voltar}
+                        >
                             Voltar
                         </Button>
-                        <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
+                        <Button
+                            type="submit"
+                            iconeInicio={<LogIn className="size-4" />}
+                            size="lg"
+                            fullWidth
+                            loading={isSubmitting}
+                        >
                             Acessar
                         </Button>
                     </div>

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { Check, Key, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { camposComErro } from '@/src/shared/kernel'
 import { Button, Dialog, Input, Select, avisar } from '@/src/shared/ui'
@@ -145,15 +146,26 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                         <Button
                             type="button"
                             variant="ghost"
+                            iconeInicio={trocandoSenha ? <X className="size-4" /> : <Key className="size-4" />}
                             onClick={trocandoSenha ? cancelarTrocaDeSenha : () => setTrocandoSenha(true)}
                         >
                             {trocandoSenha ? 'Cancelar troca de senha' : 'Trocar Senha'}
                         </Button>
                     )}
-                    <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        iconeInicio={<X className="size-4" />}
+                        onClick={() => onOpenChange(false)}
+                    >
                         Cancelar
                     </Button>
-                    <Button type="submit" form="usuario-form" loading={isSubmitting}>
+                    <Button
+                        type="submit"
+                        form="usuario-form"
+                        iconeInicio={<Check className="size-4" />}
+                        loading={isSubmitting}
+                    >
                         {modoEdicao ? 'Salvar' : 'Cadastrar'}
                     </Button>
                 </>

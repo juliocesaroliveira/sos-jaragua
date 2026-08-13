@@ -1,6 +1,6 @@
 'use client'
 
-import { Download, FileSpreadsheet, LifeBuoy } from 'lucide-react'
+import { Download, FileSpreadsheet, LifeBuoy, RotateCcw } from 'lucide-react'
 import type { RowData } from '@tanstack/react-table'
 import { Alert, Button, Table, Tabs, type ColunaTabela } from '@/src/shared/ui'
 import { chaveEstoque, chaveSaidas, useListagemPaginada } from '@/src/shared/query'
@@ -134,7 +134,11 @@ function TabelaRelatorio<T extends RowData>({
             <Alert tom="danger" titulo={`Não foi possível carregar: ${titulo}`}>
                 <div className="flex flex-col items-start gap-3">
                     <p>{listagem.erro.message}</p>
-                    <Button variant="secondary" onClick={() => void listagem.refetch()}>
+                    <Button
+                        variant="secondary"
+                        iconeInicio={<RotateCcw className="size-4" />}
+                        onClick={() => void listagem.refetch()}
+                    >
                         Tentar novamente
                     </Button>
                 </div>

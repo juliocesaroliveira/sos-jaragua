@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { Check, MoreVertical } from 'lucide-react'
 import { Alert, Button, NumberInput, Select, avisar } from '@/src/shared/ui'
 import { BASES_DEMANDA, ROTULO_BASE_DEMANDA, type BaseDemanda } from '@/src/modules/logistica/domain/projecao'
 import type {
@@ -88,7 +89,7 @@ export function GestaoCrise({
                 </div>
 
                 <div className="flex justify-end">
-                    <Button loading={enviando} onClick={salvarCrise}>
+                    <Button iconeInicio={<Check className="size-4" />} loading={enviando} onClick={salvarCrise}>
                         Atualizar números
                     </Button>
                 </div>
@@ -225,6 +226,7 @@ function LinhaMetrica({
                 />
                 <Button
                     variant="secondary"
+                    iconeInicio={<Check className="size-4" />}
                     loading={enviando}
                     onClick={() => onSalvar(kit.id, (base[0] as BaseDemanda) ?? null, proporcao)}
                 >

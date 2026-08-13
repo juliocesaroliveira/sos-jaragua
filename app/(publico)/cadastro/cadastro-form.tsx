@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { UserPlus } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signUp } from '@/src/shared/auth/client'
 import { Alert, Button, Input } from '@/src/shared/ui'
@@ -101,7 +102,13 @@ export function CadastroForm() {
                     erro={errors.confirmacao?.message}
                     {...register('confirmacao')}
                 />
-                <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
+                <Button
+                    type="submit"
+                    iconeInicio={<UserPlus className="size-4" />}
+                    size="lg"
+                    fullWidth
+                    loading={isSubmitting}
+                >
                     Criar conta
                 </Button>
             </form>

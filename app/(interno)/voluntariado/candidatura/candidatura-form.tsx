@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { UserPlus } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { camposComErro } from '@/src/shared/kernel'
 import { Alert, Button, CheckboxGroup, DatePicker, Input, RadioGroup, Switch, Textarea, avisar } from '@/src/shared/ui'
@@ -273,7 +274,13 @@ export function CandidaturaForm({ habilidades, statusAtual, motivoRejeicao }: Ca
                 {...register('restricoesSaude')}
             />
 
-            <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
+            <Button
+                type="submit"
+                iconeInicio={<UserPlus className="size-4" />}
+                size="lg"
+                fullWidth
+                loading={isSubmitting}
+            >
                 Enviar candidatura
             </Button>
         </form>

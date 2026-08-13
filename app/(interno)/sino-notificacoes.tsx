@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { Bell } from 'lucide-react'
+import { Bell, CheckSquare } from 'lucide-react'
 import { Badge, Button, Drawer, IconButton, cn } from '@/src/shared/ui'
 import type { NotificacaoInApp } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
 import { marcarComoLida, marcarTodasComoLidas } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
@@ -81,7 +81,12 @@ export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: Not
                 descricao={naoLidas > 0 ? `${naoLidas} não lida(s)` : 'Tudo em dia'}
                 acoes={
                     naoLidas > 0 && (
-                        <Button variant="secondary" loading={processando} onClick={marcarTudo}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<CheckSquare className="size-4" />}
+                            loading={processando}
+                            onClick={marcarTudo}
+                        >
                             Marcar todas como lidas
                         </Button>
                     )

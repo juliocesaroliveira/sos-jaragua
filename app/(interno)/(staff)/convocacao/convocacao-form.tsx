@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { Megaphone } from 'lucide-react'
+import { Megaphone, Send, X } from 'lucide-react'
 import { Alert, Button, Dialog, Input, Select, Textarea, avisar } from '@/src/shared/ui'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { enviarBroadcast } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
@@ -117,10 +117,19 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 }
                 acoes={
                     <>
-                        <Button variant="secondary" onClick={() => setConfirmando(false)}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<X className="size-4" />}
+                            onClick={() => setConfirmando(false)}
+                        >
                             Cancelar
                         </Button>
-                        <Button variant="danger" loading={enviando} onClick={enviar}>
+                        <Button
+                            variant="danger"
+                            iconeInicio={<Send className="size-4" />}
+                            loading={enviando}
+                            onClick={enviar}
+                        >
                             Enviar agora
                         </Button>
                     </>

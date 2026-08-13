@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
-import { UserMinus, UserPlus } from 'lucide-react'
+import { Check, UserMinus, UserPlus, X } from 'lucide-react'
 import {
     Alert,
     Badge,
@@ -194,10 +194,19 @@ export function PainelEscala({
                 }
                 acoes={
                     <>
-                        <Button variant="secondary" onClick={() => setTurnoAlvo(null)}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<X className="size-4" />}
+                            onClick={() => setTurnoAlvo(null)}
+                        >
                             Cancelar
                         </Button>
-                        <Button loading={emAndamento} disabled={!selecionado[0]} onClick={alocar}>
+                        <Button
+                            iconeInicio={<Check className="size-4" />}
+                            loading={emAndamento}
+                            disabled={!selecionado[0]}
+                            onClick={alocar}
+                        >
                             Alocar
                         </Button>
                     </>

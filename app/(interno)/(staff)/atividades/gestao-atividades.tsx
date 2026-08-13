@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { Plus } from 'lucide-react'
+import { MoreVertical, Plus, X } from 'lucide-react'
 import {
     Alert,
     Badge,
@@ -144,7 +144,14 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                                         Abrir escala
                                     </Link>
                                     <Menu
-                                        gatilho={<Button variant="secondary">Ações</Button>}
+                                        gatilho={
+                                            <Button
+                                                variant="secondary"
+                                                iconeInicio={<MoreVertical className="size-4" />}
+                                            >
+                                                Ações
+                                            </Button>
+                                        }
                                         itens={[
                                             {
                                                 value: 'encerrar',
@@ -185,10 +192,14 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                 tamanho="lg"
                 acoes={
                     <>
-                        <Button variant="secondary" onClick={() => setCriando(false)}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<X className="size-4" />}
+                            onClick={() => setCriando(false)}
+                        >
                             Cancelar
                         </Button>
-                        <Button loading={emAndamento} onClick={salvar}>
+                        <Button iconeInicio={<Plus className="size-4" />} loading={emAndamento} onClick={salvar}>
                             Criar atividade
                         </Button>
                     </>

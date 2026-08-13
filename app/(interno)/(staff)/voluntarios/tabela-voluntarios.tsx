@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { RotateCcw } from 'lucide-react'
 import {
     Alert,
     Badge,
@@ -95,7 +96,11 @@ export function TabelaVoluntarios({
                 <Alert tom="danger" titulo="Não foi possível carregar os voluntários">
                     <div className="flex flex-col items-start gap-3">
                         <p>{erro.message}</p>
-                        <Button variant="secondary" onClick={() => void refetch()}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<RotateCcw className="size-4" />}
+                            onClick={() => void refetch()}
+                        >
                             Tentar novamente
                         </Button>
                     </div>

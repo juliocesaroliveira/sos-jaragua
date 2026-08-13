@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useId, useRef, useState, useTransition } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
     Alert,
     Badge,
@@ -146,7 +146,12 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
                                             </p>
                                         )}
                                     </div>
-                                    <Button variant="secondary" size="sm" onClick={() => abrirEdicao(kit)}>
+                                    <Button
+                                        variant="secondary"
+                                        iconeInicio={<Pencil className="size-3" />}
+                                        size="sm"
+                                        onClick={() => abrirEdicao(kit)}
+                                    >
                                         Editar
                                     </Button>
                                 </div>
@@ -196,10 +201,14 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
                 tamanho="lg"
                 acoes={
                     <>
-                        <Button variant="secondary" onClick={() => setAberto(false)}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<X className="size-4" />}
+                            onClick={() => setAberto(false)}
+                        >
                             Cancelar
                         </Button>
-                        <Button loading={enviando} onClick={salvar}>
+                        <Button iconeInicio={<Check className="size-4" />} loading={enviando} onClick={salvar}>
                             Salvar
                         </Button>
                     </>

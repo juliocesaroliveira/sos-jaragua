@@ -1,7 +1,7 @@
 'use client'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { Pencil } from 'lucide-react'
+import { Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Alert, Button, IconButton, Table, type ColunaTabela } from '@/src/shared/ui'
 import { RAIZ_USUARIOS, chaveUsuarios, useListagemPaginada } from '@/src/shared/query'
@@ -67,14 +67,20 @@ export function TabelaUsuarios() {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-end">
-                <Button onClick={abrirCadastro}>Nova conta</Button>
+                <Button iconeInicio={<Plus className="size-4" />} onClick={abrirCadastro}>
+                    Nova conta
+                </Button>
             </div>
 
             {erro ? (
                 <Alert tom="danger" titulo="Não foi possível carregar as contas">
                     <div className="flex flex-col items-start gap-3">
                         <p>{erro.message}</p>
-                        <Button variant="secondary" onClick={() => void refetch()}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<RotateCcw className="size-4" />}
+                            onClick={() => void refetch()}
+                        >
                             Tentar novamente
                         </Button>
                     </div>
