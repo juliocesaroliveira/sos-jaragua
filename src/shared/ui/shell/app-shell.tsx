@@ -43,10 +43,10 @@ export function AppShell({ itens, nome, rotuloRole, notificacoes, children }: Ap
     }
 
     return (
-        <div className="flex min-h-dvh flex-col lg:flex-row">
+        <div className="flex h-dvh flex-col overflow-hidden lg:flex-row">
             <SidebarNav itens={itens} menuAberto={menuAberto} onNavegar={() => setMenuAberto(false)} />
 
-            <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
                 <Topbar
                     nome={nome}
                     rotuloRole={rotuloRole}
@@ -57,7 +57,7 @@ export function AppShell({ itens, nome, rotuloRole, notificacoes, children }: Ap
                     onSair={sair}
                 />
 
-                <main className="min-w-0 flex-1 p-4">{children}</main>
+                <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4">{children}</main>
             </div>
         </div>
     )

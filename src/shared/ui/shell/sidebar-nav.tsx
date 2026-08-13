@@ -34,7 +34,7 @@ export function SidebarNav({ itens, menuAberto, onNavegar }: SidebarNavProps) {
         <nav
             aria-label="Navegação principal"
             className={cn(
-                'flex flex-col gap-1 border-border bg-surface p-3 lg:w-72 lg:shrink-0 lg:border-r',
+                'flex flex-col gap-1 border-border bg-surface p-3 lg:w-72 lg:shrink-0 lg:overflow-y-auto lg:border-r',
                 menuAberto ? 'border-b' : 'hidden lg:flex'
             )}
         >

@@ -36,7 +36,7 @@ export function Topbar({
     onSair
 }: TopbarProps) {
     return (
-        <header className="flex items-center justify-between gap-2 border-b border-border bg-surface p-3">
+        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface p-3">
             <div className="flex items-center gap-2">
                 {/* Só abaixo de `lg`: em telas largas a navegação é coluna
                     fixa, e o botão não teria o que alternar (FR-009). */}
