@@ -1,7 +1,8 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { Menu as Ark } from '@ark-ui/react/menu'
 import { LogOut, Menu as MenuIcon, X } from 'lucide-react'
+import { forwardRef, type ReactNode } from 'react'
 import { Avatar } from '../avatar/avatar'
 import { IconButton } from '../icon-button/icon-button'
 import { ThemeToggle } from '../theme/theme-toggle'
@@ -11,9 +12,8 @@ export interface TopbarProps {
     rotuloRole: string
     /** Slot do sino de notificações (NOT-09). Ausente = sino não renderizado. */
     notificacoes?: ReactNode
-    /** Estado da gaveta, controlado pelo `AppShell`. */
+    /** Estado do painel mobile/tablet, controlado pelo `AppShell` via `Ark.RootProvider` (005-mobile-menu-panel). */
     menuAberto: boolean
-    onAlternarMenu: () => void
     /** `false` quando não há itens de navegação — sem menu a abrir. */
     mostrarBotaoMenu?: boolean
     onSair: () => void
@@ -25,35 +25,37 @@ export interface TopbarProps {
  *
  * Presente em **toda** página autenticada, para todos os perfis — sair e
  * alternar tema não podem depender de o usuário ser staff.
+ *
+ * O `ref` encaminhado ao `<header>` é a âncora de posicionamento do painel
+ * mobile/tablet (`menu-mobile.tsx`) — o painel sai com a largura do topbar
+ * inteiro, não do botão de hambúrguer (research.md D2, 005-mobile-menu-panel).
  */
-export function Topbar({
-    nome,
-    rotuloRole,
-    notificacoes,
-    menuAberto,
-    onAlternarMenu,
-    mostrarBotaoMenu = true,
-    onSair
-}: TopbarProps) {
+export const Topbar = forwardRef<HTMLElement, TopbarProps>(function Topbar(
+    { nome, rotuloRole, notificacoes, menuAberto, mostrarBotaoMenu = true, onSair },
+    ref
+) {
     return (
-        <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface p-3">
+        <header
+            ref={ref}
+            className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface p-3"
+        >
             <div className="flex items-center gap-2">
                 {/* Só abaixo de `lg`: em telas largas a navegação é coluna
                     fixa, e o botão não teria o que alternar (FR-009). */}
                 {mostrarBotaoMenu && (
                     <span className="lg:hidden">
-                        <IconButton
-                            aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
-                            aria-expanded={menuAberto}
-                            icone={
-                                menuAberto ? (
-                                    <X aria-hidden className="size-5" />
-                                ) : (
-                                    <MenuIcon aria-hidden className="size-5" />
-                                )
-                            }
-                            onClick={onAlternarMenu}
-                        />
+                        <Ark.Trigger asChild>
+                            <IconButton
+                                aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+                                icone={
+                                    menuAberto ? (
+                                        <X aria-hidden className="size-5" />
+                                    ) : (
+                                        <MenuIcon aria-hidden className="size-5" />
+                                    )
+                                }
+                            />
+                        </Ark.Trigger>
                     </span>
                 )}
                 <span className="text-lg font-semibold text-foreground lg:hidden">SOS Jaraguá</span>
@@ -73,4 +75,4 @@ export function Topbar({
             </div>
         </header>
     )
-}
+})

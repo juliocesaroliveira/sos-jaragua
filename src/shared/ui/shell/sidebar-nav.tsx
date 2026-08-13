@@ -7,20 +7,18 @@ import { ANEL_FOCO, cn } from '../cn'
 import { ICONES } from './icones'
 
 /**
- * Navegação lateral: coluna fixa em `lg+`, gaveta em telas menores
- * (mobile-first, DESIGN_SYSTEM.md §1.7).
+ * Navegação lateral: coluna fixa, exclusiva de `lg+`. Abaixo de `lg`, a
+ * navegação é o painel de `menu-mobile.tsx`, ancorado ao `Topbar`
+ * (005-mobile-menu-panel) — este componente não tem mais variante mobile.
  *
  * Recebe os itens **já filtrados no servidor** — o navegador de um voluntário
  * nunca recebe a lista de destinos internos (contracts/app-shell.md, S-02).
  */
 export interface SidebarNavProps {
     itens: readonly ItemNavegacao[]
-    menuAberto: boolean
-    /** Fecha a gaveta ao escolher um destino (FR-022). */
-    onNavegar: () => void
 }
 
-export function SidebarNav({ itens, menuAberto, onNavegar }: SidebarNavProps) {
+export function SidebarNav({ itens }: SidebarNavProps) {
     const pathname = usePathname()
 
     // Sem destinos visíveis, uma coluna vazia só rouba espaço. A topbar
@@ -33,12 +31,9 @@ export function SidebarNav({ itens, menuAberto, onNavegar }: SidebarNavProps) {
     return (
         <nav
             aria-label="Navegação principal"
-            className={cn(
-                'flex flex-col gap-1 border-border bg-surface p-3 lg:w-72 lg:shrink-0 lg:overflow-y-auto lg:border-r',
-                menuAberto ? 'border-b' : 'hidden lg:flex'
-            )}
+            className="hidden flex-col gap-1 border-r border-border bg-surface p-3 lg:flex lg:w-72 lg:shrink-0 lg:overflow-y-auto"
         >
-            <p className="hidden px-3 py-4 text-lg font-semibold text-foreground lg:block">SOS Jaraguá</p>
+            <p className="px-3 py-4 text-lg font-semibold text-foreground">SOS Jaraguá</p>
 
             {secoes.map((secao) => (
                 <section key={secao.grupo.id} aria-labelledby={`grupo-${secao.grupo.id}`} className="flex flex-col">
@@ -56,7 +51,6 @@ export function SidebarNav({ itens, menuAberto, onNavegar }: SidebarNavProps) {
                             <Link
                                 key={item.href}
                                 href={item.href}
-                                onClick={onNavegar}
                                 aria-current={ehAtivo ? 'page' : undefined}
                                 className={cn(
                                     'flex min-h-11 items-center gap-3 rounded-lg px-3 text-base',
