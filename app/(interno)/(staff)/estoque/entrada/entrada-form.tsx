@@ -228,6 +228,7 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
                 <Button
+                    size="lg"
                     variant="secondary"
                     iconeInicio={<RotateCcw className="size-4" />}
                     onClick={limpar}
