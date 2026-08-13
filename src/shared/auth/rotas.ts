@@ -89,3 +89,17 @@ export function podeAcessar(pathname: string, role: Role | undefined): boolean {
  * `voluntario` caíam em `/dashboard` e batiam em `/sem-permissao`.
  */
 export const AREA_PADRAO = '/'
+
+/**
+ * Destino do botão de retorno na página de endereço não encontrado
+ * (specs/003-not-found-page).
+ *
+ * Duas saídas porque são dois públicos: quem tem sessão volta para a home, que
+ * é ciente do perfil; quem não tem vai para a tela de entrada. Mandar o
+ * visitante anônimo para `/` funcionaria por acidente — o `proxy.ts` o
+ * redirecionaria —, mas com um salto a mais e dependendo do gate para corrigir
+ * o destino. Um botão de saída que produz nova negativa é pior que nenhum.
+ */
+export function destinoDeRetorno(temSessao: boolean): string {
+    return temSessao ? AREA_PADRAO : ROTA_PUBLICA
+}

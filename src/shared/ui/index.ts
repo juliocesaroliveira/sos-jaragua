@@ -56,3 +56,4 @@ export { ThemeProvider, themeInitScript } from './theme/theme-provider'
 export { ThemeToggle } from './theme/theme-toggle'
 
 export { AppShell, type AppShellProps } from './shell/app-shell'
+export { ConteudoNaoEncontrado, type ConteudoNaoEncontradoProps } from './nao-encontrado/nao-encontrado'

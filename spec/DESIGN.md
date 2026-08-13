@@ -319,6 +319,39 @@ A seção de contingência na tela de relatórios continua renderizada condicion
 alcança a tela, já que as regras coincidem; ela permanece porque são autorizações independentes
 por natureza, e a checagem é o que impede o botão-que-dá-403 de voltar se elas divergirem.
 
+### 6.6. Endereço não encontrado (404)
+
+Decisão registrada em `specs/003-not-found-page/`.
+
+**Duas fronteiras**, porque o Next resolve os dois casos em posições diferentes da árvore:
+
+- `app/not-found.tsx` — URLs desconhecidas de toda a aplicação. Nenhum segmento casou, então
+  nenhum layout de área se aplica: é esta página que lê a sessão (`obterSessao`, **nunca**
+  `exigirSessao` — página de erro que redireciona é defeito) e decide envolver no shell ou não.
+- `app/(interno)/not-found.tsx` — `notFound()` lançado sob a área autenticada. O shell já vem
+  do layout, que continua na árvore; montá-lo de novo duplicaria topbar e menu.
+
+O conteúdo é um só (`src/shared/ui/nao-encontrado/`), e **não recebe ator nem itens de menu** —
+a ausência de vazamento na variante anônima é propriedade do tipo, não disciplina de quem edita.
+
+`app/not-found.tsx` declara `instant = false`: a apresentação depende de cookies e, com Cache
+Components, o build falha ao tentar prerenderizar. Das três saídas do Next (cachear, isolar sob
+`<Suspense>`, declarar bloqueante), esta é a coerente com o projeto — todo segmento que lê sessão
+já faz assim. `<Suspense>` renderia casca estática, mas o destino do botão também depende da
+sessão: o link trocaria sob o cursor.
+
+**404 não é 403.** Endereço restrito continua produzindo `/sem-permissao`. Dizer "não existe"
+sobre uma área que existe seria vazamento invertido e confundiria quem tem permissão parcial.
+
+**Status HTTP**: URL desconhecida devolve `404` real (decidido no roteamento, antes de qualquer
+streaming). Já `notFound()` chamado dentro de um `<Suspense>` — o caso de `/atividades/[id]` —
+devolve `200` com `<meta robots="noindex">`, porque o cabeçalho já foi enviado. É comportamento
+documentado do Next; o `noindex` preserva o efeito que importa. Obter status real ali exigiria
+eliminar o streaming da tela ou consultar o banco no `proxy.ts`, ambos piores que o problema.
+
+`experimental.globalNotFound` foi avaliado e rejeitado: exigiria devolver um documento HTML
+completo, duplicando o root layout inteiro — tema, fonte e estilos globais — para uma única tela.
+
 A landing pública anterior deixou de existir. Ela já era inalcançável na prática — o
 deny-by-default do `proxy.ts` exige sessão em `/` desde a feature 001, então o conteúdo escrito
 para visitante deslogado nunca chegava a ser exibido.

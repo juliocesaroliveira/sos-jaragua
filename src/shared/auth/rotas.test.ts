@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AREA_PADRAO, ehRotaPublica, podeAcessar, rolesExigidas } from './rotas'
+import { AREA_PADRAO, ROTA_PUBLICA, destinoDeRetorno, ehRotaPublica, podeAcessar, rolesExigidas } from './rotas'
 import { ROLES } from './roles'
 
 /** Classificação de rota — modelo deny-by-default (specs/001-unified-login-flow/contracts/routing-gate.md). */
@@ -120,5 +120,34 @@ describe('AREA_PADRAO — destino pós-login', () => {
 
     it('não é uma rota restrita a algum papel', () => {
         expect(rolesExigidas(AREA_PADRAO)).toBeNull()
+    })
+})
+
+describe('destinoDeRetorno — botão da página de endereço não encontrado', () => {
+    /** Invariantes de specs/003-not-found-page/contracts/nao-encontrado.md. */
+
+    it('INV-01 — com sessão, o destino é alcançável por TODOS os papéis', () => {
+        // Trava de SC-004: um botão de saída que leva a /sem-permissao é pior
+        // que não ter botão. É a mesma classe de defeito que a feature 002
+        // corrigiu no login.
+        const destino = destinoDeRetorno(true)
+        for (const role of ROLES) {
+            expect(podeAcessar(destino, role), `${role} não alcança ${destino}`).toBe(true)
+        }
+    })
+
+    it('INV-02 — sem sessão, o destino dispensa sessão', () => {
+        // Apontar para `/` funcionaria por acidente (o proxy redirigiria para
+        // /login), com um salto a mais e dependendo do gate para corrigir.
+        expect(ehRotaPublica(destinoDeRetorno(false))).toBe(true)
+    })
+
+    it('INV-03 — os dois destinos são distintos', () => {
+        expect(destinoDeRetorno(true)).not.toBe(destinoDeRetorno(false))
+    })
+
+    it('reaproveita as constantes já estabelecidas, não literais soltos', () => {
+        expect(destinoDeRetorno(true)).toBe(AREA_PADRAO)
+        expect(destinoDeRetorno(false)).toBe(ROTA_PUBLICA)
     })
 })
