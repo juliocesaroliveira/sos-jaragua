@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { Role } from '@/src/shared/auth/roles'
+import { rolesExigidas } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import { montarPacoteContingencia } from '@/src/modules/contingencia/application/pacote-contingencia'
 import { gerarXlsx, nomeDeArquivo } from '@/src/modules/contingencia/infrastructure/planilha'
@@ -12,7 +13,12 @@ import { gerarXlsx, nomeDeArquivo } from '@/src/modules/contingencia/infrastruct
  * Servir uma versão cacheada aqui entregaria à equipe um retrato do estoque que
  * já não corresponde ao galpão.
  */
-const ROLES_PERMITIDAS: readonly Role[] = ['coordenador', 'administrador']
+/**
+ * Derivado de `REGRAS_DE_ROTA`, não redigitado: esta checagem e a do `proxy.ts`
+ * precisam falar da mesma regra, e uma cópia literal aqui significaria que
+ * mudar a autorização exige lembrar de mudar os dois lugares.
+ */
+const ROLES_PERMITIDAS: readonly Role[] = rolesExigidas('/api/contingencia/export') ?? []
 
 export async function GET() {
     const ator = await obterSessao()

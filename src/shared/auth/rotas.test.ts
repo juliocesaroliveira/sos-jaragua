@@ -37,6 +37,38 @@ describe('rolesExigidas', () => {
         expect(rolesExigidas('/estoque/kits')).toEqual(['coordenador', 'administrador'])
     })
 
+    it('relatórios pertencem à Defesa Civil — coordenação não tem acesso', () => {
+        expect(rolesExigidas('/relatorios')).toEqual(['membro_defesa_civil', 'administrador'])
+    })
+
+    it('a API de download de relatórios acompanha a tela', () => {
+        // Se divergirem, ou a tela abre com os botões em 403, ou os dados ficam
+        // alcançáveis por URL direta para quem já não pode abrir a tela.
+        expect(rolesExigidas('/api/relatorios/export')).toEqual(rolesExigidas('/relatorios'))
+    })
+
+    it('o pacote de contingência acompanha a tela que o gera', () => {
+        // Ele só é alcançável pela tela de relatórios; regras diferentes
+        // deixariam ou um botão em 403, ou a permissão órfã para quem já não
+        // abre a tela.
+        expect(rolesExigidas('/api/contingencia/export')).toEqual(['membro_defesa_civil', 'administrador'])
+        expect(rolesExigidas('/api/contingencia/export')).toEqual(rolesExigidas('/relatorios'))
+    })
+
+    it('coordenador não alcança relatórios nem os downloads da tela', () => {
+        for (const rota of ['/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
+            expect(podeAcessar(rota, 'coordenador'), rota).toBe(false)
+        }
+    })
+
+    it('membro_defesa_civil e administrador alcançam a tela e os dois downloads', () => {
+        for (const role of ['membro_defesa_civil', 'administrador'] as const) {
+            for (const rota of ['/relatorios', '/api/relatorios/export', '/api/contingencia/export']) {
+                expect(podeAcessar(rota, role), `${role} → ${rota}`).toBe(true)
+            }
+        }
+    })
+
     it('prefixo mais específico vence sobre o mais genérico', () => {
         expect(rolesExigidas('/estoque/entrada')).toEqual(['membro_defesa_civil', 'coordenador', 'administrador'])
         expect(rolesExigidas('/estoque/descarte')).toEqual(['coordenador', 'administrador'])

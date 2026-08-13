@@ -43,7 +43,7 @@ Agrupamento nomeado, existente apenas para legibilidade do menu.
 | `rotulo` | `string` | Cabeçalho exibido, em pt-BR. |
 | `ordem` | `number` | Posição relativa no menu. |
 
-`IdGrupo` ∈ `'pessoal' | 'voluntariado' | 'operacao' | 'estoque' | 'coordenacao' | 'administracao'`
+`IdGrupo` ∈ `'principal' | 'pessoal' | 'voluntariado' | 'operacao' | 'estoque' | 'coordenacao' | 'administracao'`
 
 **Regras**:
 
@@ -71,31 +71,46 @@ Origem obrigatória: `auth.api.getSession` no servidor. Nunca de props do client
 
 Estado alvo do registro. `✓` = item aparece no menu daquele perfil.
 
+`★` = também aparece como **card de acesso rápido** na home (`atalho`).
+
 | Grupo | Destino | `usuario` | `voluntario` | `membro_defesa_civil` | `coordenador` | `administrador` |
 |-------|---------|:---:|:---:|:---:|:---:|:---:|
-| Pessoal | `/voluntariado/candidatura` | ✓ | ✓ | | | |
-| Voluntariado | `/voluntariado/minhas-atividades` | | ✓ | ✓ | ✓ | ✓ |
-| Operação | `/dashboard` | | | ✓ | ✓ | ✓ |
-| Operação | `/cadastros-pendentes` | | | ✓ | ✓ | ✓ |
+| Início | `/` | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Pessoal | `/voluntariado/candidatura` | ★ | ★ | | | |
+| Voluntariado | `/voluntariado/minhas-atividades` | | ★ | ★ | ★ | ★ |
+| Operação | `/dashboard` | | | ★ | ★ | ★ |
+| Operação | `/cadastros-pendentes` | | | ★ | ★ | ★ |
 | Operação | `/voluntarios` | | | ✓ | ✓ | ✓ |
 | Operação | `/atividades` | | | ✓ | ✓ | ✓ |
-| Operação | `/crise` | | | ✓ | ✓ | ✓ |
+| Operação | `/crise` | | | ★ | ★ | ★ |
+| Operação | `/relatorios` | | | ★ | | ★ |
 | Estoque | `/estoque` | | | ✓ | ✓ | ✓ |
-| Estoque | `/estoque/entrada` | | | ✓ | ✓ | ✓ |
-| Estoque | `/estoque/saida` | | | ✓ | ✓ | ✓ |
+| Estoque | `/estoque/entrada` | | | ★ | ★ | ★ |
+| Estoque | `/estoque/saida` | | | ★ | ★ | ★ |
 | Estoque | `/estoque/kits` | | | | ✓ | ✓ |
 | Estoque | `/estoque/descarte` | | | | ✓ | ✓ |
-| Coordenação | `/convocacao` | | | | ✓ | ✓ |
-| Coordenação | `/relatorios` | | | | ✓ | ✓ |
+| Coordenação | `/convocacao` | | | | ★ | ★ |
 | Administração | *(nenhum ainda — research.md D4)* | | | | | |
 
-### Leitura da matriz — três observações necessárias
+### Leitura da matriz — cinco observações necessárias
 
 1. **`/voluntariado/minhas-atividades` inclui staff.** Não é generosidade: `REGRAS_DE_ROTA` já concede essa rota a `voluntario`, `membro_defesa_civil`, `coordenador` e `administrador`. A trava de igualdade de D3 **exige** que a linha reflita a regra. Divergir aqui quebraria o teste.
 
 2. **`/voluntariado/candidatura` não tem regra em `REGRAS_DE_ROTA`** — a trava de igualdade não se aplica, e as roles são declaradas por decisão de produto: quem já é staff não se candidata a voluntário pelo menu. Este é precisamente o caso que `podeAcessar` sozinho decidiria errado (research.md D3).
 
-3. **`administrador` tem menu idêntico a `coordenador` hoje.** Consequência esperada de D4 — a área de administração não existe. O grupo "Administração" está definido e vazio, pronto para receber a primeira linha sem qualquer mudança estrutural.
+3. **`administrador` difere de `coordenador` apenas em `/relatorios`.** O grupo "Administração" continua definido e vazio (D4 — a área não existe), então a única distinção real entre os dois perfis hoje vem da mudança descrita no item 4.
+
+4. **`/relatorios` pertence à Defesa Civil, não à coordenação.** Autorização alterada por decisão de produto: `membro_defesa_civil` ganhou acesso, `coordenador` perdeu, `administrador` manteve. A mudança foi aplicada em `REGRAS_DE_ROTA` (tela **e** `/api/relatorios/export`, que andam juntas) e refletida aqui pela trava INV-01. O item saiu do grupo "Coordenação" para "Operação" — mantê-lo no grupo antigo faria a seção "Coordenação" aparecer para quem não coordena.
+
+5. **A home (`/`) não é card de si mesma.** Ela é item de menu para todos os perfis (é o caminho de volta), mas nunca aparece na própria grade de acesso rápido.
+
+### Cards de acesso rápido (`atalho`)
+
+Subconjunto curado dos destinos visíveis — "acesso rápido" com 13 cards deixa de ser rápido. Ficam de fora as telas de consulta e de exceção (`/voluntarios`, `/atividades`, `/estoque`, `/estoque/kits`, `/estoque/descarte`), alcançáveis pelo menu lateral.
+
+Contagem resultante: `usuario` 1 card · `voluntario` 2 · `membro_defesa_civil` 7 · `coordenador` 7 · `administrador` 8.
+
+`atalho` é modelado como objeto (`{ descricao }`) e não como par `atalho: boolean` + `descricao?: string`, para que o **tipo** garanta o que de outro modo exigiria um teste: não existe atalho sem descrição.
 
 ---
 

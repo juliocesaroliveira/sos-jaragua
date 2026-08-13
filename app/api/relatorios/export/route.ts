@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Role } from '@/src/shared/auth/roles'
+import { rolesExigidas } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import {
     ehFormato,
@@ -15,7 +16,13 @@ import { gerarCsv, gerarXlsx, nomeDeArquivo } from '@/src/modules/contingencia/i
  * É um **Route Handler** e não uma Server Action (DESIGN.md §14): payload
  * binário não é um bom fit para o modelo de retorno de Server Actions.
  */
-const ROLES_PERMITIDAS: readonly Role[] = ['coordenador', 'administrador']
+/**
+ * Derivado de `REGRAS_DE_ROTA`, não redigitado: esta checagem e a do `proxy.ts`
+ * precisam falar da mesma regra. Uma cópia literal aqui já significaria que
+ * mudar a autorização da tela exige lembrar de mudar o download também — e
+ * esquecer deixaria os dados alcançáveis por URL direta.
+ */
+const ROLES_PERMITIDAS: readonly Role[] = rolesExigidas('/api/relatorios/export') ?? []
 
 export async function GET(request: NextRequest) {
     // Re-checagem no servidor mesmo com o `proxy.ts` já filtrando: a rota

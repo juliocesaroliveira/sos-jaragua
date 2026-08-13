@@ -37,10 +37,15 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     // Convocação em massa — alcance grande demais para operação de campo
     { prefixo: '/convocacao', roles: ['coordenador', 'administrador'] },
 
-    // Relatórios e exportações
-    { prefixo: '/relatorios', roles: ['coordenador', 'administrador'] },
-    { prefixo: '/api/relatorios/export', roles: ['coordenador', 'administrador'] },
-    { prefixo: '/api/contingencia/export', roles: ['coordenador', 'administrador'] },
+    // Relatórios e exportações — atribuídos à Defesa Civil, não à coordenação.
+    // A rota e sua API de download andam juntas: separá-las deixaria a tela
+    // acessível com os botões em 403, ou os dados alcançáveis por URL direta
+    // para quem já não pode abrir a tela.
+    { prefixo: '/relatorios', roles: ['membro_defesa_civil', 'administrador'] },
+    { prefixo: '/api/relatorios/export', roles: ['membro_defesa_civil', 'administrador'] },
+    // Pacote de contingência (BR-CON-01): mesma atribuição da tela de
+    // relatórios, de onde ele é gerado. Coordenação não tem acesso.
+    { prefixo: '/api/contingencia/export', roles: ['membro_defesa_civil', 'administrador'] },
 
     // Triagem, atividades e dashboard
     { prefixo: '/cadastros-pendentes', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },

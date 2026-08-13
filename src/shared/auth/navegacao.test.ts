@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { GRUPOS, NAVEGACAO, gruposVisiveis, itemAtivo, itensDeNavegacao } from './navegacao'
+import { GRUPOS, NAVEGACAO, atalhosDeNavegacao, gruposVisiveis, itemAtivo, itensDeNavegacao } from './navegacao'
 import { ROLES, type Role } from './roles'
 import { rolesExigidas } from './rotas'
 
@@ -104,9 +104,10 @@ describe('INV-03 — todo destino existe', () => {
 describe('INV-04 — matriz de visibilidade por perfil', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const MATRIZ: Record<Role, string[]> = {
-        usuario: ['/voluntariado/candidatura'],
-        voluntario: ['/voluntariado/candidatura', '/voluntariado/minhas-atividades'],
+        usuario: ['/', '/voluntariado/candidatura'],
+        voluntario: ['/', '/voluntariado/candidatura', '/voluntariado/minhas-atividades'],
         membro_defesa_civil: [
+            '/',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -115,9 +116,11 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/estoque',
             '/estoque/entrada',
             '/estoque/saida',
+            '/relatorios',
             '/voluntariado/minhas-atividades'
         ],
         coordenador: [
+            '/',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -129,10 +132,10 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/estoque/kits',
             '/estoque/descarte',
             '/convocacao',
-            '/relatorios',
             '/voluntariado/minhas-atividades'
         ],
         administrador: [
+            '/',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -167,8 +170,92 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
 
     it('coordenação não é exibida a membro_defesa_civil', () => {
         const hrefs = itensDeNavegacao('membro_defesa_civil').map((i) => i.href)
-        for (const proibido of ['/estoque/kits', '/estoque/descarte', '/convocacao', '/relatorios']) {
+        for (const proibido of ['/estoque/kits', '/estoque/descarte', '/convocacao']) {
             expect(hrefs).not.toContain(proibido)
+        }
+    })
+
+    it('relatórios pertencem à Defesa Civil, não à coordenação', () => {
+        expect(itensDeNavegacao('membro_defesa_civil').map((i) => i.href)).toContain('/relatorios')
+        expect(itensDeNavegacao('administrador').map((i) => i.href)).toContain('/relatorios')
+        expect(itensDeNavegacao('coordenador').map((i) => i.href)).not.toContain('/relatorios')
+    })
+})
+
+describe('atalhos — cards de acesso rápido da home', () => {
+    it('todo atalho é um destino visível ao perfil (nunca um card inacessível)', () => {
+        for (const role of ROLES) {
+            const visiveis = itensDeNavegacao(role).map((i) => i.href)
+            for (const atalho of atalhosDeNavegacao(role)) {
+                expect(visiveis, `${role} → ${atalho.href}`).toContain(atalho.href)
+            }
+        }
+    })
+
+    it('todo atalho tem descrição preenchida', () => {
+        for (const role of ROLES) {
+            for (const atalho of atalhosDeNavegacao(role)) {
+                expect(atalho.atalho.descricao.trim(), atalho.href).not.toBe('')
+            }
+        }
+    })
+
+    /** Fonte: specs/002-role-based-app-shell/data-model.md. */
+    const ATALHOS: Record<Role, string[]> = {
+        usuario: ['/voluntariado/candidatura'],
+        voluntario: ['/voluntariado/candidatura', '/voluntariado/minhas-atividades'],
+        membro_defesa_civil: [
+            '/voluntariado/minhas-atividades',
+            '/dashboard',
+            '/cadastros-pendentes',
+            '/crise',
+            '/relatorios',
+            '/estoque/entrada',
+            '/estoque/saida'
+        ],
+        coordenador: [
+            '/voluntariado/minhas-atividades',
+            '/dashboard',
+            '/cadastros-pendentes',
+            '/crise',
+            '/estoque/entrada',
+            '/estoque/saida',
+            '/convocacao'
+        ],
+        administrador: [
+            '/voluntariado/minhas-atividades',
+            '/dashboard',
+            '/cadastros-pendentes',
+            '/crise',
+            '/relatorios',
+            '/estoque/entrada',
+            '/estoque/saida',
+            '/convocacao'
+        ]
+    }
+
+    for (const role of ROLES) {
+        it(`${role} recebe exatamente os cards esperados`, () => {
+            const hrefs = atalhosDeNavegacao(role).map((i) => i.href)
+            expect([...hrefs].sort()).toEqual([...ATALHOS[role]].sort())
+        })
+    }
+
+    it('nenhum perfil recebe card de destino restrito a outro perfil', () => {
+        const naoStaff = ['usuario', 'voluntario'] as const
+        for (const role of naoStaff) {
+            const hrefs = atalhosDeNavegacao(role).map((i) => i.href)
+            for (const proibido of ['/dashboard', '/cadastros-pendentes', '/relatorios', '/convocacao']) {
+                expect(hrefs, `${role} não pode ter card de ${proibido}`).not.toContain(proibido)
+            }
+        }
+        // `/relatorios` pertence à Defesa Civil — coordenação não o alcança.
+        expect(atalhosDeNavegacao('coordenador').map((i) => i.href)).not.toContain('/relatorios')
+    })
+
+    it('a home não vira card de si mesma', () => {
+        for (const role of ROLES) {
+            expect(atalhosDeNavegacao(role).map((i) => i.href), role).not.toContain('/')
         }
     })
 })

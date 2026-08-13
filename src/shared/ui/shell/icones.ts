@@ -4,6 +4,7 @@ import {
     ClipboardList,
     FileSpreadsheet,
     HandHeart,
+    House,
     LayoutDashboard,
     Megaphone,
     Package,
@@ -25,6 +26,7 @@ import type { NomeIcone } from '../../auth/navegacao'
  * renderizar React (research.md D7).
  */
 export const ICONES: Readonly<Record<NomeIcone, LucideIcon>> = {
+    House,
     HandHeart,
     CalendarCheck,
     LayoutDashboard,

@@ -101,11 +101,11 @@ Server Action (presentation/actions/aprovarCandidatura.ts)
 ```
 app/                                    # roteamento/composição — sem lógica de negócio
   (publico)/                            # pré-autenticação — SEM shell
-    page.tsx                            # landing
     login/page.tsx
     cadastro/page.tsx
   (interno)/                            # TODA página autenticada — COM shell
     layout.tsx                          # exigirSessao() + <AppShell> + sino de notificações
+    page.tsx                            # home: cards de acesso rápido por perfil
     sino-notificacoes.tsx
     sem-permissao/page.tsx
     design-system/page.tsx              # ferramenta de dev; exige sessão, fora do menu
@@ -291,6 +291,37 @@ tem direito a ele, sem quebrar nada.
 
 O grupo `administracao` existe e está vazio: `/admin` tem regra de rota mas ainda não tem
 página, e exibir link para 404 violaria o critério de "nenhum item leva a negativa de acesso".
+
+**Home (`/`)** — página autenticada com cards de acesso rápido por perfil. Os cards saem de
+`atalhosDeNavegacao(role)`, que filtra `itensDeNavegacao(role)` — derivar da mesma lista já
+filtrada é o que impede um card de apontar para destino que a pessoa não pode abrir. É um
+subconjunto curado (`atalho`), não todos os destinos: acesso rápido com 13 cards não é rápido.
+
+**Relatórios e contingência pertencem à Defesa Civil** — `membro_defesa_civil` e
+`administrador`; `coordenador` **não** tem acesso. São três regras que precisam andar juntas,
+porque descrevem uma tela e os downloads que só existem dentro dela:
+
+- `/relatorios` — a tela
+- `/api/relatorios/export` — exportação de inventário e saídas (BR-REL-01)
+- `/api/contingencia/export` — pacote de contingência (BR-CON-01)
+
+Separá-las produz um de dois defeitos: a tela abre com botões em 403, ou os dados ficam
+alcançáveis por URL direta para quem já não pode abrir a tela — e, no caso da contingência,
+uma permissão órfã, já que não há outro caminho na UI até ela. `rotas.test.ts` trava a
+igualdade entre as três.
+
+Os dois Route Handlers derivam as roles de `rolesExigidas()` em vez de redigitá-las. Antes cada
+um mantinha sua própria cópia literal — três lugares para lembrar de mudar, e nenhum aviso ao
+esquecer um.
+
+A seção de contingência na tela de relatórios continua renderizada condicionalmente
+(`podeAcessar('/api/contingencia/export', role)`). Hoje a condição é sempre verdadeira para quem
+alcança a tela, já que as regras coincidem; ela permanece porque são autorizações independentes
+por natureza, e a checagem é o que impede o botão-que-dá-403 de voltar se elas divergirem.
+
+A landing pública anterior deixou de existir. Ela já era inalcançável na prática — o
+deny-by-default do `proxy.ts` exige sessão em `/` desde a feature 001, então o conteúdo escrito
+para visitante deslogado nunca chegava a ser exibido.
 
 ---
 

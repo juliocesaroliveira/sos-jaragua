@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui'
+import { podeAcessar } from '@/src/shared/auth/rotas'
+import { exigirSessao } from '@/src/shared/auth/sessao'
 import { inventarioParaExportacao, saidasParaExportacao } from '@/src/modules/estoque/presentation/queries/estoque'
 import { PainelRelatorios } from './painel-relatorios'
 
@@ -34,6 +36,19 @@ async function Conteudo() {
     // declarar a renderização em tempo de requisição é o correto aqui.
     await connection()
 
+    // O pacote de contingência (BR-CON-01) tem autorização própria, diferente
+    // da tela: quem abre relatórios não necessariamente pode gerá-lo. Sem esta
+    // checagem, o botão apareceria e daria 403 — mostrar ação que leva a
+    // negativa é o defeito que a matriz de navegação existe para evitar.
+    const ator = await exigirSessao()
+    const podeGerarContingencia = podeAcessar('/api/contingencia/export', ator.role)
+
     const [inventario, saidas] = await Promise.all([inventarioParaExportacao(), saidasParaExportacao()])
-    return <PainelRelatorios inventario={inventario} saidas={saidas} />
+    return (
+        <PainelRelatorios
+            inventario={inventario}
+            saidas={saidas}
+            podeGerarContingencia={podeGerarContingencia}
+        />
+    )
 }

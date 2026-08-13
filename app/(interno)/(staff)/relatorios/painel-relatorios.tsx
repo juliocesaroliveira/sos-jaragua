@@ -13,7 +13,16 @@ import type { ItemComSaldo, LinhaSaidaPlana } from '@/src/modules/estoque/presen
  * binário (DESIGN.md §14), e o link deixa o navegador cuidar do arquivo —
  * inclusive em celular, onde interceptar um blob costuma dar problema.
  */
-export function PainelRelatorios({ inventario, saidas }: { inventario: ItemComSaldo[]; saidas: LinhaSaidaPlana[] }) {
+export function PainelRelatorios({
+    inventario,
+    saidas,
+    podeGerarContingencia
+}: {
+    inventario: ItemComSaldo[]
+    saidas: LinhaSaidaPlana[]
+    /** Decidido no servidor: o pacote de contingência tem autorização própria. */
+    podeGerarContingencia: boolean
+}) {
     const colunasInventario: ColunaTabela<ItemComSaldo>[] = [
         { accessorKey: 'nome', header: 'Item' },
         { id: 'categoria', header: 'Categoria', cell: ({ row }) => ROTULO_CATEGORIA_ITEM[row.original.categoria] },
@@ -81,7 +90,7 @@ export function PainelRelatorios({ inventario, saidas }: { inventario: ItemComSa
                 ]}
             />
 
-            <PacoteContingencia />
+            {podeGerarContingencia && <PacoteContingencia />}
         </div>
     )
 }
