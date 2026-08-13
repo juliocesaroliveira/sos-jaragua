@@ -21,15 +21,26 @@ npm run db:migrate
 npm run db:seed
 ```
 
-| E-mail | Perfil |
-|--------|--------|
-| `usuario@teste.local` | `usuario` |
-| `voluntario@teste.local` | `voluntario` |
-| `membro-defesa-civil@teste.local` | `membro_defesa_civil` |
-| `coordenador@teste.local` | `coordenador` |
-| `administrador@teste.local` | `administrador` |
+| E-mail | Perfil | Dados relacionados |
+|--------|--------|--------------------|
+| `usuario1@teste.local` | `usuario` | perfil `pendente` · 1 habilidade |
+| `usuario2@teste.local` | `usuario` | perfil `pendente` · 2 habilidades |
+| `usuario3@teste.local` | `usuario` | perfil `pendente` · restrição de saúde |
+| `usuario4@teste.local` | `usuario` | perfil `pendente` · 1 habilidade |
+| `usuario5@teste.local` | `usuario` | perfil `rejeitado` · com motivo |
+| `voluntario1@teste.local` | `voluntario` | perfil `aprovado` · 2 habilidades · escalado |
+| `voluntario2@teste.local` | `voluntario` | perfil `aprovado` · 2 habilidades · escalado |
+| `coordenador1@teste.local` | `coordenador` | aprovador dos voluntários |
+| `coordenador2@teste.local` | `coordenador` | — |
+| `defesa-civil1@teste.local` | `membro_defesa_civil` | — |
 
-Todas usam a senha de `SEED_TESTE_PASSWORD`. Sem essa variável o seed pula as contas e só faz o bootstrap normal — e o seed **recusa** rodar com `NODE_ENV=production`, porque são credenciais de senha conhecida, uma delas administradora.
+O `administrador` continua vindo do bootstrap `ADMIN_EMAIL`/`ADMIN_PASSWORD`, não deste elenco.
+
+Além das contas, o seed cria uma atividade com um turno de 4h no dia seguinte e aloca os dois voluntários aprovados — é o que dá conteúdo a "Minhas atividades", "Cadastros pendentes" e "Voluntários".
+
+Todas usam a senha de `SEED_TESTE_PASSWORD`. Sem essa variável o seed pula o elenco e só faz o bootstrap normal — e **recusa** rodar com `NODE_ENV=production`, porque são credenciais de senha conhecida, duas delas de coordenação.
+
+O script é idempotente: rodar de novo reafirma `role`/`ativo` e não duplica perfis, habilidades nem escala.
 
 ```bash
 npm run dev

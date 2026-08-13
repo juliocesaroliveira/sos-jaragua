@@ -74,20 +74,18 @@ export function podeAcessar(pathname: string, role: Role | undefined): boolean {
 }
 
 /**
- * Área autenticada padrão para onde um usuário já logado é enviado — usada
- * quando ele acessa `/login` diretamente (FR-003) e não há
- * `?redirecionar=` explícito a honrar.
+ * Destino padrão de quem acabou de autenticar, ou de quem já logado acessa
+ * `/login` (FR-003), quando não há `?redirecionar=` explícito a honrar.
+ *
+ * É a home — e **uma só para todos os papéis**, de propósito. Ela monta os
+ * cards de acesso rápido a partir do perfil da sessão, então já entrega a cada
+ * pessoa o destino certo sem que ninguém precise decidir isso antes.
+ *
+ * Substituiu um `areaPadraoPorRole(role)` que devolvia `/dashboard` para staff,
+ * `/voluntariado/minhas-atividades` para voluntário e `/voluntariado/candidatura`
+ * para usuário. Um destino por papel só funciona enquanto **todo** ponto de
+ * redirecionamento souber a role — e o formulário de login, que roda no cliente
+ * antes de a sessão existir, não sabe. Era exatamente aí que `usuario` e
+ * `voluntario` caíam em `/dashboard` e batiam em `/sem-permissao`.
  */
-export function areaPadraoPorRole(role: Role): string {
-    switch (role) {
-        case 'coordenador':
-        case 'membro_defesa_civil':
-        case 'administrador':
-            return '/dashboard'
-        case 'voluntario':
-            return '/voluntariado/minhas-atividades'
-        case 'usuario':
-        default:
-            return '/voluntariado/candidatura'
-    }
-}
+export const AREA_PADRAO = '/'

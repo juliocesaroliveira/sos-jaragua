@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { areaPadraoPorRole, ehRotaPublica, podeAcessar, rolesExigidas } from './rotas'
+import { AREA_PADRAO, ehRotaPublica, podeAcessar, rolesExigidas } from './rotas'
+import { ROLES } from './roles'
 
 /** Classificação de rota — modelo deny-by-default (specs/001-unified-login-flow/contracts/routing-gate.md). */
 
@@ -100,18 +101,24 @@ describe('podeAcessar', () => {
     })
 })
 
-describe('areaPadraoPorRole', () => {
-    it('staff vai para o dashboard', () => {
-        expect(areaPadraoPorRole('coordenador')).toBe('/dashboard')
-        expect(areaPadraoPorRole('membro_defesa_civil')).toBe('/dashboard')
-        expect(areaPadraoPorRole('administrador')).toBe('/dashboard')
+describe('AREA_PADRAO — destino pós-login', () => {
+    it('é a home', () => {
+        expect(AREA_PADRAO).toBe('/')
     })
 
-    it('voluntário vai para minhas-atividades', () => {
-        expect(areaPadraoPorRole('voluntario')).toBe('/voluntariado/minhas-atividades')
+    /**
+     * A trava que faltava. O destino padrão era `/dashboard`, rota de staff:
+     * `usuario` e `voluntario` autenticavam e caíam em `/sem-permissao`.
+     * `/sem-permissao` só deve aparecer para quem pede uma página sem ter
+     * direito a ela — nunca como consequência de simplesmente entrar.
+     */
+    it('é alcançável por TODOS os papéis — nenhum cai em /sem-permissao ao entrar', () => {
+        for (const role of ROLES) {
+            expect(podeAcessar(AREA_PADRAO, role), `${role} não alcança ${AREA_PADRAO}`).toBe(true)
+        }
     })
 
-    it('usuário comum vai para a candidatura', () => {
-        expect(areaPadraoPorRole('usuario')).toBe('/voluntariado/candidatura')
+    it('não é uma rota restrita a algum papel', () => {
+        expect(rolesExigidas(AREA_PADRAO)).toBeNull()
     })
 })

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
+import { AREA_PADRAO } from '@/src/shared/auth/rotas'
 import { Alert, Button, Input } from '@/src/shared/ui'
 
 const esquema = z.object({
@@ -25,7 +26,11 @@ type ModoLogin = 'opcoes' | 'credenciais'
 export function LoginForm() {
     const router = useRouter()
     const params = useSearchParams()
-    const destino = params.get('redirecionar') ?? '/dashboard'
+    // A home serve a todos os papéis (ela é montada a partir da sessão). Este
+    // formulário roda no cliente antes de a sessão existir, então não teria como
+    // escolher um destino por papel — fixar `/dashboard` aqui mandava `usuario`
+    // e `voluntario` direto para `/sem-permissao`.
+    const destino = params.get('redirecionar') ?? AREA_PADRAO
     const expirouPorInatividade = params.get('motivo') === 'expirado'
 
     const [modo, setModo] = useState<ModoLogin>('opcoes')

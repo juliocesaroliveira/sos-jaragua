@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { obterSessao } from '@/src/shared/auth/sessao'
-import { areaPadraoPorRole } from '@/src/shared/auth/rotas'
+import { AREA_PADRAO } from '@/src/shared/auth/rotas'
 import { SkeletonLista } from '@/src/shared/ui'
 import { LoginForm } from './login-form'
 
@@ -20,7 +20,7 @@ export const instant = false
 export default async function LoginPage() {
     // Usuário já autenticado não deve ver o formulário de login (FR-003).
     const ator = await obterSessao()
-    if (ator) redirect(areaPadraoPorRole(ator.role))
+    if (ator) redirect(AREA_PADRAO)
 
     return (
         <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 p-4">
