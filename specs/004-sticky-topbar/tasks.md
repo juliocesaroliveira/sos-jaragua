@@ -1,6 +1,5 @@
 ---
-
-description: "Task list template for feature implementation"
+description: 'Task list template for feature implementation'
 ---
 
 # Tasks: Topbar Fixo Durante a Rolagem
@@ -40,9 +39,9 @@ Projeto único Next.js — código em `src/`, sem `tests/` dedicados nesta featu
 
 **⚠️ CRITICAL**: Nenhuma fase de user story pode ser validada até esta fase estar completa.
 
-- [X] T002 Travar a altura da raiz do shell em `src/shared/ui/shell/app-shell.tsx`: trocar `flex min-h-dvh flex-col lg:flex-row` por `flex h-dvh flex-col overflow-hidden lg:flex-row`; adicionar `min-h-0` na `<div>` coluna que envolve `Topbar` + `<main>`; trocar `className="min-w-0 flex-1 p-4"` de `<main>` para incluir `overflow-y-auto` (ex.: `"min-h-0 min-w-0 flex-1 overflow-y-auto p-4"`). Ver research.md D1/D3 e contracts/app-shell-layout.md L-01..L-03.
-- [X] T003 [P] Adicionar rolagem própria à coluna desktop de navegação em `src/shared/ui/shell/sidebar-nav.tsx`: incluir `overflow-y-auto` na variante `lg:` do container `<nav>` (mantendo o comportamento atual da gaveta mobile inalterado — ver research.md D2), para que uma lista de itens longa não força a página a crescer. Ver contracts/app-shell-layout.md L-04.
-- [X] T004 [P] Revisar `src/shared/ui/shell/topbar.tsx` e confirmar que nenhuma classe ou suposição de layout (`sticky`, `fixed`, cálculo de altura) precisa ser adicionada — a garantia L-02 do contrato (`Topbar` nunca dentro de área que rola) vem inteiramente da estrutura ajustada em T002, não de CSS no próprio componente. Adicionado `shrink-0` explícito no `<header>` para impedir que o flexbox comprima a barra em viewports muito baixas.
+- [x] T002 Travar a altura da raiz do shell em `src/shared/ui/shell/app-shell.tsx`: trocar `flex min-h-dvh flex-col lg:flex-row` por `flex h-dvh flex-col overflow-hidden lg:flex-row`; adicionar `min-h-0` na `<div>` coluna que envolve `Topbar` + `<main>`; trocar `className="min-w-0 flex-1 p-4"` de `<main>` para incluir `overflow-y-auto` (ex.: `"min-h-0 min-w-0 flex-1 overflow-y-auto p-4"`). Ver research.md D1/D3 e contracts/app-shell-layout.md L-01..L-03.
+- [x] T003 [P] Adicionar rolagem própria à coluna desktop de navegação em `src/shared/ui/shell/sidebar-nav.tsx`: incluir `overflow-y-auto` na variante `lg:` do container `<nav>` (mantendo o comportamento atual da gaveta mobile inalterado — ver research.md D2), para que uma lista de itens longa não força a página a crescer. Ver contracts/app-shell-layout.md L-04.
+- [x] T004 [P] Revisar `src/shared/ui/shell/topbar.tsx` e confirmar que nenhuma classe ou suposição de layout (`sticky`, `fixed`, cálculo de altura) precisa ser adicionada — a garantia L-02 do contrato (`Topbar` nunca dentro de área que rola) vem inteiramente da estrutura ajustada em T002, não de CSS no próprio componente. Adicionado `shrink-0` explícito no `<header>` para impedir que o flexbox comprima a barra em viewports muito baixas.
 
 **Checkpoint**: Shell reestruturado — `Topbar` deixa de rolar junto com o conteúdo em qualquer página autenticada. As fases seguintes apenas validam cenários específicos, sem código novo.
 
@@ -94,8 +93,8 @@ Projeto único Next.js — código em `src/`, sem `tests/` dedicados nesta featu
 
 **Purpose**: Conferir que a mudança respeita o contrato e não introduz superfície nova.
 
-- [X] T012 Rodar `npm run lint` e `npm run format` para confirmar que as classes Tailwind adicionadas em T002–T004 seguem a configuração já estabelecida do projeto. `npm run lint`: sem problemas. `prettier --check` nos 3 arquivos alterados: formatados corretamente.
-- [X] T013 Revisar o diff final contra `contracts/app-shell-layout.md` §3 ("O que este contrato proíbe"): confirmar que nenhum `z-index`, `position: sticky/fixed` ou `padding-top` compensatório foi introduzido, e que `min-h-dvh` não foi reintroduzido na raiz do shell. Confirmado — diff final não contém nenhum desses padrões.
+- [x] T012 Rodar `npm run lint` e `npm run format` para confirmar que as classes Tailwind adicionadas em T002–T004 seguem a configuração já estabelecida do projeto. `npm run lint`: sem problemas. `prettier --check` nos 3 arquivos alterados: formatados corretamente.
+- [x] T013 Revisar o diff final contra `contracts/app-shell-layout.md` §3 ("O que este contrato proíbe"): confirmar que nenhum `z-index`, `position: sticky/fixed` ou `padding-top` compensatório foi introduzido, e que `min-h-dvh` não foi reintroduzido na raiz do shell. Confirmado — diff final não contém nenhum desses padrões.
 
 ---
 

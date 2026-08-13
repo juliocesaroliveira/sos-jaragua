@@ -32,16 +32,16 @@ A abordagem travará a altura da raiz do shell na altura da viewport (`h-dvh` fi
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Princípio | Avaliação | Veredito |
-|-----------|-----------|----------|
-| **I. Clean Architecture por Módulo** | Feature transversal de apresentação, vive inteiramente em `src/shared/ui/shell/`. Não toca `domain/` nem `application/` de nenhum módulo. | ✅ PASS |
-| **II. Tipagem Estrita e Qualidade** | Nenhuma prop, tipo ou texto novo — só classes Tailwind. Sem `any`. | ✅ PASS |
-| **III. Testes em Regras de Negócio** | Não há regra de negócio nova; é apresentação pura. Cai no carve-out do próprio princípio para `presentation/` — validação por contrato (`contracts/app-shell-layout.md`) e roteiro manual (`quickstart.md`), sem introduzir tooling de teste de componente (`@testing-library/react`) que o projeto não usa hoje. | ✅ PASS |
-| **IV. Segurança e Defesa em Profundidade** | Não altera autenticação, sessão, roles, `proxy.ts` nem `(staff)/layout.tsx`. Puramente visual. | ✅ N/A |
-| **V. Auditoria Não Bloqueante** | Nenhuma escrita de domínio. | ✅ N/A |
-| **VI. Simplicidade Operacional** | Zero dependência nova. A solução escolhida (contêiner de altura travada) evita `position: sticky/fixed` + `z-index` + sincronização de altura — menos superfície do que a alternativa avaliada e rejeitada em research.md D1. | ✅ PASS |
+| Princípio                                  | Avaliação                                                                                                                                                                                                                                                                                                         | Veredito |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **I. Clean Architecture por Módulo**       | Feature transversal de apresentação, vive inteiramente em `src/shared/ui/shell/`. Não toca `domain/` nem `application/` de nenhum módulo.                                                                                                                                                                         | ✅ PASS  |
+| **II. Tipagem Estrita e Qualidade**        | Nenhuma prop, tipo ou texto novo — só classes Tailwind. Sem `any`.                                                                                                                                                                                                                                                | ✅ PASS  |
+| **III. Testes em Regras de Negócio**       | Não há regra de negócio nova; é apresentação pura. Cai no carve-out do próprio princípio para `presentation/` — validação por contrato (`contracts/app-shell-layout.md`) e roteiro manual (`quickstart.md`), sem introduzir tooling de teste de componente (`@testing-library/react`) que o projeto não usa hoje. | ✅ PASS  |
+| **IV. Segurança e Defesa em Profundidade** | Não altera autenticação, sessão, roles, `proxy.ts` nem `(staff)/layout.tsx`. Puramente visual.                                                                                                                                                                                                                    | ✅ N/A   |
+| **V. Auditoria Não Bloqueante**            | Nenhuma escrita de domínio.                                                                                                                                                                                                                                                                                       | ✅ N/A   |
+| **VI. Simplicidade Operacional**           | Zero dependência nova. A solução escolhida (contêiner de altura travada) evita `position: sticky/fixed` + `z-index` + sincronização de altura — menos superfície do que a alternativa avaliada e rejeitada em research.md D1.                                                                                     | ✅ PASS  |
 
 **Gate pós-desenho (Phase 1)**: reavaliado ao fim deste documento — sem violações, `Complexity Tracking` vazio.
 
@@ -81,7 +81,7 @@ src/shared/ui/shell/
 
 As duas escolhas que importam:
 
-1. **Contêiner de altura travada, não `sticky`/`fixed` no `Topbar`.** Ver research.md D1 — a alternativa `sticky` exigiria resolver empilhamento com a gaveta mobile (que hoje fica *acima* do `Topbar` no fluxo, não em overlay); o contêiner travado evita esse conflito por construção, sem tocar `SidebarNav`.
+1. **Contêiner de altura travada, não `sticky`/`fixed` no `Topbar`.** Ver research.md D1 — a alternativa `sticky` exigiria resolver empilhamento com a gaveta mobile (que hoje fica _acima_ do `Topbar` no fluxo, não em overlay); o contêiner travado evita esse conflito por construção, sem tocar `SidebarNav`.
 2. **`SidebarNav` não muda de comportamento, só ganha `overflow-y-auto` na variante desktop.** A gaveta mobile continua empurrando o layout (research.md D2) — o pedido da spec é sobre o `Topbar`, não uma reformulação da navegação.
 
 ## Complexity Tracking

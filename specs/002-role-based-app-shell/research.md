@@ -11,7 +11,7 @@ Todas as `NEEDS CLARIFICATION` do Technical Context foram resolvidas — a stack
 
 **Decisão**: A fronteira é o route group, não uma lista de rotas. `(publico)/` = sem shell; `(interno)/` = com shell. Três páginas hoje pré-autenticação — landing `/`, `/login`, `/cadastro` — vão para `(publico)`. Todo o resto vai para `(interno)`.
 
-**Rationale**: Uma lista de exceções ("estas rotas não têm shell") apodrece: a próxima página nasce fora dela e ninguém percebe. A estrutura de diretórios torna a fronteira visível no momento em que o arquivo é criado, e é exatamente o mesmo raciocínio *deny-by-default* que `rotas.ts` já aplica à autorização — consistência de modelo mental entre as duas camadas.
+**Rationale**: Uma lista de exceções ("estas rotas não têm shell") apodrece: a próxima página nasce fora dela e ninguém percebe. A estrutura de diretórios torna a fronteira visível no momento em que o arquivo é criado, e é exatamente o mesmo raciocínio _deny-by-default_ que `rotas.ts` já aplica à autorização — consistência de modelo mental entre as duas camadas.
 
 **Ponto sensível descoberto durante a pesquisa**: `ehRotaPublica()` isenta **apenas** `/login`. Pelo `proxy.ts`, `/`, `/cadastro` e `/voluntariado/candidatura` exigem sessão. Mas o código dessas três páginas foi escrito para visitante deslogado — a landing afirma em comentário estar "excluída do matcher do `proxy.ts`" (não está: o matcher casa `/`), e `candidatura/page.tsx` tem um caminho que mostra "entre ou crie conta" a quem chega sem sessão, hoje inalcançável. `rotas.test.ts` confirma o comportamento atual como intencional (`'/'` e `'/cadastro'` asseridos como não-públicos).
 
@@ -23,8 +23,9 @@ Isso é um defeito ou uma decisão de 001 — **esta feature não resolve nem al
 O que **não** pode acontecer é o shell autenticado aparecer em uma tela de login — e a separação por grupo garante isso independentemente de como a inconsistência for resolvida.
 
 **Alternativas consideradas**:
-- *Um único layout raiz que decide renderizar o shell conforme o pathname*: rejeitado — coloca lógica de roteamento em tempo de render, quebra o mapeamento direto arquivo→layout do App Router e é fácil de errar em rota nova.
-- *Adicionar o shell página a página*: rejeitado — viola FR-004 explicitamente e é o problema que a feature existe para eliminar.
+
+- _Um único layout raiz que decide renderizar o shell conforme o pathname_: rejeitado — coloca lógica de roteamento em tempo de render, quebra o mapeamento direto arquivo→layout do App Router e é fácil de errar em rota nova.
+- _Adicionar o shell página a página_: rejeitado — viola FR-004 explicitamente e é o problema que a feature existe para eliminar.
 
 ---
 
@@ -34,13 +35,14 @@ O que **não** pode acontecer é o shell autenticado aparecer em uma tela de log
 
 **Rationale**: Dois gates em camadas espelham exatamente os dois níveis de autorização que já existem — "tem sessão" e "tem role de staff". Aninhar significa que o shell é escrito uma vez e que o gate de role continua onde estava conceitualmente, sem que nenhum layout precise saber do outro. Uma página de staff nova continua herdando os dois gates; uma página autenticada não-staff herda só o primeiro.
 
-O `exigirRoles` do layout de staff permanece porque a constituição (Princípio IV) exige defesa em profundidade — remover a checagem de role do render, confiando só no `proxy.ts`, seria o único jeito de esta feature *piorar* a segurança. Não fazemos isso.
+O `exigirRoles` do layout de staff permanece porque a constituição (Princípio IV) exige defesa em profundidade — remover a checagem de role do render, confiando só no `proxy.ts`, seria o único jeito de esta feature _piorar_ a segurança. Não fazemos isso.
 
 **Efeito colateral positivo**: as páginas de `usuario`/`voluntario` hoje **não têm nenhuma checagem no render** — dependem só do proxy. Sob `(interno)`, passam a ter `exigirSessao()`. A feature fecha essa lacuna de defesa em profundidade de graça.
 
 **Alternativas consideradas**:
-- *Grupos irmãos `(staff)` e `(voluntario)`, cada um com seu layout renderizando o shell*: rejeitado — duplica a montagem do shell e a busca de notificações em dois lugares, que é a origem do problema atual.
-- *Um `(interno)` plano, sem `(staff)` aninhado, com o gate de role movido para cada página*: rejeitado — espalha a checagem por ~12 páginas em vez de concentrá-la em um layout; contraria "presentation é a camada mais fina" (Princípio I).
+
+- _Grupos irmãos `(staff)` e `(voluntario)`, cada um com seu layout renderizando o shell_: rejeitado — duplica a montagem do shell e a busca de notificações em dois lugares, que é a origem do problema atual.
+- _Um `(interno)` plano, sem `(staff)` aninhado, com o gate de role movido para cada página_: rejeitado — espalha a checagem por ~12 páginas em vez de concentrá-la em um layout; contraria "presentation é a camada mais fina" (Princípio I).
 
 ---
 
@@ -55,8 +57,9 @@ Declaração explícita + trava por teste dá o melhor dos dois: satisfaz FR-021
 **Por que igualdade e não subconjunto**: exigir apenas `roles do item ⊆ roles da regra` deixaria passar um item invisível para quem tem direito a ele — FR-013 exige mostrar **todos** os destinos permitidos, não apenas alguns. Igualdade pega os dois erros de uma vez.
 
 **Alternativas consideradas**:
-- *Derivar tudo de `podeAcessar`*: rejeitado pelo motivo acima — silenciosamente errado para rotas fora do mapa.
-- *Adicionar `/voluntariado/candidatura` e os demais a `REGRAS_DE_ROTA` e derivar*: rejeitado — mudaria regra de autorização (endurecendo o acesso ao formulário de candidatura) para resolver um problema de menu. A spec é explícita: nenhuma regra de autorização é alterada por esta feature.
+
+- _Derivar tudo de `podeAcessar`_: rejeitado pelo motivo acima — silenciosamente errado para rotas fora do mapa.
+- _Adicionar `/voluntariado/candidatura` e os demais a `REGRAS_DE_ROTA` e derivar_: rejeitado — mudaria regra de autorização (endurecendo o acesso ao formulário de candidatura) para resolver um problema de menu. A spec é explícita: nenhuma regra de autorização é alterada por esta feature.
 
 ---
 
@@ -69,8 +72,9 @@ Declaração explícita + trava por teste dá o melhor dos dois: satisfaz FR-021
 **Consequência a registrar**: com essa decisão, o menu do Administrador é hoje **idêntico** ao do Coordenador. Isso é correto e esperado — reflete que a área de administração ainda não foi construída, não que a distinção de perfis falhou. FR-020 fica satisfeito na estrutura (o registro suporta o grupo "Administração" e a role `administrador`), e passa a ser satisfeito na prática assim que a primeira página de admin existir, adicionando uma linha ao registro.
 
 **Alternativas consideradas**:
-- *Criar páginas-esqueleto de administração nesta feature*: rejeitado — expande o escopo para além do que a spec delimitou; construir a área de admin é uma feature própria.
-- *Exibir o item desabilitado com "em breve"*: rejeitado — ruído na interface de operação de campo, sem valor para quem está usando o sistema durante uma crise.
+
+- _Criar páginas-esqueleto de administração nesta feature_: rejeitado — expande o escopo para além do que a spec delimitou; construir a área de admin é uma feature própria.
+- _Exibir o item desabilitado com "em breve"_: rejeitado — ruído na interface de operação de campo, sem valor para quem está usando o sistema durante uma crise.
 
 ---
 
@@ -93,8 +97,9 @@ Declaração explícita + trava por teste dá o melhor dos dois: satisfaz FR-021
 **Rationale**: Derivar os grupos da lista já filtrada, em vez de declarar uma árvore grupo→itens, torna FR-026 uma consequência estrutural em vez de uma regra que alguém precisa lembrar de aplicar. Um perfil com um único item nunca produz um cabeçalho de grupo órfão.
 
 **Alternativas consideradas**:
-- *Estrutura aninhada `{ grupo, itens: [] }`*: rejeitado — obriga a filtrar em dois níveis e a podar grupos vazios manualmente, exatamente o passo que se esquece.
-- *Sem agrupamento*: é o estado atual; aceitável para os 5 itens do voluntário, ruim para os 12+ do coordenador. A spec priorizou como P2, então entra, mas depois das duas histórias P1.
+
+- _Estrutura aninhada `{ grupo, itens: [] }`_: rejeitado — obriga a filtrar em dois níveis e a podar grupos vazios manualmente, exatamente o passo que se esquece.
+- _Sem agrupamento_: é o estado atual; aceitável para os 5 itens do voluntário, ruim para os 12+ do coordenador. A spec priorizou como P2, então entra, mas depois das duas histórias P1.
 
 ---
 

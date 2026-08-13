@@ -14,7 +14,7 @@ Hoje, a barra superior (topbar) rola junto com o conteúdo da página: em págin
 
 Esta feature torna o topbar fixo (fica sempre visível, ancorado ao topo da viewport) em todas as páginas autenticadas que possuem rolagem, para desktop e mobile. O conteúdo da página passa a rolar por baixo do topbar, sem nunca cobri-lo ou escondê-lo.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Acessar o menu em qualquer ponto da rolagem (Priority: P1)
 
@@ -66,7 +66,7 @@ Uma pessoa navega entre diferentes páginas do sistema (com e sem rolagem, com e
 - O que acontece na página de "não encontrado" (404) quando exibida dentro do shell autenticado? O topbar deve permanecer fixo da mesma forma que nas demais páginas autenticadas.
 - Como o topbar fixo se comporta ao redimensionar a janela ou girar o dispositivo (retrato/paisagem)? Ele deve permanecer fixo e não deve haver sobreposição de conteúdo em nenhuma orientação.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -80,9 +80,9 @@ Uma pessoa navega entre diferentes páginas do sistema (com e sem rolagem, com e
 
 ### Key Entities
 
-*(Esta feature é puramente de comportamento visual/estrutural de layout; não introduz novas entidades de dados.)*
+_(Esta feature é puramente de comportamento visual/estrutural de layout; não introduz novas entidades de dados.)_
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

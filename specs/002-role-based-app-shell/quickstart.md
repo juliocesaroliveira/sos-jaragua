@@ -21,18 +21,18 @@ npm run db:migrate
 npm run db:seed
 ```
 
-| E-mail | Perfil | Dados relacionados |
-|--------|--------|--------------------|
-| `usuario1@teste.local` | `usuario` | perfil `pendente` · 1 habilidade |
-| `usuario2@teste.local` | `usuario` | perfil `pendente` · 2 habilidades |
-| `usuario3@teste.local` | `usuario` | perfil `pendente` · restrição de saúde |
-| `usuario4@teste.local` | `usuario` | perfil `pendente` · 1 habilidade |
-| `usuario5@teste.local` | `usuario` | perfil `rejeitado` · com motivo |
-| `voluntario1@teste.local` | `voluntario` | perfil `aprovado` · 2 habilidades · escalado |
-| `voluntario2@teste.local` | `voluntario` | perfil `aprovado` · 2 habilidades · escalado |
-| `coordenador1@teste.local` | `coordenador` | aprovador dos voluntários |
-| `coordenador2@teste.local` | `coordenador` | — |
-| `defesa-civil1@teste.local` | `membro_defesa_civil` | — |
+| E-mail                      | Perfil                | Dados relacionados                           |
+| --------------------------- | --------------------- | -------------------------------------------- |
+| `usuario1@teste.local`      | `usuario`             | perfil `pendente` · 1 habilidade             |
+| `usuario2@teste.local`      | `usuario`             | perfil `pendente` · 2 habilidades            |
+| `usuario3@teste.local`      | `usuario`             | perfil `pendente` · restrição de saúde       |
+| `usuario4@teste.local`      | `usuario`             | perfil `pendente` · 1 habilidade             |
+| `usuario5@teste.local`      | `usuario`             | perfil `rejeitado` · com motivo              |
+| `voluntario1@teste.local`   | `voluntario`          | perfil `aprovado` · 2 habilidades · escalado |
+| `voluntario2@teste.local`   | `voluntario`          | perfil `aprovado` · 2 habilidades · escalado |
+| `coordenador1@teste.local`  | `coordenador`         | aprovador dos voluntários                    |
+| `coordenador2@teste.local`  | `coordenador`         | —                                            |
+| `defesa-civil1@teste.local` | `membro_defesa_civil` | —                                            |
 
 O `administrador` continua vindo do bootstrap `ADMIN_EMAIL`/`ADMIN_PASSWORD`, não deste elenco.
 
@@ -70,19 +70,19 @@ Se apenas um teste puder rodar, que seja INV-01. Ele é o que impede menu e auto
 
 Para **cada** perfil, autentique e percorra as páginas acessíveis. Em todas: topbar visível com nome e rótulo do perfil, sidebar presente, ação de sair alcançável.
 
-| Perfil | Páginas a percorrer |
-|--------|---------------------|
-| `usuario` | `/voluntariado/candidatura`, `/sem-permissao` |
-| `voluntario` | `/voluntariado/minhas-atividades`, `/voluntariado/candidatura`, `/sem-permissao` |
+| Perfil                | Páginas a percorrer                                                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `usuario`             | `/voluntariado/candidatura`, `/sem-permissao`                                                                                                                      |
+| `voluntario`          | `/voluntariado/minhas-atividades`, `/voluntariado/candidatura`, `/sem-permissao`                                                                                   |
 | `membro_defesa_civil` | `/dashboard`, `/cadastros-pendentes`, `/voluntarios`, `/atividades`, `/crise`, `/estoque`, `/estoque/entrada`, `/estoque/saida`, `/voluntariado/minhas-atividades` |
-| `coordenador` | todas as de `membro_defesa_civil` + `/estoque/kits`, `/estoque/descarte`, `/convocacao`, `/relatorios` |
-| `administrador` | idênticas às de `coordenador` (ver [data-model.md](./data-model.md), observação 3) |
+| `coordenador`         | todas as de `membro_defesa_civil` + `/estoque/kits`, `/estoque/descarte`, `/convocacao`, `/relatorios`                                                             |
+| `administrador`       | idênticas às de `coordenador` (ver [data-model.md](./data-model.md), observação 3)                                                                                 |
 
 ### Ausência do shell (SC-002)
 
 Deslogado, confirme que **nenhuma** destas exibe o shell autenticado: `/login`, `/cadastro`, `/`.
 
-> Se `/cadastro` e `/` redirecionarem para `/login` em vez de renderizar, isso é o comportamento *deny-by-default* pré-existente descrito em [research.md](./research.md) D1 — **não** uma regressão desta feature. Confirme que o comportamento é idêntico ao de antes da mudança.
+> Se `/cadastro` e `/` redirecionarem para `/login` em vez de renderizar, isso é o comportamento _deny-by-default_ pré-existente descrito em [research.md](./research.md) D1 — **não** uma regressão desta feature. Confirme que o comportamento é idêntico ao de antes da mudança.
 
 ### Preservação de URLs
 
@@ -96,9 +96,9 @@ Para cada perfil, compare a sidebar renderizada contra a matriz de [data-model.m
 
 1. **Nada a menos**: todo destino marcado `✓` para o perfil aparece.
 2. **Nada a mais**: nenhum destino não marcado aparece. Verificações-chave:
-   - `membro_defesa_civil` **não** vê Kits, Descarte, Convocação, Relatórios.
-   - `voluntario` **não** vê nenhum destino de gestão.
-   - `coordenador`/`administrador` **não** veem "Quero ser voluntário".
+    - `membro_defesa_civil` **não** vê Kits, Descarte, Convocação, Relatórios.
+    - `voluntario` **não** vê nenhum destino de gestão.
+    - `coordenador`/`administrador` **não** veem "Quero ser voluntário".
 3. **Sem becos sem saída (SC-004)**: clique em **todos** os itens visíveis do perfil. Nenhum pode resultar em `/sem-permissao` nem em 404.
 
 ### Item ativo (FR-014, G-09)
@@ -175,14 +175,14 @@ npm run build && npm run start
 
 ## Critérios de conclusão
 
-| # | Critério | Nível |
-|---|----------|-------|
-| SC-001 | 100% das páginas autenticadas com topbar + sidebar | 2 |
-| SC-002 | 0% das páginas não autenticadas com shell | 2 |
-| SC-003 | Itens conferem exatamente com a matriz, nos 5 perfis | 1, 3 |
-| SC-004 | 0% dos itens visíveis levam a negativa ou 404 | 3 |
-| SC-005 | Sair em ≤2 cliques de qualquer página | 6 |
-| SC-006 | Qualquer destino permitido em ≤2 cliques | 3 |
-| SC-007 | Menu operável por teclado, sem armadilha de foco | 5 |
-| SC-008 | 360px sem rolagem horizontal | 5 |
-| SC-009 | Sem regressão na primeira renderização útil | 7 |
+| #      | Critério                                             | Nível |
+| ------ | ---------------------------------------------------- | ----- |
+| SC-001 | 100% das páginas autenticadas com topbar + sidebar   | 2     |
+| SC-002 | 0% das páginas não autenticadas com shell            | 2     |
+| SC-003 | Itens conferem exatamente com a matriz, nos 5 perfis | 1, 3  |
+| SC-004 | 0% dos itens visíveis levam a negativa ou 404        | 3     |
+| SC-005 | Sair em ≤2 cliques de qualquer página                | 6     |
+| SC-006 | Qualquer destino permitido em ≤2 cliques             | 3     |
+| SC-007 | Menu operável por teclado, sem armadilha de foco     | 5     |
+| SC-008 | 360px sem rolagem horizontal                         | 5     |
+| SC-009 | Sem regressão na primeira renderização útil          | 7     |

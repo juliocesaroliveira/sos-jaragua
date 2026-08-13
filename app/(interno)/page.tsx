@@ -31,9 +31,7 @@ export default async function HomePage() {
     return (
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 py-4">
             <header className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-                    Olá, {primeiroNome}
-                </h1>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Olá, {primeiroNome}</h1>
                 <p className="text-base text-neutral-500 dark:text-neutral-400">
                     Você está conectado como {ROTULO_ROLE[ator.role]}.
                 </p>
@@ -70,9 +68,7 @@ export default async function HomePage() {
                                                     className="size-6 shrink-0 text-primary-600 dark:text-primary-400"
                                                 />
                                             ) : null}
-                                            <span className="text-lg font-semibold text-foreground">
-                                                {item.rotulo}
-                                            </span>
+                                            <span className="text-lg font-semibold text-foreground">{item.rotulo}</span>
                                         </span>
                                         <span className="text-sm text-neutral-600 dark:text-neutral-300">
                                             {item.atalho.descricao}

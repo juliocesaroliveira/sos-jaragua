@@ -25,14 +25,14 @@ ornamentação.
 uma paleta hexadecimal customizada. Isso garante uma escala com 11 tons (`50`–`950`)
 consistente e testada, sem trabalho de curadoria manual.
 
-| Token semântico | Paleta base | Uso |
-| --- | --- | --- |
+| Token semântico             | Paleta base         | Uso                                                                            |
+| --------------------------- | ------------------- | ------------------------------------------------------------------------------ |
 | `--color-primary-{50..950}` | `orange` (Tailwind) | Cor de marca "Defesa Civil" — ações primárias, links, foco, destaques de marca |
-| `--color-neutral-{50..950}` | `slate` (Tailwind) | Texto, bordas, fundos de superfície, ícones secundários |
-| `--color-success-{50..950}` | `green` | Aprovações, saldo suficiente, confirmações |
-| `--color-warning-{50..950}` | `amber` | Pendências, alertas de atenção (ex.: cadastros acumulados) |
-| `--color-danger-{50..950}` | `red` | Erros, rejeições, déficit de estoque, cancelamentos, urgência |
-| `--color-info-{50..950}` | `blue` | Estados informativos neutros (ex.: atividade "aberta") |
+| `--color-neutral-{50..950}` | `slate` (Tailwind)  | Texto, bordas, fundos de superfície, ícones secundários                        |
+| `--color-success-{50..950}` | `green`             | Aprovações, saldo suficiente, confirmações                                     |
+| `--color-warning-{50..950}` | `amber`             | Pendências, alertas de atenção (ex.: cadastros acumulados)                     |
+| `--color-danger-{50..950}`  | `red`               | Erros, rejeições, déficit de estoque, cancelamentos, urgência                  |
+| `--color-info-{50..950}`    | `blue`              | Estados informativos neutros (ex.: atividade "aberta")                         |
 
 Adicionar em `app/globals.css`, dentro de `@theme inline`:
 
@@ -76,7 +76,7 @@ Adicionar em `app/globals.css`, dentro de `@theme inline`:
 
 `primary`/`neutral`/`success`/`warning`/`danger`/`info` **não variam entre claro/escuro** —
 são as mesmas 11 tonalidades oklch em ambos os modos (é assim que os presets do Tailwind
-já funcionam; o que muda é *qual tom da escala* é usado para uma função, ver §1.6). Já os
+já funcionam; o que muda é _qual tom da escala_ é usado para uma função, ver §1.6). Já os
 tokens de **superfície** (`background`, `foreground`, `surface`, `border`, etc.) mudam de
 valor por modo — ver tabela completa na §2.
 
@@ -88,16 +88,16 @@ valor por modo — ver tabela completa na §2.
 - **Escala semântica** — usar diretamente as classes utilitárias do Tailwind, sem criar
   tokens novos de tamanho:
 
-| Papel | Classes Tailwind | Uso |
-| --- | --- | --- |
-| `h1` (título de página) | `text-3xl font-bold tracking-tight` (`md:text-4xl`) | Título principal de cada tela |
-| `h2` (seção) | `text-2xl font-semibold tracking-tight` | Cabeçalho de seção/card grande |
-| `h3` (subseção) | `text-xl font-semibold` | Cabeçalho de card/painel |
-| `h4` | `text-lg font-semibold` | Subtítulo dentro de card |
-| `body` (padrão) | `text-base font-normal` | Texto corrido, valor de campos |
-| `body-sm` | `text-sm font-normal` | Texto secundário, descrições |
-| `label` | `text-sm font-medium` | Rótulo de campo de formulário |
-| `caption` | `text-xs font-normal text-neutral-500` | Metadados, timestamps, contadores |
+| Papel                   | Classes Tailwind                                    | Uso                               |
+| ----------------------- | --------------------------------------------------- | --------------------------------- |
+| `h1` (título de página) | `text-3xl font-bold tracking-tight` (`md:text-4xl`) | Título principal de cada tela     |
+| `h2` (seção)            | `text-2xl font-semibold tracking-tight`             | Cabeçalho de seção/card grande    |
+| `h3` (subseção)         | `text-xl font-semibold`                             | Cabeçalho de card/painel          |
+| `h4`                    | `text-lg font-semibold`                             | Subtítulo dentro de card          |
+| `body` (padrão)         | `text-base font-normal`                             | Texto corrido, valor de campos    |
+| `body-sm`               | `text-sm font-normal`                               | Texto secundário, descrições      |
+| `label`                 | `text-sm font-medium`                               | Rótulo de campo de formulário     |
+| `caption`               | `text-xs font-normal text-neutral-500`              | Metadados, timestamps, contadores |
 
 **Regra de clareza sob estresse**: nunca usar tamanho abaixo de `text-sm` (14px) para
 informação acionável (valores, erros, botões). `text-xs` é reservado a metadados
@@ -117,11 +117,11 @@ não-críticos.
 
 Estilo definido: **suave/amigável**. Usar diretamente a escala padrão do Tailwind:
 
-| Elemento | Classe |
-| --- | --- |
-| Botões, inputs, selects, badges retangulares | `rounded-lg` (0.5rem / 8px) |
-| Cards, dialogs, drawers, painéis | `rounded-xl` (0.75rem / 12px) |
-| Badges/tags de status, avatar, pills, switch | `rounded-full` |
+| Elemento                                     | Classe                        |
+| -------------------------------------------- | ----------------------------- |
+| Botões, inputs, selects, badges retangulares | `rounded-lg` (0.5rem / 8px)   |
+| Cards, dialogs, drawers, painéis             | `rounded-xl` (0.75rem / 12px) |
+| Badges/tags de status, avatar, pills, switch | `rounded-full`                |
 
 ### 1.5. Sombras / elevação
 
@@ -131,18 +131,18 @@ de tokens:
 - **Modo claro**: `shadow-sm` em cards e `shadow-md` em elementos flutuantes (dialog,
   popover, menu) é suficiente — sombra discreta, não decorativa.
 - **Modo escuro**: sombra é pouco perceptível sobre fundo escuro — priorizar `border
-  border-neutral-800` em vez de depender de `shadow-*` para separar superfícies.
+border-neutral-800` em vez de depender de `shadow-*` para separar superfícies.
 
 ### 1.6. Uso de tons por função (light vs. dark)
 
-| Função | Claro | Escuro | Motivo |
-| --- | --- | --- | --- |
-| Ação primária (fundo de botão) | `primary-600` | `primary-500` | `600` garante contraste AA sobre branco; `500` é suficientemente vívido sobre fundo escuro e evita saturação excessiva |
-| Texto sobre ação primária | `white` (`primary-foreground`) | `white` | Contraste consistente nos dois modos |
-| Texto padrão | `neutral-900` | `neutral-100` | — |
-| Texto secundário | `neutral-500` | `neutral-400` | — |
-| Borda padrão | `neutral-200` | `neutral-800` | — |
-| Anel de foco | `primary-500` | `primary-400` | Visibilidade em ambos os fundos |
+| Função                         | Claro                          | Escuro        | Motivo                                                                                                                 |
+| ------------------------------ | ------------------------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Ação primária (fundo de botão) | `primary-600`                  | `primary-500` | `600` garante contraste AA sobre branco; `500` é suficientemente vívido sobre fundo escuro e evita saturação excessiva |
+| Texto sobre ação primária      | `white` (`primary-foreground`) | `white`       | Contraste consistente nos dois modos                                                                                   |
+| Texto padrão                   | `neutral-900`                  | `neutral-100` | —                                                                                                                      |
+| Texto secundário               | `neutral-500`                  | `neutral-400` | —                                                                                                                      |
+| Borda padrão                   | `neutral-200`                  | `neutral-800` | —                                                                                                                      |
+| Anel de foco                   | `primary-500`                  | `primary-400` | Visibilidade em ambos os fundos                                                                                        |
 
 ### 1.7. Breakpoints
 
@@ -167,15 +167,15 @@ Escala padrão do Tailwind (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`
 
 Extensão direta do padrão já existente em `app/globals.css` (`:root` vs. `:root.dark`).
 
-| Token CSS | Claro | Escuro | Uso |
-| --- | --- | --- | --- |
-| `--background` | `#ffffff` | `#0a0a0a` | Já existente — fundo da página |
-| `--foreground` | `#171717` | `#ededed` | Já existente — texto padrão |
-| `--surface` | `oklch(1 0 0)` (branco) | `var(--color-neutral-900)` | Fundo de cards/painéis |
-| `--surface-muted` | `var(--color-neutral-50)` | `var(--color-neutral-800)` | Fundo de seções secundárias, hover de linha de tabela |
-| `--border` | `var(--color-neutral-200)` | `var(--color-neutral-800)` | Borda padrão de inputs/cards |
-| `--border-strong` | `var(--color-neutral-300)` | `var(--color-neutral-700)` | Divisores com mais ênfase |
-| `--primary-foreground` | `#ffffff` | `#ffffff` | Texto sobre fundo `primary-*` |
+| Token CSS              | Claro                      | Escuro                     | Uso                                                   |
+| ---------------------- | -------------------------- | -------------------------- | ----------------------------------------------------- |
+| `--background`         | `#ffffff`                  | `#0a0a0a`                  | Já existente — fundo da página                        |
+| `--foreground`         | `#171717`                  | `#ededed`                  | Já existente — texto padrão                           |
+| `--surface`            | `oklch(1 0 0)` (branco)    | `var(--color-neutral-900)` | Fundo de cards/painéis                                |
+| `--surface-muted`      | `var(--color-neutral-50)`  | `var(--color-neutral-800)` | Fundo de seções secundárias, hover de linha de tabela |
+| `--border`             | `var(--color-neutral-200)` | `var(--color-neutral-800)` | Borda padrão de inputs/cards                          |
+| `--border-strong`      | `var(--color-neutral-300)` | `var(--color-neutral-700)` | Divisores com mais ênfase                             |
+| `--primary-foreground` | `#ffffff`                  | `#ffffff`                  | Texto sobre fundo `primary-*`                         |
 
 Implementação: adicionar essas variáveis nos mesmos blocos já existentes em
 `app/globals.css` (`:root`, `@media (prefers-color-scheme: dark) :root:not(.light):not(.dark)`,
@@ -188,25 +188,25 @@ e `:root.dark`), seguindo exatamente o padrão já usado por `--background`/`--f
 Todo `Badge`/`Tag` de status no sistema **deve** usar esta tabela — não inventar cores
 ad-hoc por tela.
 
-| Entidade.campo | Valor | Cor semântica |
-| --- | --- | --- |
-| `voluntario_perfil.status` | `pendente` | `warning` |
-| `voluntario_perfil.status` | `aprovado` | `success` |
-| `voluntario_perfil.status` | `rejeitado` | `danger` |
-| `atividade.status` | `aberta` | `info` |
-| `atividade.status` | `encerrada` | `neutral` |
-| `atividade.status` | `cancelada` | `danger` |
-| `alocacao.status` | `confirmado` | `success` |
-| `alocacao.status` | `cancelado` | `danger` |
-| `saida.tipo` | `avulso` | `neutral` |
-| `saida.tipo` | `kit` | `primary` |
-| `notificacao_envio.status` | `pendente` | `warning` |
-| `notificacao_envio.status` | `enviado` | `success` |
-| `notificacao_envio.status` | `falhou` | `danger` |
-| Turno com déficit (Kanban, `preenchidas < vagas`) | — | fundo `danger-50`/borda `danger-400` (claro), `danger-950`/`danger-700` (escuro) |
-| Alerta "Estoque Crítico" | — | banner `warning` |
-| Alerta "Déficit de Atendimento" | — | banner `danger` |
-| Alerta "Cadastros Acumulados" | — | banner `info` |
+| Entidade.campo                                    | Valor        | Cor semântica                                                                    |
+| ------------------------------------------------- | ------------ | -------------------------------------------------------------------------------- |
+| `voluntario_perfil.status`                        | `pendente`   | `warning`                                                                        |
+| `voluntario_perfil.status`                        | `aprovado`   | `success`                                                                        |
+| `voluntario_perfil.status`                        | `rejeitado`  | `danger`                                                                         |
+| `atividade.status`                                | `aberta`     | `info`                                                                           |
+| `atividade.status`                                | `encerrada`  | `neutral`                                                                        |
+| `atividade.status`                                | `cancelada`  | `danger`                                                                         |
+| `alocacao.status`                                 | `confirmado` | `success`                                                                        |
+| `alocacao.status`                                 | `cancelado`  | `danger`                                                                         |
+| `saida.tipo`                                      | `avulso`     | `neutral`                                                                        |
+| `saida.tipo`                                      | `kit`        | `primary`                                                                        |
+| `notificacao_envio.status`                        | `pendente`   | `warning`                                                                        |
+| `notificacao_envio.status`                        | `enviado`    | `success`                                                                        |
+| `notificacao_envio.status`                        | `falhou`     | `danger`                                                                         |
+| Turno com déficit (Kanban, `preenchidas < vagas`) | —            | fundo `danger-50`/borda `danger-400` (claro), `danger-950`/`danger-700` (escuro) |
+| Alerta "Estoque Crítico"                          | —            | banner `warning`                                                                 |
+| Alerta "Déficit de Atendimento"                   | —            | banner `danger`                                                                  |
+| Alerta "Cadastros Acumulados"                     | —            | banner `info`                                                                    |
 
 ---
 
@@ -336,7 +336,7 @@ focus-visible:ring-offset-2`.
 ### 4.15. Skeleton
 
 - Componente próprio: bloco `bg-neutral-200 dark:bg-neutral-800 animate-pulse
-  rounded-lg`. Usado em listagens/dashboard durante carregamento (Suspense boundaries dos
+rounded-lg`. Usado em listagens/dashboard durante carregamento (Suspense boundaries dos
   Server Components).
 
 ### 4.16. KanbanCard / KanbanColumn
@@ -396,7 +396,7 @@ compostas de `select/`).
 ## 6. Diretrizes de Acessibilidade e Responsividade
 
 - **Foco visível obrigatório** em todo elemento interativo (`focus-visible:ring-2
-  ring-primary-500`/`ring-primary-400` no escuro) — nunca `outline-none` sem substituto.
+ring-primary-500`/`ring-primary-400` no escuro) — nunca `outline-none` sem substituto.
 - **Contraste mínimo AA** (4.5:1 para texto normal, 3:1 para texto grande/ícones) —
   garantido pela escolha de tons por função na §1.6; não usar `primary-400`/`primary-300`
   como fundo de texto no claro (contraste insuficiente sobre branco).

@@ -40,7 +40,7 @@ O projeto já tem dois wrappers Ark UI relevantes em `src/shared/ui/`:
 
 **Decisão**: manter `menuAberto`/`setMenuAberto` como a única fonte de verdade em `AppShell` (sem mudança de forma), só que agora alimentando `useMenu({ open: menuAberto, onOpenChange, positioning })`. O `store` resultante é compartilhado entre `Topbar` (que renderiza `Menu.Trigger asChild` em volta do `IconButton` já existente) e o novo painel via `Menu.RootProvider`, já que ambos precisam estar no mesmo "menu" mas vivem em componentes-irmãos dentro de `AppShell`.
 
-**Por quê**: `Menu.RootProvider` existe exatamente para esse caso — separar o *store* (criado uma vez, no componente pai) do *trigger* e do *conteúdo* (que podem viver em componentes-filhos diferentes) — documentado em `menu-root-provider.d.ts`. Sem isso, `Menu.Trigger` e `Menu.Positioner`/`Content` precisariam estar na mesma árvore direta de `Menu.Root`, o que forçaria fundir `Topbar` e o painel num único componente.
+**Por quê**: `Menu.RootProvider` existe exatamente para esse caso — separar o _store_ (criado uma vez, no componente pai) do _trigger_ e do _conteúdo_ (que podem viver em componentes-filhos diferentes) — documentado em `menu-root-provider.d.ts`. Sem isso, `Menu.Trigger` e `Menu.Positioner`/`Content` precisariam estar na mesma árvore direta de `Menu.Root`, o que forçaria fundir `Topbar` e o painel num único componente.
 
 **Alternativas consideradas**: mover o botão de hambúrguer para dentro do próprio componente de painel (eliminando a necessidade de compartilhar o store). Rejeitado — o botão pertence visualmente e semanticamente ao topbar (FR-002/FR-003), e movê-lo mudaria a barra superior sem necessidade.
 
@@ -64,11 +64,11 @@ O projeto já tem dois wrappers Ark UI relevantes em `src/shared/ui/`:
 
 ## Resumo das decisões
 
-| # | Decisão |
-|---|---------|
-| D1 | Primitivos brutos do Ark UI Menu, não o wrapper `Menu` existente nem `Drawer` |
-| D2 | `positioning.getAnchorElement` no `<header>` do Topbar + `placement: 'bottom'` + `sameWidth: true` |
-| D3 | `useMenu` controlado por `menuAberto`, compartilhado via `Menu.RootProvider` entre `Topbar` e o novo painel |
-| D4 | `Menu.ItemGroup`/`ItemGroupLabel` + `Menu.Item asChild` com `<Link>`, espelhando a estrutura de `sidebar-nav.tsx` |
-| D5 | `SidebarNav` volta a ser desktop-only; a variante mobile some dela |
-| D6 | Sem teste automatizado novo |
+| #   | Decisão                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------- |
+| D1  | Primitivos brutos do Ark UI Menu, não o wrapper `Menu` existente nem `Drawer`                                     |
+| D2  | `positioning.getAnchorElement` no `<header>` do Topbar + `placement: 'bottom'` + `sameWidth: true`                |
+| D3  | `useMenu` controlado por `menuAberto`, compartilhado via `Menu.RootProvider` entre `Topbar` e o novo painel       |
+| D4  | `Menu.ItemGroup`/`ItemGroupLabel` + `Menu.Item asChild` com `<Link>`, espelhando a estrutura de `sidebar-nav.tsx` |
+| D5  | `SidebarNav` volta a ser desktop-only; a variante mobile some dela                                                |
+| D6  | Sem teste automatizado novo                                                                                       |

@@ -5,10 +5,10 @@ Contrato de comportamento observável da página de login, incluindo o Server Co
 
 ## `page.tsx` (Server Component)
 
-| Situação | Comportamento |
-|---|---|
+| Situação                                           | Comportamento                                                                                                                                                                          |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Requisição chega com sessão válida já estabelecida | `redirect()` para a área correspondente ao papel do usuário (ex.: `/dashboard` para staff, `/voluntariado/minhas-atividades` para voluntário) — nunca renderiza o formulário (FR-003). |
-| Requisição sem sessão válida | Renderiza `LoginForm` no estado inicial (`modo: 'opcoes'`). |
+| Requisição sem sessão válida                       | Renderiza `LoginForm` no estado inicial (`modo: 'opcoes'`).                                                                                                                            |
 
 ## `login-form.tsx` (Client Component) — estados
 
@@ -17,7 +17,7 @@ Contrato de comportamento observável da página de login, incluindo o Server Co
 - Exibe exatamente 3 controles, nesta ordem: "Acessar com Google", "Acessar com Facebook",
   "Usar usuário e senha" (FR-004).
 - Clique em "Acessar com Google" ou "Acessar com Facebook" → chama `signIn.social({ provider,
-  callbackURL })` — **inalterado** em relação ao comportamento atual (FR-005). Nenhuma
+callbackURL })` — **inalterado** em relação ao comportamento atual (FR-005). Nenhuma
   mudança de código nesse caminho além de, se necessário, mover a chamada para dentro do novo
   componente sem alterar sua lógica.
 - Clique em "Usar usuário e senha" → transição local para `modo: 'credenciais'`, sem

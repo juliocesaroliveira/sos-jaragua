@@ -449,7 +449,10 @@ async function garantirPerfilVoluntario(
     for (const nome of perfil.habilidades) {
         const habilidadeId = habilidadesPorNome.get(nome)
         if (!habilidadeId) throw new Error(`Habilidade "${nome}" não existe — o seed de lookups precisa rodar antes.`)
-        await db.insert(voluntarioHabilidade).values({ voluntarioPerfilId: perfilId, habilidadeId }).onConflictDoNothing()
+        await db
+            .insert(voluntarioHabilidade)
+            .values({ voluntarioPerfilId: perfilId, habilidadeId })
+            .onConflictDoNothing()
     }
 
     return perfilId

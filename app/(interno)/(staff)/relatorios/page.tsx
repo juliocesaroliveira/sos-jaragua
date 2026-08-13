@@ -47,11 +47,5 @@ async function Conteudo() {
     const podeGerarContingencia = podeAcessar('/api/contingencia/export', ator.role)
 
     const [inventario, saidas] = await Promise.all([inventarioParaExportacao(), saidasParaExportacao()])
-    return (
-        <PainelRelatorios
-            inventario={inventario}
-            saidas={saidas}
-            podeGerarContingencia={podeGerarContingencia}
-        />
-    )
+    return <PainelRelatorios inventario={inventario} saidas={saidas} podeGerarContingencia={podeGerarContingencia} />
 }

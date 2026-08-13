@@ -24,7 +24,7 @@
 
 **Alternativas consideradas**:
 
-- **`sticky top-0` no `Topbar`, mantendo a página inteira rolável.** Funciona isoladamente, mas exige um `z-index` explícito e uma decisão de empilhamento em relação à gaveta mobile — que hoje é renderizada **acima** do `Topbar` no fluxo (mesmo container `flex-col`), então ao abrir a gaveta e rolar, o `Topbar` sticky ficaria colado no topo *sobre* uma gaveta que não é sticky, produzindo exatamente o "corte/sobreposição incorreta" que o FR-006/edge case da spec proíbe. Corrigir isso exigiria também tornar a gaveta sticky ou transformá-la em overlay — mudança maior, fora do que a spec pede.
+- **`sticky top-0` no `Topbar`, mantendo a página inteira rolável.** Funciona isoladamente, mas exige um `z-index` explícito e uma decisão de empilhamento em relação à gaveta mobile — que hoje é renderizada **acima** do `Topbar` no fluxo (mesmo container `flex-col`), então ao abrir a gaveta e rolar, o `Topbar` sticky ficaria colado no topo _sobre_ uma gaveta que não é sticky, produzindo exatamente o "corte/sobreposição incorreta" que o FR-006/edge case da spec proíbe. Corrigir isso exigiria também tornar a gaveta sticky ou transformá-la em overlay — mudança maior, fora do que a spec pede.
 - **`position: fixed` no `Topbar` + `padding-top` no `main` do tamanho da barra.** Precisa manter o padding sincronizado com a altura real do topbar (que varia: nome/role só aparecem em `sm:flex`, botão de menu só existe com `mostrarBotaoMenu`), correndo risco de gap ou sobreposição de 1px em algum breakpoint. O contêiner de altura travada não tem esse acoplamento — a altura do topbar é apenas mais uma linha do flexbox.
 
 **Rationale**: contêiner travado é a opção mais simples (Princípio VI) — zero `z-index`, zero sincronização de altura, e a gaveta mobile continua exatamente onde está hoje (empurra o layout, não sobrepõe), sem precisar de nenhuma mudança de comportamento nela.
@@ -59,10 +59,10 @@
 
 ## Resumo das decisões
 
-| # | Decisão |
-|---|---------|
-| D1 | Contêiner de altura travada (`h-dvh overflow-hidden` na raiz, `overflow-y-auto` em `main`) em vez de `sticky`/`fixed` no `Topbar` |
-| D2 | `SidebarNav` inalterada — a gaveta mobile continua empurrando o layout, agora dentro do contêiner travado |
-| D3 | `min-h-0` nos ramos flex intermediários para a rolagem realmente ficar em `main` |
-| D4 | Manter `dvh` como unidade de viewport |
-| D5 | Sem teste automatizado novo; validação por `quickstart.md` |
+| #   | Decisão                                                                                                                           |
+| --- | --------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Contêiner de altura travada (`h-dvh overflow-hidden` na raiz, `overflow-y-auto` em `main`) em vez de `sticky`/`fixed` no `Topbar` |
+| D2  | `SidebarNav` inalterada — a gaveta mobile continua empurrando o layout, agora dentro do contêiner travado                         |
+| D3  | `min-h-0` nos ramos flex intermediários para a rolagem realmente ficar em `main`                                                  |
+| D4  | Manter `dvh` como unidade de viewport                                                                                             |
+| D5  | Sem teste automatizado novo; validação por `quickstart.md`                                                                        |

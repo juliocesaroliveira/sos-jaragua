@@ -32,16 +32,16 @@ A abordagem separa as duas variantes: `SidebarNav` volta a ser exclusivamente a 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Princípio | Avaliação | Veredito |
-|-----------|-----------|----------|
-| **I. Clean Architecture por Módulo** | Feature transversal de apresentação, vive inteiramente em `src/shared/ui/shell/`. Não toca `domain/` nem `application/` de nenhum módulo. | ✅ PASS |
-| **II. Tipagem Estrita e Qualidade** | Sem `any`. Reaproveita tipos já existentes (`ItemNavegacao`, `SecaoNavegacao`); nenhum texto novo em pt-BR além do que já existe (rótulos de navegação inalterados). | ✅ PASS |
-| **III. Testes em Regras de Negócio** | Não há regra de negócio nova; é composição de apresentação sobre um primitivo de UI já usado no projeto. Cai no carve-out do próprio princípio para `presentation/` — validação por contrato (`contracts/mobile-menu-panel.md`) e roteiro manual (`quickstart.md`). | ✅ PASS |
-| **IV. Segurança e Defesa em Profundidade** | Não altera autenticação, sessão, roles, `proxy.ts` nem os dados/regras de `navegacao.ts` (quais destinos aparecem para qual perfil). Puramente de apresentação. | ✅ N/A |
-| **V. Auditoria Não Bloqueante** | Nenhuma escrita de domínio. | ✅ N/A |
-| **VI. Simplicidade Operacional** | Zero dependência nova — reaproveita `@ark-ui/react` já instalado. `SidebarNav` fica mais simples (perde a variante mobile) em vez de acumular duas responsabilidades; o painel novo usa o mesmo primitivo já padronizado no design system (`Menu`), só com composição diferente da já existente. | ✅ PASS |
+| Princípio                                  | Avaliação                                                                                                                                                                                                                                                                                        | Veredito |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| **I. Clean Architecture por Módulo**       | Feature transversal de apresentação, vive inteiramente em `src/shared/ui/shell/`. Não toca `domain/` nem `application/` de nenhum módulo.                                                                                                                                                        | ✅ PASS  |
+| **II. Tipagem Estrita e Qualidade**        | Sem `any`. Reaproveita tipos já existentes (`ItemNavegacao`, `SecaoNavegacao`); nenhum texto novo em pt-BR além do que já existe (rótulos de navegação inalterados).                                                                                                                             | ✅ PASS  |
+| **III. Testes em Regras de Negócio**       | Não há regra de negócio nova; é composição de apresentação sobre um primitivo de UI já usado no projeto. Cai no carve-out do próprio princípio para `presentation/` — validação por contrato (`contracts/mobile-menu-panel.md`) e roteiro manual (`quickstart.md`).                              | ✅ PASS  |
+| **IV. Segurança e Defesa em Profundidade** | Não altera autenticação, sessão, roles, `proxy.ts` nem os dados/regras de `navegacao.ts` (quais destinos aparecem para qual perfil). Puramente de apresentação.                                                                                                                                  | ✅ N/A   |
+| **V. Auditoria Não Bloqueante**            | Nenhuma escrita de domínio.                                                                                                                                                                                                                                                                      | ✅ N/A   |
+| **VI. Simplicidade Operacional**           | Zero dependência nova — reaproveita `@ark-ui/react` já instalado. `SidebarNav` fica mais simples (perde a variante mobile) em vez de acumular duas responsabilidades; o painel novo usa o mesmo primitivo já padronizado no design system (`Menu`), só com composição diferente da já existente. | ✅ PASS  |
 
 **Gate pós-desenho (Phase 1)**: reavaliado ao fim deste documento — sem violações, `Complexity Tracking` vazio.
 

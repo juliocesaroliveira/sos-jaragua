@@ -13,13 +13,13 @@
 
 Um destino apresentável no menu lateral.
 
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `href` | `string` | sim | Caminho público do destino. MUST corresponder a uma página existente em `app/`. |
-| `rotulo` | `string` | sim | Texto exibido, em pt-BR. |
-| `icone` | `NomeIcone` | sim | **Identificador** de ícone, não JSX — mantém o registro serializável e testável sem React (research.md D7). |
-| `grupo` | `IdGrupo` | sim | Grupo de pertencimento. |
-| `roles` | `readonly Role[]` | sim | Perfis que enxergam o item. Declaração explícita e obrigatória (FR-021). |
+| Campo    | Tipo              | Obrigatório | Descrição                                                                                                   |
+| -------- | ----------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| `href`   | `string`          | sim         | Caminho público do destino. MUST corresponder a uma página existente em `app/`.                             |
+| `rotulo` | `string`          | sim         | Texto exibido, em pt-BR.                                                                                    |
+| `icone`  | `NomeIcone`       | sim         | **Identificador** de ícone, não JSX — mantém o registro serializável e testável sem React (research.md D7). |
+| `grupo`  | `IdGrupo`         | sim         | Grupo de pertencimento.                                                                                     |
+| `roles`  | `readonly Role[]` | sim         | Perfis que enxergam o item. Declaração explícita e obrigatória (FR-021).                                    |
 
 **Regras de validação** (verificadas por teste, não em runtime):
 
@@ -37,11 +37,11 @@ Um destino apresentável no menu lateral.
 
 Agrupamento nomeado, existente apenas para legibilidade do menu.
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `id` | `IdGrupo` | Chave estável usada por `ItemNavegacao.grupo`. |
-| `rotulo` | `string` | Cabeçalho exibido, em pt-BR. |
-| `ordem` | `number` | Posição relativa no menu. |
+| Campo    | Tipo      | Descrição                                      |
+| -------- | --------- | ---------------------------------------------- |
+| `id`     | `IdGrupo` | Chave estável usada por `ItemNavegacao.grupo`. |
+| `rotulo` | `string`  | Cabeçalho exibido, em pt-BR.                   |
+| `ordem`  | `number`  | Posição relativa no menu.                      |
 
 `IdGrupo` ∈ `'principal' | 'pessoal' | 'voluntariado' | 'operacao' | 'estoque' | 'coordenacao' | 'administracao'`
 
@@ -56,12 +56,12 @@ Agrupamento nomeado, existente apenas para legibilidade do menu.
 
 Já existe como `SessaoAtor` em `src/shared/auth/sessao.ts`. O shell consome apenas quatro campos:
 
-| Campo | Uso no shell |
-|-------|--------------|
-| `role` | Filtragem dos itens; rótulo do perfil na topbar. |
-| `nome` | Identificação na topbar e iniciais do avatar. |
-| `userId` | Consulta de notificações (slot da topbar). |
-| — | `email`, `ativo`, `sessionToken` **não** são usados pelo shell. |
+| Campo    | Uso no shell                                                    |
+| -------- | --------------------------------------------------------------- |
+| `role`   | Filtragem dos itens; rótulo do perfil na topbar.                |
+| `nome`   | Identificação na topbar e iniciais do avatar.                   |
+| `userId` | Consulta de notificações (slot da topbar).                      |
+| —        | `email`, `ativo`, `sessionToken` **não** são usados pelo shell. |
 
 Origem obrigatória: `auth.api.getSession` no servidor. Nunca de props do cliente, query string ou estado local (FR-010).
 
@@ -73,24 +73,24 @@ Estado alvo do registro. `✓` = item aparece no menu daquele perfil.
 
 `★` = também aparece como **card de acesso rápido** na home (`atalho`).
 
-| Grupo | Destino | `usuario` | `voluntario` | `membro_defesa_civil` | `coordenador` | `administrador` |
-|-------|---------|:---:|:---:|:---:|:---:|:---:|
-| Início | `/` | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Pessoal | `/voluntariado/candidatura` | ★ | ★ | | | |
-| Voluntariado | `/voluntariado/minhas-atividades` | | ★ | ★ | ★ | ★ |
-| Operação | `/dashboard` | | | ★ | ★ | ★ |
-| Operação | `/cadastros-pendentes` | | | ★ | ★ | ★ |
-| Operação | `/voluntarios` | | | ✓ | ✓ | ✓ |
-| Operação | `/atividades` | | | ✓ | ✓ | ✓ |
-| Operação | `/crise` | | | ★ | | ★ |
-| Operação | `/relatorios` | | | ★ | | ★ |
-| Estoque | `/estoque` | | | ✓ | ✓ | ✓ |
-| Estoque | `/estoque/entrada` | | | ★ | ★ | ★ |
-| Estoque | `/estoque/saida` | | | ★ | ★ | ★ |
-| Estoque | `/estoque/kits` | | | | ✓ | ✓ |
-| Estoque | `/estoque/descarte` | | | | ✓ | ✓ |
-| Coordenação | `/convocacao` | | | | ★ | ★ |
-| Administração | *(nenhum ainda — research.md D4)* | | | | | |
+| Grupo         | Destino                           | `usuario` | `voluntario` | `membro_defesa_civil` | `coordenador` | `administrador` |
+| ------------- | --------------------------------- | :-------: | :----------: | :-------------------: | :-----------: | :-------------: |
+| Início        | `/`                               |     ✓     |      ✓       |           ✓           |       ✓       |        ✓        |
+| Pessoal       | `/voluntariado/candidatura`       |     ★     |      ★       |                       |               |                 |
+| Voluntariado  | `/voluntariado/minhas-atividades` |           |      ★       |           ★           |       ★       |        ★        |
+| Operação      | `/dashboard`                      |           |              |           ★           |       ★       |        ★        |
+| Operação      | `/cadastros-pendentes`            |           |              |           ★           |       ★       |        ★        |
+| Operação      | `/voluntarios`                    |           |              |           ✓           |       ✓       |        ✓        |
+| Operação      | `/atividades`                     |           |              |           ✓           |       ✓       |        ✓        |
+| Operação      | `/crise`                          |           |              |           ★           |               |        ★        |
+| Operação      | `/relatorios`                     |           |              |           ★           |               |        ★        |
+| Estoque       | `/estoque`                        |           |              |           ✓           |       ✓       |        ✓        |
+| Estoque       | `/estoque/entrada`                |           |              |           ★           |       ★       |        ★        |
+| Estoque       | `/estoque/saida`                  |           |              |           ★           |       ★       |        ★        |
+| Estoque       | `/estoque/kits`                   |           |              |                       |       ✓       |        ✓        |
+| Estoque       | `/estoque/descarte`               |           |              |                       |       ✓       |        ✓        |
+| Coordenação   | `/convocacao`                     |           |              |                       |       ★       |        ★        |
+| Administração | _(nenhum ainda — research.md D4)_ |           |              |                       |               |                 |
 
 ### Leitura da matriz — cinco observações necessárias
 

@@ -9,10 +9,10 @@ login. Ambos são documentados abaixo como os "dados" desta feature.
 
 Estrutura em `src/shared/auth/rotas.ts`, consultada por `proxy.ts` a cada requisição.
 
-| Campo | Tipo | Descrição |
-|---|---|---|
-| `pathname` | `string` | Path da requisição atual (`request.nextUrl.pathname`). |
-| `publica` | `boolean` | Derivado: `true` somente para `/login` (e prefixos técnicos isentos do matcher, como `/api/auth/*`, tratados fora deste mapa). |
+| Campo           | Tipo                      | Descrição                                                                                                                                                                      |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pathname`      | `string`                  | Path da requisição atual (`request.nextUrl.pathname`).                                                                                                                         |
+| `publica`       | `boolean`                 | Derivado: `true` somente para `/login` (e prefixos técnicos isentos do matcher, como `/api/auth/*`, tratados fora deste mapa).                                                 |
 | `rolesExigidas` | `readonly Role[] \| null` | Quando a rota exige papel específico além de "ter sessão válida" (ex.: `/estoque/descarte` → `coordenador \| administrador`). `null` significa "qualquer sessão válida basta". |
 
 **Regra de resolução** (substitui a atual `rolesExigidas(pathname): Role[] | null`):
@@ -34,11 +34,11 @@ mudança.
 
 Estado local do componente `login-form.tsx`.
 
-| Campo | Tipo | Valores | Descrição |
-|---|---|---|---|
-| `modo` | `'opcoes' \| 'credenciais'` | — | `'opcoes'` = estado inicial (3 botões); `'credenciais'` = formulário de usuário/senha + Voltar/Acessar. Estado efêmero, resetado a cada carregamento da página (FR-011, edge case de F5). |
-| `carregandoSocial` | `'google' \| 'facebook' \| null` | já existe | Inalterado — indica qual provedor social está em andamento. |
-| `erroServidor` | `string \| null` | já existe | Inalterado — mensagem de erro genérica de credenciais inválidas (FR-009) ou falha ao iniciar OAuth. |
+| Campo              | Tipo                             | Valores   | Descrição                                                                                                                                                                                 |
+| ------------------ | -------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modo`             | `'opcoes' \| 'credenciais'`      | —         | `'opcoes'` = estado inicial (3 botões); `'credenciais'` = formulário de usuário/senha + Voltar/Acessar. Estado efêmero, resetado a cada carregamento da página (FR-011, edge case de F5). |
+| `carregandoSocial` | `'google' \| 'facebook' \| null` | já existe | Inalterado — indica qual provedor social está em andamento.                                                                                                                               |
+| `erroServidor`     | `string \| null`                 | já existe | Inalterado — mensagem de erro genérica de credenciais inválidas (FR-009) ou falha ao iniciar OAuth.                                                                                       |
 
 **Transições**:
 

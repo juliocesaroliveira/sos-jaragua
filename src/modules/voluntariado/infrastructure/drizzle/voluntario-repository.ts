@@ -1,19 +1,19 @@
 import { eq } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
-import { user } from '@/db/schema/identidade'
+import { criarUsuarioRepository } from '@/src/modules/identidade/infrastructure/drizzle/usuario-repository'
 import { voluntarioHabilidade, voluntarioPerfil } from '@/db/schema/voluntariado'
-import type { Role } from '@/src/shared/auth/roles'
 import type {
     PerfilVoluntario,
     UnidadeDeTrabalho,
-    UserRepository,
     VoluntarioRepository
 } from '../../application/ports/voluntario-repository'
 
 /**
- * Implementação Drizzle dos ports de Voluntariado (DESIGN.md §5).
- * Importa apenas a fatia `db/schema` deste módulo (+ `user`, por ser a raiz de
- * Identidade da qual o perfil é extensão 1:1).
+ * Implementação Drizzle do port de Voluntariado (DESIGN.md §5).
+ *
+ * O port `usuarios` (leitura/escrita de `user.role`) não é implementado
+ * aqui — vem de `identidade`, o módulo dono da tabela `user`
+ * (006-user-management-page, research.md D6).
  */
 type Executor = typeof db | Transacao
 
@@ -104,23 +104,11 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
     }
 }
 
-export function criarUserRepository(executor: Executor = db): UserRepository {
-    return {
-        async atualizarRole(userId, role) {
-            await executor.update(user).set({ role }).where(eq(user.id, userId))
-        },
-        async buscarRole(userId) {
-            const [linha] = await executor.select({ role: user.role }).from(user).where(eq(user.id, userId)).limit(1)
-            return (linha?.role as Role) ?? null
-        }
-    }
-}
-
 /** Unidade de trabalho sobre uma transação Drizzle real. */
 export const unidadeDeTrabalho: UnidadeDeTrabalho = {
     executar(fn) {
         return db.transaction((tx) =>
-            fn({ voluntarios: criarVoluntarioRepository(tx), usuarios: criarUserRepository(tx) })
+            fn({ voluntarios: criarVoluntarioRepository(tx), usuarios: criarUsuarioRepository(tx) })
         )
     }
 }

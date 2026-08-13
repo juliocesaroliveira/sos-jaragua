@@ -61,7 +61,7 @@ Para **cada** um dos cinco perfis, confirme:
 
 ## Nível 3 — Sem sessão (US2, SC-002)
 
-> **Leia antes**: na configuração atual, um visitante anônimo que digite um endereço desconhecido é desviado para `/login` **pelo `proxy.ts`**, antes de a página ser alcançada. Isso é o modelo *deny-by-default* da feature 001, **não** um defeito desta. Ver a nota ao fim da spec.
+> **Leia antes**: na configuração atual, um visitante anônimo que digite um endereço desconhecido é desviado para `/login` **pelo `proxy.ts`**, antes de a página ser alcançada. Isso é o modelo _deny-by-default_ da feature 001, **não** um defeito desta. Ver a nota ao fim da spec.
 
 Para exercitar a variante sem shell, use um caminho que o gate não cobre — o matcher do `proxy.ts` exclui arquivos com extensão:
 
@@ -103,12 +103,12 @@ http://localhost:3000/atividades/00000000-0000-0000-0000-000000000000
 
 O teste que separa esta feature de um defeito de segurança.
 
-| Perfil | Endereço | Esperado |
-|--------|----------|----------|
-| `usuario` | `/dashboard` | `/sem-permissao` — **não** a página de 404 |
-| `voluntario` | `/estoque` | `/sem-permissao` |
-| `coordenador` | `/relatorios` | `/sem-permissao` (feature 002 moveu relatórios para a Defesa Civil) |
-| `membro_defesa_civil` | `/convocacao` | `/sem-permissao` |
+| Perfil                | Endereço      | Esperado                                                            |
+| --------------------- | ------------- | ------------------------------------------------------------------- |
+| `usuario`             | `/dashboard`  | `/sem-permissao` — **não** a página de 404                          |
+| `voluntario`          | `/estoque`    | `/sem-permissao`                                                    |
+| `coordenador`         | `/relatorios` | `/sem-permissao` (feature 002 moveu relatórios para a Defesa Civil) |
+| `membro_defesa_civil` | `/convocacao` | `/sem-permissao`                                                    |
 
 Se qualquer linha exibir "endereço não encontrado", a implementação está dizendo que uma área não existe quando ela existe.
 
@@ -145,13 +145,13 @@ npm run build
 
 ## Critérios de conclusão
 
-| # | Critério | Nível |
-|---|----------|-------|
-| SC-001 | 100% dos endereços inexistentes com sessão exibem shell | 2 |
-| SC-002 | 0% das exibições sem sessão mostram shell ou dado interno | 3 |
-| SC-003 | Home em 1 clique; qualquer destino do perfil em ≤2 | 2 |
+| #      | Critério                                                   | Nível   |
+| ------ | ---------------------------------------------------------- | ------- |
+| SC-001 | 100% dos endereços inexistentes com sessão exibem shell    | 2       |
+| SC-002 | 0% das exibições sem sessão mostram shell ou dado interno  | 3       |
+| SC-003 | Home em 1 clique; qualquer destino do perfil em ≤2         | 2       |
 | SC-004 | 0% dos retornos geram nova negativa — 5 perfis e deslogado | 1, 2, 3 |
-| SC-005 | A tela genérica em inglês não aparece mais | 2, 3, 4 |
-| SC-006 | Endereço restrito continua produzindo acesso negado | 5 |
-| SC-007 | Operável por teclado e legível em 360px | 7 |
-| SC-008 | Sem atraso perceptível | 2, 6 |
+| SC-005 | A tela genérica em inglês não aparece mais                 | 2, 3, 4 |
+| SC-006 | Endereço restrito continua produzindo acesso negado        | 5       |
+| SC-007 | Operável por teclado e legível em 360px                    | 7       |
+| SC-008 | Sem atraso perceptível                                     | 2, 6    |

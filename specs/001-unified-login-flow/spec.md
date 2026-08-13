@@ -8,7 +8,7 @@
 
 **Input**: User description: "preciso alterar o fluxo de login da aplicação. A interface de login deve ser a única rota publica da aplicação. Caso o usuário acesse a aplicação e não tenha uma seção válida, o sistema deverá redireciona-lo para a página de login. A pagina de login deverá apresentar 3 botões, sendo eles: Acessar com Google, Acessar com Facebook e Usar usuário e Senha. Ao clicar nos botões de login via provider como do google ou facebook, o fluxo deve ser o mesmo de hoje, caso o usuário acione o botão 'Usar usuário e senha', o sistema deverá mudar a renderização para os campos de usuário e senha, com os botões de voltar e acessar logo abaixo."
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Redirecionamento para login sem sessão válida (Priority: P1)
 
@@ -68,7 +68,7 @@ Um usuário na página de login, ao invés de usar um provedor social, clica no 
 - O que acontece se um usuário autenticado, com sessão válida, tentar acessar a página de login pela URL? Deve ser redirecionado para a área autenticada correspondente ao seu papel (ver User Story 1, cenário 4).
 - O que acontece com chamadas a rotas técnicas não navegáveis pelo usuário final, como o endpoint de callback OAuth (`/api/auth/...`)? Essas rotas continuam acessíveis sem sessão prévia, pois são parte do próprio mecanismo de autenticação, e não são consideradas "rotas públicas de navegação" para fins desta especificação.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -89,7 +89,7 @@ Um usuário na página de login, ao invés de usar um provedor social, clica no 
 - **Sessão do Usuário**: Representa o estado de autenticação vigente de um usuário (válida, expirada ou inexistente); determina se o acesso a rotas protegidas é permitido ou se o redirecionamento à página de login é necessário.
 - **Página de Login**: Única rota pública de navegação da aplicação; possui dois estados de exibição — estado inicial (3 opções de acesso) e estado de usuário/senha (formulário de credenciais).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

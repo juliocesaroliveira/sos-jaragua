@@ -40,7 +40,7 @@ mecanismo de autenticação.
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+_GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - **Princípio IV — Segurança e Defesa em Profundidade**: PASSA, e a mudança é uma correção
   de postura de segurança. O modelo atual (`rolesExigidas` em `src/shared/auth/rotas.ts`)
@@ -124,4 +124,4 @@ inteiramente pelo mapa em `src/shared/auth/rotas.ts` consultado por `proxy.ts`.
 
 ## Complexity Tracking
 
-*Não aplicável — nenhuma violação de constituição identificada no Constitution Check acima.*
+_Não aplicável — nenhuma violação de constituição identificada no Constitution Check acima._

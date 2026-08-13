@@ -1,4 +1,4 @@
-import type { Role } from '@/src/shared/auth/roles'
+import type { UsuarioRepository } from '@/src/modules/identidade/application/ports/usuario-repository'
 import type { CandidaturaValidada } from '../../domain/candidatura'
 
 /**
@@ -33,15 +33,16 @@ export interface VoluntarioRepository {
     rejeitar(entrada: { perfilId: string; aprovadoPor: string; motivo: string }): Promise<void>
 }
 
-export interface UserRepository {
-    atualizarRole(userId: string, role: Role): Promise<void>
-    buscarRole(userId: string): Promise<Role | null>
-}
-
 /**
  * Executa `fn` dentro de uma única transação Postgres. É o que garante que
  * `voluntario_perfil.status` e `user.role` mudem juntos (BR-VOL-03).
+ *
+ * `usuarios` é o port de Identidade (`UsuarioRepository`), não uma cópia
+ * local — `voluntariado` não é o dono de `user`, só um consumidor
+ * (006-user-management-page, research.md D6).
  */
 export interface UnidadeDeTrabalho {
-    executar<T>(fn: (repos: { voluntarios: VoluntarioRepository; usuarios: UserRepository }) => Promise<T>): Promise<T>
+    executar<T>(
+        fn: (repos: { voluntarios: VoluntarioRepository; usuarios: UsuarioRepository }) => Promise<T>
+    ): Promise<T>
 }

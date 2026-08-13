@@ -216,6 +216,7 @@ entrada explícita em nenhum mapa. Responsabilidades:
     específica. A candidatura pública de voluntário deixou de ser acessível sem conta (ver
     `specs/001-unified-login-flow/spec.md`, decisão de escopo): o pré-requisito passou a ser
     criar conta (`/cadastro`) ou entrar antes de candidatar-se.
+
 4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).
 5. `config.matcher` exclui `/api/auth/*` e assets estáticos — não exclui mais nenhuma rota de

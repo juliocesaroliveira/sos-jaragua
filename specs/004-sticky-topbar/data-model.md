@@ -10,8 +10,8 @@ Nenhuma. A feature é puramente estrutural/visual (layout do shell autenticado) 
 
 O único estado envolvido já existe hoje e não muda de forma:
 
-| Estado | Onde vive | Efeito nesta feature |
-|--------|-----------|------------------------|
+| Estado                | Onde vive               | Efeito nesta feature                                                                                                                                                                                                                                                      |
+| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `menuAberto: boolean` | `AppShell` (`useState`) | Continua controlando a visibilidade da gaveta mobile de `SidebarNav`. Com o contêiner de altura travada (research.md D1/D2), abrir a gaveta passa a encolher a área de rolagem de `<main>` em vez de aumentar a altura da página — mesma variável, novo efeito de layout. |
 
 Nenhum novo campo, prop obrigatória ou transição de estado é introduzido.

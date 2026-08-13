@@ -14,7 +14,7 @@ Hoje, em telas mobile/tablet, ao abrir o menu de navegação a partir do botão 
 
 Esta feature reposiciona o painel de navegação mobile/tablet para que ele sempre apareça **abaixo** do topbar, nunca acima ou sobre ele, usando um componente de menu específico para esses tamanhos de tela (distinto da coluna de navegação fixa já usada em desktop, que não é afetada por esta mudança).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Abrir o menu em mobile/tablet (Priority: P1)
 
@@ -67,7 +67,7 @@ Uma pessoa que navega por teclado ou usa leitor de tela precisa conseguir abrir 
 - O que acontece se a pessoa girar o dispositivo (retrato ↔ paisagem) ou redimensionar a janela enquanto o painel está aberto? O painel continua abaixo da barra superior na nova orientação; se o redimensionamento cruzar para o tamanho de desktop, o painel mobile/tablet some e a navegação passa a ser a coluna fixa de desktop (comportamento já existente, inalterado).
 - O que acontece se a pessoa tocar em um destino de navegação e depois usar o botão "voltar" do navegador? O painel deve permanecer fechado (o estado de aberto/fechado não é uma página nova no histórico de navegação).
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -83,9 +83,9 @@ Uma pessoa que navega por teclado ou usa leitor de tela precisa conseguir abrir 
 
 ### Key Entities
 
-*(Esta feature não introduz novas entidades de dados — reorganiza a apresentação de destinos de navegação já existentes.)*
+_(Esta feature não introduz novas entidades de dados — reorganiza a apresentação de destinos de navegação já existentes.)_
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
