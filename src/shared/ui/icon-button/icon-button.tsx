@@ -42,7 +42,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(functio
             aria-busy={loading || undefined}
             className={cn(
                 'inline-flex shrink-0 items-center justify-center rounded-lg transition-colors',
-                'disabled:cursor-not-allowed disabled:opacity-50',
+                'hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
                 ANEL_FOCO,
                 VARIANTES[variant],
                 DIMENSAO[size]

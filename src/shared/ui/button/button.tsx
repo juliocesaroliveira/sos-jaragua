@@ -29,7 +29,18 @@ export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement
     loading?: boolean
     /** Ocupa toda a largura — padrão em ações primárias de tela cheia no mobile. */
     fullWidth?: boolean
+    /**
+     * Icon rendered on the left side of button text. Positioned via flexbox gap.
+     * Use icons from 'lucide-react' to maintain visual consistency.
+     * For size sm/md: use `className="size-4"` on icon (16px)
+     * For size lg: use `className="size-5"` on icon (20px)
+     * Example: `<Button iconeInicio={<Plus className="size-4" />}>Criar</Button>`
+     */
     iconeInicio?: ReactNode
+    /**
+     * Icon rendered on the right side of button text. Positioned via flexbox gap.
+     * Less common than iconeInicio; use for secondary visual affordances only.
+     */
     iconeFim?: ReactNode
 }
 
@@ -53,7 +64,7 @@ export function Button({
             aria-busy={loading || undefined}
             className={cn(
                 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors',
-                'disabled:cursor-not-allowed disabled:opacity-50',
+                'hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
                 ANEL_FOCO,
                 VARIANTES[variant],
                 ALTURA_POR_TAMANHO[size],
