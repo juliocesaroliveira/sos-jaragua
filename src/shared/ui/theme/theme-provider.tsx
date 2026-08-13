@@ -36,6 +36,15 @@ function readStoredTheme(): Theme {
     return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 }
 
+/**
+ * O estado inicial é sempre 'light' — inclusive no cliente — para que a
+ * primeira renderização do cliente seja idêntica ao HTML do servidor. O tema
+ * real já está aplicado nas classes do <html> pelo `themeInitScript`, então não
+ * há flash visual; o `useEffect` abaixo apenas sincroniza o estado do React.
+ * Ler o DOM no inicializador do `useState` causaria erro de hidratação.
+ */
+const TEMA_INICIAL: Theme = 'light'
+
 function applyTheme(theme: Theme) {
     const root = document.documentElement
     root.classList.toggle('dark', theme === 'dark')
@@ -45,7 +54,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setThemeState] = useState<Theme>(readStoredTheme)
+    const [theme, setThemeState] = useState<Theme>(TEMA_INICIAL)
 
     useEffect(() => {
         setThemeState(readStoredTheme())

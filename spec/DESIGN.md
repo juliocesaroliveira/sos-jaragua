@@ -100,22 +100,28 @@ Server Action (presentation/actions/aprovarCandidatura.ts)
 
 ```
 app/                                    # roteamento/composição — sem lógica de negócio
-  (public)/
-    page.tsx                            # landing
-    voluntariado/candidatura/page.tsx   # formulário público de candidatura
-  (auth)/
+  (publico)/                            # pré-autenticação — SEM shell
     login/page.tsx
-  (staff)/
-    layout.tsx                          # re-checagem de sessão/role (defesa em profundidade)
-    cadastros-pendentes/page.tsx
-    atividades/page.tsx
-    atividades/[id]/page.tsx            # Kanban de turnos
-    estoque/entrada/page.tsx
-    estoque/saida/page.tsx
-    estoque/descarte/page.tsx
-    estoque/kits/page.tsx
-    dashboard/page.tsx
-    relatorios/page.tsx
+    cadastro/page.tsx
+  (interno)/                            # TODA página autenticada — COM shell
+    layout.tsx                          # exigirSessao() + <AppShell> + sino de notificações
+    page.tsx                            # home: cards de acesso rápido por perfil
+    sino-notificacoes.tsx
+    sem-permissao/page.tsx
+    design-system/page.tsx              # ferramenta de dev; exige sessão, fora do menu
+    voluntariado/candidatura/page.tsx
+    voluntariado/minhas-atividades/page.tsx
+    (staff)/                            # grupo aninhado — só o gate de role
+      layout.tsx                        # exigirRoles(ROLES_STAFF) (defesa em profundidade)
+      cadastros-pendentes/page.tsx
+      atividades/page.tsx
+      atividades/[id]/page.tsx          # Kanban de turnos
+      estoque/entrada/page.tsx
+      estoque/saida/page.tsx
+      estoque/descarte/page.tsx
+      estoque/kits/page.tsx
+      dashboard/page.tsx
+      relatorios/page.tsx
   api/
     auth/[...all]/route.ts              # handler do better-auth
     cron/lembrete-turno/route.ts        # alvo do Vercel Cron
@@ -183,11 +189,17 @@ importa apenas a fatia de `db/schema/` referente ao seu próprio módulo — nun
 
 ### 6.2. `proxy.ts` — gate de autenticação/autorização
 
-Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Responsabilidades:
+Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Modelo **deny-by-default**: toda
+rota exige sessão válida, exceto `/login` (`ROTA_PUBLICA`/`ehRotaPublica` em
+`src/shared/auth/rotas.ts`) — uma rota nova sob `app/` nasce protegida, sem precisar de
+entrada explícita em nenhum mapa. Responsabilidades:
 
-1. Checagem rápida de presença de sessão via cookie (`getSessionCookie`) — redireciona para
-   `/login` se ausente, sem hit ao banco.
-2. Mapa rota → roles permitidas, espelhando a matriz de atores do BRD §2:
+1. Se a rota é `/login` → segue sem nenhuma checagem.
+2. Checagem rápida de presença de sessão via cookie (`getSessionCookie`) para toda outra
+   rota — redireciona para `/login` se ausente, sem hit ao banco.
+3. Mapa rota → roles adicionalmente permitidas (aplicado **depois** de confirmada a sessão),
+   espelhando a matriz de atores do BRD §2. Rotas ausentes deste mapa exigem apenas sessão
+   válida (qualquer role):
 
     | Prefixo de rota                                                             | Roles permitidas                                      |
     | --------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -199,9 +211,18 @@ Roda em Node.js (Next 16 não suporta Edge em `proxy.ts`). Responsabilidades:
     | `/(staff)/admin/*` (gestão de usuários/permissões)                          | `administrador`                                       |
     | `/voluntariado/minhas-atividades`                                           | `voluntario` e acima                                  |
 
-3. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
+    Rotas como `/`, `/cadastro`, `/voluntariado/candidatura`, `/design-system` e
+    `/sem-permissao` não têm entrada no mapa — exigem apenas sessão válida, sem role
+    específica. A candidatura pública de voluntário deixou de ser acessível sem conta (ver
+    `specs/001-unified-login-flow/spec.md`, decisão de escopo): o pré-requisito passou a ser
+    criar conta (`/cadastro`) ou entrar antes de candidatar-se.
+4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).
-4. `config.matcher` exclui `/api/auth/*`, assets estáticos e a landing pública.
+5. `config.matcher` exclui `/api/auth/*` e assets estáticos — não exclui mais nenhuma rota de
+   navegação; a landing (`/`) passou a exigir sessão junto com o restante da aplicação.
+
+Um usuário já autenticado que acessa `/login` diretamente é redirecionado para a área padrão
+do seu papel (`areaPadraoPorRole`, `app/(auth)/login/page.tsx`) em vez de ver o formulário.
 
 A checagem de role em `proxy.ts` é a **barreira rápida**; a fonte de verdade fica em cada
 `(staff)/layout.tsx`, que re-valida via `auth.api.getSession` no servidor (defesa em
@@ -224,6 +245,23 @@ customizado, implementado em `src/shared/auth/`:
 - Não se aplica ao `administrador` propositalmente fora do escopo do NFR — mas pode ser
   reavaliado se a operação exigir.
 
+### 6.4.1. Rotas com regra granular exigem checagem na página
+
+O `proxy.ts` **não** é enforcement suficiente para rotas cuja regra é mais estrita que
+`ROLES_STAFF`. Ele decide a partir do cache de sessão em cookie e, quando esse cache não está
+disponível, deixa passar de propósito (`if (!cache) return NextResponse.next()`) — apostando que
+"o layout faz a checagem autoritativa em seguida".
+
+Essa aposta vale para `/dashboard` e afins, onde `(staff)/layout.tsx` exige `ROLES_STAFF`. **Não
+valia** para `/crise`, `/relatorios`, `/estoque/kits`, `/estoque/descarte` e `/convocacao`: um
+perfil de staff sem direito à rota específica passava, porque nenhuma segunda checagem existia.
+Verificado em execução — um `coordenador` abria `/crise` e `/relatorios` mesmo com a regra já
+alterada em `REGRAS_DE_ROTA`.
+
+Correção: cada uma dessas páginas chama `exigirAcessoA('<rota>')`, que deriva de `rolesExigidas`
+e redireciona para `/sem-permissao`. **Toda rota nova com regra granular precisa dessa chamada** —
+o proxy sozinho não a protege.
+
 ### 6.4. Segurança
 
 - Cookies httpOnly, secure, sameSite=lax.
@@ -233,6 +271,118 @@ customizado, implementado em `src/shared/auth/`:
   decisão final, para manter `cpf` indexável/buscável sem complexidade extra de key
   management, já que o at-rest do Neon atende literalmente o requisito NFR "criptografia em
   repouso".
+
+### 6.5. Shell de navegação por perfil
+
+Decisão registrada em `specs/002-role-based-app-shell/`.
+
+**Estrutura de route groups** — a fronteira "tem shell / não tem shell" é o diretório, não uma
+lista de rotas, para que uma página nova nasça do lado certo sem ninguém precisar lembrar:
+
+- `(publico)/` — pré-autenticação, sem shell.
+- `(interno)/` — o layout aplica `exigirSessao()` e renderiza `<AppShell>`. Toda página
+  autenticada herda gate e navegação por construção.
+- `(interno)/(staff)/` — grupo aninhado que só acrescenta `exigirRoles(ROLES_STAFF)`.
+
+Isto fechou uma lacuna de defesa em profundidade: as páginas de `usuario`/`voluntario` não
+tinham **nenhuma** re-checagem no render, dependendo apenas do `proxy.ts`.
+
+Ambos os layouts declaram `instant = false` — o segmento que lê a sessão precisa declarar por
+si, não herda do pai. E `obterSessao` é **memoizada por request** (`cache` do React): com dois
+níveis de gate no mesmo render, sem a memoização cada página de staff dispararia dois
+`auth.api.getSession` por navegação. A checagem em camadas é decisão de autorização; pagar dois
+hits ao banco por isso não é.
+
+**Registro de navegação** (`src/shared/auth/navegacao.ts`) — fonte única dos itens do menu,
+co-locado com `rotas.ts` porque os dois descrevem a mesma matriz de atores. Cada item declara
+suas roles explicitamente, e `navegacao.test.ts` trava a **igualdade** entre `item.roles` e
+`rolesExigidas(href)` sempre que houver regra em `REGRAS_DE_ROTA` — divergir quebra `npm test`.
+
+Declaração explícita, e não derivação de `podeAcessar`, porque `podeAcessar` retorna `true`
+para rota ausente do mapa: derivar mostraria "Quero ser voluntário" a coordenador e
+administrador. Igualdade e não subconjunto porque subconjunto esconderia um destino de quem
+tem direito a ele, sem quebrar nada.
+
+**Esconder um item não é autorização.** O menu é ergonomia; o acesso continua barrado pelo
+`proxy.ts` e pelos gates de layout, inclusive por URL direta.
+
+O grupo `administracao` existe e está vazio: `/admin` tem regra de rota mas ainda não tem
+página, e exibir link para 404 violaria o critério de "nenhum item leva a negativa de acesso".
+
+**Home (`/`)** — página autenticada com cards de acesso rápido por perfil. Os cards saem de
+`atalhosDeNavegacao(role)`, que filtra `itensDeNavegacao(role)` — derivar da mesma lista já
+filtrada é o que impede um card de apontar para destino que a pessoa não pode abrir. É um
+subconjunto curado (`atalho`), não todos os destinos: acesso rápido com 13 cards não é rápido.
+
+**Variáveis da crise pertencem à Defesa Civil** — `membro_defesa_civil` e `administrador`. As
+três Server Actions de `logistica.ts` (`atualizarVariaveisCrise`, `definirMetricaKit`,
+`removerMetricaKit`) só existem dentro de `/crise` e por isso derivam de `rolesExigidas('/crise')`
+em vez de repetir a lista: separá-las deixaria a coordenação alterando os números sem poder abrir
+a tela — permissão de escrita sem tela é pior que nenhuma.
+
+`/dashboard` **continua** com toda a staff: o coordenador acompanha os números da crise, só não
+os altera. Como o painel tem atalhos para `/crise`, eles são renderizados condicionalmente
+(`podeAcessar('/crise', role)`) — do contrário o coordenador veria links que devolvem
+`/sem-permissao`.
+
+**Relatórios e contingência pertencem à Defesa Civil** — `membro_defesa_civil` e
+`administrador`; `coordenador` **não** tem acesso. São três regras que precisam andar juntas,
+porque descrevem uma tela e os downloads que só existem dentro dela:
+
+- `/relatorios` — a tela
+- `/api/relatorios/export` — exportação de inventário e saídas (BR-REL-01)
+- `/api/contingencia/export` — pacote de contingência (BR-CON-01)
+
+Separá-las produz um de dois defeitos: a tela abre com botões em 403, ou os dados ficam
+alcançáveis por URL direta para quem já não pode abrir a tela — e, no caso da contingência,
+uma permissão órfã, já que não há outro caminho na UI até ela. `rotas.test.ts` trava a
+igualdade entre as três.
+
+Os dois Route Handlers derivam as roles de `rolesExigidas()` em vez de redigitá-las. Antes cada
+um mantinha sua própria cópia literal — três lugares para lembrar de mudar, e nenhum aviso ao
+esquecer um.
+
+A seção de contingência na tela de relatórios continua renderizada condicionalmente
+(`podeAcessar('/api/contingencia/export', role)`). Hoje a condição é sempre verdadeira para quem
+alcança a tela, já que as regras coincidem; ela permanece porque são autorizações independentes
+por natureza, e a checagem é o que impede o botão-que-dá-403 de voltar se elas divergirem.
+
+### 6.6. Endereço não encontrado (404)
+
+Decisão registrada em `specs/003-not-found-page/`.
+
+**Duas fronteiras**, porque o Next resolve os dois casos em posições diferentes da árvore:
+
+- `app/not-found.tsx` — URLs desconhecidas de toda a aplicação. Nenhum segmento casou, então
+  nenhum layout de área se aplica: é esta página que lê a sessão (`obterSessao`, **nunca**
+  `exigirSessao` — página de erro que redireciona é defeito) e decide envolver no shell ou não.
+- `app/(interno)/not-found.tsx` — `notFound()` lançado sob a área autenticada. O shell já vem
+  do layout, que continua na árvore; montá-lo de novo duplicaria topbar e menu.
+
+O conteúdo é um só (`src/shared/ui/nao-encontrado/`), e **não recebe ator nem itens de menu** —
+a ausência de vazamento na variante anônima é propriedade do tipo, não disciplina de quem edita.
+
+`app/not-found.tsx` declara `instant = false`: a apresentação depende de cookies e, com Cache
+Components, o build falha ao tentar prerenderizar. Das três saídas do Next (cachear, isolar sob
+`<Suspense>`, declarar bloqueante), esta é a coerente com o projeto — todo segmento que lê sessão
+já faz assim. `<Suspense>` renderia casca estática, mas o destino do botão também depende da
+sessão: o link trocaria sob o cursor.
+
+**404 não é 403.** Endereço restrito continua produzindo `/sem-permissao`. Dizer "não existe"
+sobre uma área que existe seria vazamento invertido e confundiria quem tem permissão parcial.
+
+**Status HTTP**: URL desconhecida devolve `404` real (decidido no roteamento, antes de qualquer
+streaming). Já `notFound()` chamado dentro de um `<Suspense>` — o caso de `/atividades/[id]` —
+devolve `200` com `<meta robots="noindex">`, porque o cabeçalho já foi enviado. É comportamento
+documentado do Next; o `noindex` preserva o efeito que importa. Obter status real ali exigiria
+eliminar o streaming da tela ou consultar o banco no `proxy.ts`, ambos piores que o problema.
+
+`experimental.globalNotFound` foi avaliado e rejeitado: exigiria devolver um documento HTML
+completo, duplicando o root layout inteiro — tema, fonte e estilos globais — para uma única tela.
+
+A landing pública anterior deixou de existir. Ela já era inalcançável na prática — o
+deny-by-default do `proxy.ts` exige sessão em `/` desde a feature 001, então o conteúdo escrito
+para visitante deslogado nunca chegava a ser exibido.
 
 ---
 
@@ -384,10 +534,13 @@ condicional que possa ser esquecido em um novo relatório).
 - Catálogo de eventos espelha 1:1 a matriz de comunicação do BRD §6: `triagem_concluida`,
   `atividade_atribuida`, `alteracao_atividade`, `lembrete_turno`, `broadcast_urgencia`,
   `cadastros_acumulados`, `estoque_critico`, `deficit_atendimento`.
-- **Lembrete de turno** (2h antes): não há trigger de evento natural (é baseado em tempo),
-  então usa **Vercel Cron** — `vercel.json` agenda `GET /api/cron/lembrete-turno` a cada
-  ~15 minutos; a rota (protegida por header `Authorization: Bearer $CRON_SECRET`) busca
-  `alocacao` join `turno` com `turno.inicio` entre 105 e 120 minutos no futuro e
+- **Lembrete de turno** (aviso diário): não há trigger de evento natural (é baseado em
+  tempo), então usa **Vercel Cron** — `vercel.json` agenda `GET /api/cron/lembrete-turno`
+  **1x por dia** às 12:00 UTC (09:00 America/Sao_Paulo). O plano Hobby da Vercel só
+  permite cron diário, então o lembrete "2h antes" do BRD §6 foi substituído por um aviso
+  matinal cobrindo os turnos das próximas ~24h. A rota (protegida por header
+  `Authorization: Bearer $CRON_SECRET`) busca `alocacao` join `turno` com `turno.inicio`
+  entre 0 e 26 horas no futuro (folga acima de 24h para tolerar atraso do cron) e
   `alocacao.lembreteEnviadoEm IS NULL`, dispara a notificação e marca
   `lembreteEnviadoEm = now()` (evita duplicidade entre execuções).
 - **Broadcast de Urgência**: uma única Server Action em lote, disparada pelo Coordenador
@@ -513,3 +666,41 @@ com o usuário, sem pendências para a implementação:
 | Reenvio de candidatura rejeitada    | Permitido, reaproveitando a mesma linha                                            |
 | Timeout de inatividade (staff)      | Mecanismo customizado `lastActivityAt`, escopado a Coordenador/Membro Defesa Civil |
 | Criptografia de dados sensíveis     | At-rest nativa do Neon Postgres + TLS em trânsito (sem pgcrypto)                   |
+
+---
+
+## 20. PWA — instalação em campo
+
+A aplicação é instalável na tela inicial (`app/manifest.ts`, `display: standalone`). O caso de uso
+justifica: a operação acontece no celular, em campo, e um atalho que abre em tela cheia encurta o
+caminho de quem precisa registrar uma saída de estoque no meio de uma ocorrência.
+
+**Ícones** são gerados por `scripts/gerar-icones-pwa.mjs` — sem dependência, escrevendo o PNG
+sobre o `zlib` do Node. A escolha é por reprodutibilidade: mudar a cor da marca é editar o script
+e rodar de novo, em vez de recriar binários num editor externo e commitá-los sem origem conhecida.
+Há uma variante `maskable` full-bleed, porque o ícone `any` ganharia bordas brancas ao ser
+recortado pela máscara do sistema.
+
+**`webmanifest` precisou entrar na isenção do `proxy.ts`.** Sem isso o navegador recebia um
+redirect para `/login` ao buscar o manifest, e a aplicação não era instalável — falha silenciosa,
+porque nada na interface indica que o manifest não carregou. Está na mesma classe de
+`favicon.ico`/`robots.txt`: metadata pública, sem dado de sessão.
+
+**Cabeçalhos de segurança** (`next.config.ts`) valem para toda a aplicação, não só para a
+instalação: rodando em tela cheia num dispositivo de campo, o custo de uma página embutida em
+iframe hostil sobe. `Permissions-Policy` desliga câmera, microfone e geolocalização — se
+georreferenciar uma ocorrência entrar no escopo, é ali que se libera conscientemente.
+
+### O que deliberadamente **não** foi feito
+
+**Sem service worker e sem cache offline.** A opção indicada pela documentação do Next é o
+Serwist, uma dependência nova — e, mais importante, cachear respostas autenticadas gravaria `cpf`
+e `restricoesSaude` no dispositivo, fora do alcance da criptografia at-rest do Neon (§6.4). Isso
+inverte a decisão registrada ali e precisa ser escolha explícita, não efeito colateral de "virar
+PWA".
+
+Há uma alternativa sem dependência para o problema de conectividade: o `experimental.useOffline`
+do Next 16, que dá interface ciente de conexão e repetição automática de navegações e Server
+Actions falhadas. É experimental, então também merece decisão própria antes de entrar.
+
+**Sem Web Push.** Continua valendo a decisão do MVP: notificações in-app + e-mail, sem VAPID.
