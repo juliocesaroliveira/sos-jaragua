@@ -238,7 +238,7 @@ decidida ad-hoc.
       `totalPessoasAfetadas × proporcao` (BR-INT-01, DESIGN.md §11).
 - [x] LOG-05 Implementar cálculo de "Kits Possíveis (Capacidade)": para cada kit,
       `min` sobre `floor(saldo_estoque[componente].quantidadeAtual /
-  kit_receita_item.quantidade)` entre todos os componentes (BR-INT-02, DESIGN.md
+kit_receita_item.quantidade)` entre todos os componentes (BR-INT-02, DESIGN.md
       §11).
 - [x] LOG-06 Página `(staff)/dashboard/page.tsx` com `StatCard`s (DS-14) para os dois
       indicadores, usando `cacheTag('dashboard:kits')` invalidado por entrada, saída,

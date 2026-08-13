@@ -17,6 +17,15 @@ vi.mock('@/src/modules/auditoria', () => ({
     withAudit: <T>(_opcoes: unknown, fn: () => Promise<T>) => fn()
 }))
 
+/**
+ * Cadastro não redefine senha — estes membros do port existem para a edição
+ * (008-admin-password-reset) e nunca devem ser chamados aqui.
+ */
+const SEM_SENHA = {
+    definirSenha: vi.fn<AutenticacaoService['definirSenha']>(),
+    encerrarSessoes: vi.fn<AutenticacaoService['encerrarSessoes']>()
+}
+
 const ENTRADA = {
     nome: 'Ana Beatriz',
     email: 'ana@example.com',
@@ -26,12 +35,12 @@ const ENTRADA = {
 
 function servicoQueCria(userId = 'user-1') {
     const criarConta = vi.fn<AutenticacaoService['criarConta']>(async () => ({ ok: true, userId }))
-    return { autenticacao: { criarConta } satisfies AutenticacaoService, criarConta }
+    return { autenticacao: { criarConta, ...SEM_SENHA } satisfies AutenticacaoService, criarConta }
 }
 
 function servicoQueRejeitaDuplicado() {
     const criarConta = vi.fn<AutenticacaoService['criarConta']>(async () => ({ ok: false, erro: 'email_duplicado' }))
-    return { autenticacao: { criarConta } satisfies AutenticacaoService, criarConta }
+    return { autenticacao: { criarConta, ...SEM_SENHA } satisfies AutenticacaoService, criarConta }
 }
 
 function repositorioQueAceita() {
@@ -40,7 +49,8 @@ function repositorioQueAceita() {
         listar: vi.fn(),
         atualizarNomeERole,
         atualizarRole: vi.fn(),
-        buscarRole: vi.fn()
+        buscarRole: vi.fn(),
+        possuiSenhaPropria: vi.fn()
     }
     return { usuarios, atualizarNomeERole }
 }
@@ -53,7 +63,8 @@ function repositorioQueFalha() {
         listar: vi.fn(),
         atualizarNomeERole,
         atualizarRole: vi.fn(),
-        buscarRole: vi.fn()
+        buscarRole: vi.fn(),
+        possuiSenhaPropria: vi.fn()
     }
     return { usuarios, atualizarNomeERole }
 }

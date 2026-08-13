@@ -47,10 +47,10 @@ export async function listar<X>Action(entrada: unknown): Promise<ResultadoAction
 
 ## L-06 — Erros e limites
 
-| Situação | Comportamento |
-|---|---|
-| `page` fora do fim após remoção de registros | servidor faz clamp para a última página válida e devolve a `page` efetiva (FR-012) |
-| `pageSize` fora de `[5,10,20,50]` | servidor aplica `20` e devolve o valor efetivo (FR-018) |
-| `totalCount === 0` | `rows: []`, `page: 1`; a tela mostra o vazio do `Table` e o rodapé com "Nenhum registro" |
-| falha no banco | `erroAction` com mensagem pt-BR; sem vazar detalhe de infraestrutura |
-| cliques rápidos sucessivos | resolvido no cliente pelo TanStack Query: só a `queryKey` corrente renderiza |
+| Situação                                     | Comportamento                                                                            |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `page` fora do fim após remoção de registros | servidor faz clamp para a última página válida e devolve a `page` efetiva (FR-012)       |
+| `pageSize` fora de `[5,10,20,50]`            | servidor aplica `20` e devolve o valor efetivo (FR-018)                                  |
+| `totalCount === 0`                           | `rows: []`, `page: 1`; a tela mostra o vazio do `Table` e o rodapé com "Nenhum registro" |
+| falha no banco                               | `erroAction` com mensagem pt-BR; sem vazar detalhe de infraestrutura                     |
+| cliques rápidos sucessivos                   | resolvido no cliente pelo TanStack Query: só a `queryKey` corrente renderiza             |

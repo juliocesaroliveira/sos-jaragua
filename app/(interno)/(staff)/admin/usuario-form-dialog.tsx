@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { camposComErro } from '@/src/shared/kernel'
@@ -18,6 +18,11 @@ import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries
  * um único componente para os dois modos, não dois formulários separados —
  * a diferença entre cadastrar e editar é só quais campos aparecem e qual
  * Server Action é chamada.
+ *
+ * 008-admin-password-reset: na edição o e-mail aparece desabilitado (confirma
+ * de qual conta se trata sem permitir alterá-la) e o rodapé ganha "Trocar
+ * Senha" — exibida apenas para contas com senha própria, nunca para quem entra
+ * por Google ou Facebook.
  */
 const esquemaCriar = z.object({
     nome: z.string().min(1, 'Informe o nome.'),
@@ -31,10 +36,20 @@ const esquemaEditar = z.object({
     role: z.enum(ROLES, { error: 'Selecione o papel.' })
 })
 
+/**
+ * Com a troca de senha ativa, o campo passa a ser obrigatório — revelar e
+ * deixar em branco é engano, não desistência; desistir é recolher a ação
+ * (008-admin-password-reset, FR-011/FR-012).
+ */
+const esquemaEditarComSenha = esquemaEditar.extend({
+    novaSenha: z.string().min(8, 'A senha deve ter ao menos 8 caracteres.')
+})
+
 type Formulario = {
     nome: string
     email?: string
     senha?: string
+    novaSenha?: string
     role: Role
 }
 
@@ -51,6 +66,7 @@ export interface UsuarioFormDialogProps {
 
 export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: UsuarioFormDialogProps) {
     const modoEdicao = Boolean(usuario)
+    const [trocandoSenha, setTrocandoSenha] = useState(false)
 
     const {
         register,
@@ -60,19 +76,35 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
         setError,
         formState: { errors, isSubmitting }
     } = useForm<Formulario>({
-        resolver: zodResolver(modoEdicao ? esquemaEditar : esquemaCriar)
+        resolver: zodResolver(modoEdicao ? (trocandoSenha ? esquemaEditarComSenha : esquemaEditar) : esquemaCriar)
     })
 
+    // Reinicialização única: cobre abrir o diálogo e também alternar de uma
+    // conta para outra sem fechá-lo — a senha digitada para uma conta jamais
+    // pode alcançar a seguinte (FR-020).
     useEffect(() => {
         if (!open) return
+        setTrocandoSenha(false)
         reset(
             usuario ? { nome: usuario.nome, role: usuario.role } : { nome: '', email: '', senha: '', role: 'usuario' }
         )
     }, [open, usuario, reset])
 
+    function cancelarTrocaDeSenha() {
+        setTrocandoSenha(false)
+        reset((valores) => ({ ...valores, novaSenha: undefined }))
+    }
+
     async function enviar(dados: Formulario) {
         const resultado = modoEdicao
-            ? await editarUsuario({ id: usuario!.id, nome: dados.nome, role: dados.role })
+            ? await editarUsuario({
+                  id: usuario!.id,
+                  nome: dados.nome,
+                  role: dados.role,
+                  // Campo recolhido não envia senha alguma — o servidor então
+                  // nem consulta o meio de acesso da conta (FR-008).
+                  novaSenha: trocandoSenha ? dados.novaSenha : undefined
+              })
             : await criarUsuario({ nome: dados.nome, email: dados.email, senha: dados.senha, role: dados.role })
 
         if (!resultado.ok) {
@@ -81,12 +113,19 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                 setError(campo as keyof Formulario, { message: mensagem })
             }
             avisar.erro(modoEdicao ? 'Não foi possível salvar' : 'Não foi possível cadastrar', resultado.erro.mensagem)
+            // A senha nunca é reapresentada depois de uma falha (U-05.3).
+            if (trocandoSenha) reset((valores) => ({ ...valores, novaSenha: undefined }))
             return
         }
 
+        const senhaTrocada = modoEdicao && trocandoSenha
         avisar.sucesso(
             modoEdicao ? 'Conta atualizada' : 'Conta cadastrada',
-            modoEdicao ? `${dados.nome} foi atualizado.` : `${dados.nome} já pode acessar o sistema.`
+            senhaTrocada
+                ? `${dados.nome} foi atualizado e a senha foi redefinida.`
+                : modoEdicao
+                  ? `${dados.nome} foi atualizado.`
+                  : `${dados.nome} já pode acessar o sistema.`
         )
         onOpenChange(false)
         onSucesso?.()
@@ -100,6 +139,17 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
             descricao={modoEdicao ? 'Altere o nome e/ou o papel da conta.' : 'Informe os dados para criar uma conta.'}
             acoes={
                 <>
+                    {/* Só contas com senha própria: quem entra por Google ou
+                        Facebook não tem senha aqui para trocar (FR-005). */}
+                    {modoEdicao && usuario?.podeTrocarSenha && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={trocandoSenha ? cancelarTrocaDeSenha : () => setTrocandoSenha(true)}
+                        >
+                            {trocandoSenha ? 'Cancelar troca de senha' : 'Trocar Senha'}
+                        </Button>
+                    )}
                     <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
                         Cancelar
                     </Button>
@@ -112,7 +162,22 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
             <form id="usuario-form" onSubmit={handleSubmit(enviar)} className="flex flex-col gap-4">
                 <Input id="nome" label="Nome" obrigatorio erro={errors.nome?.message} {...register('nome')} />
 
-                {/* E-mail e senha só existem no cadastro — a edição não os aceita (FR-010, contracts E-01). */}
+                {/* Na edição o e-mail é exibido, mas desabilitado e **fora** do
+                    `register`: assim não entra no payload da action, e o schema
+                    do servidor — que não aceita `email` — é a segunda barreira
+                    (008-admin-password-reset, FR-002). */}
+                {modoEdicao && (
+                    <Input
+                        id="email-conta"
+                        label="E-mail"
+                        type="email"
+                        value={usuario?.email ?? ''}
+                        disabled
+                        readOnly
+                    />
+                )}
+
+                {/* No cadastro, e-mail e senha são campos normais do formulário. */}
                 {!modoEdicao && (
                     <>
                         <Input
@@ -133,6 +198,18 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                             {...register('senha')}
                         />
                     </>
+                )}
+
+                {trocandoSenha && (
+                    <Input
+                        id="novaSenha"
+                        label="Nova senha"
+                        type="password"
+                        obrigatorio
+                        apoio="Mínimo de 8 caracteres."
+                        erro={errors.novaSenha?.message}
+                        {...register('novaSenha')}
+                    />
                 )}
 
                 <Controller

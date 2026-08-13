@@ -48,12 +48,12 @@ O único teste unitário novo esperado é o do saneamento de parâmetros (regra 
 
 ## Cenário 3 — URL compartilhável e entradas inválidas
 
-| URL | Esperado |
-|---|---|
-| `/admin?page=2&pageSize=5` | abre direto na página 2 com 5 por página (SC-006) |
-| `/admin?page=999` | primeira página válida ou última página válida, sem erro nem tela em branco |
-| `/admin?page=0` / `?page=abc` | página 1 |
-| `/admin?pageSize=7` | `pageSize` 20 (padrão) |
+| URL                           | Esperado                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `/admin?page=2&pageSize=5`    | abre direto na página 2 com 5 por página (SC-006)                           |
+| `/admin?page=999`             | primeira página válida ou última página válida, sem erro nem tela em branco |
+| `/admin?page=0` / `?page=abc` | página 1                                                                    |
+| `/admin?pageSize=7`           | `pageSize` 20 (padrão)                                                      |
 
 ## Cenário 4 — Rollout nas demais telas (US3)
 

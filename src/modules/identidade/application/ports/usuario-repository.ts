@@ -16,6 +16,15 @@ export type LinhaUsuario = {
     email: string
     role: Role
     criadoEm: string
+    /**
+     * Derivado: a conta possui senha própria (criada manualmente em `/admin`).
+     * `false` para quem entra só por Google/Facebook — é o que decide a
+     * exibição da ação "Trocar Senha" (008-admin-password-reset, FR-005).
+     *
+     * Booleano derivado em vez do `providerId` cru para que a regra de quem
+     * pode trocar senha exista em um lugar só.
+     */
+    podeTrocarSenha: boolean
 }
 
 export type FiltrosUsuarios = {
@@ -43,4 +52,12 @@ export interface UsuarioRepository {
     atualizarRole(userId: string, role: Role): Promise<void>
 
     buscarRole(userId: string): Promise<Role | null>
+
+    /**
+     * `true` quando existe credencial de senha para a conta. Reconsultado no
+     * servidor no momento da escrita: o valor que a tela conhece pode estar
+     * defasado, e a ausência do botão não pode ser a única proteção
+     * (008-admin-password-reset, FR-013).
+     */
+    possuiSenhaPropria(userId: string): Promise<boolean>
 }

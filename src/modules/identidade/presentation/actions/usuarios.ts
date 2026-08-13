@@ -55,11 +55,22 @@ export async function criarUsuario(entrada: unknown): Promise<ResultadoAction<{ 
 const esquemaEditar = z.object({
     id: z.string().min(1),
     nome: z.string().min(1, 'Informe o nome.'),
-    role: z.enum(ROLES, { error: 'Selecione o papel.' })
-    // Sem `email`/`senha` — a edição não os aceita (FR-010, contracts E-01).
+    role: z.enum(ROLES, { error: 'Selecione o papel.' }),
+    /**
+     * 008-admin-password-reset — ausente significa "não mexer na senha"
+     * (FR-008). String vazia é entrada **inválida**, não sinônimo de ausente
+     * (FR-011): quem revelou o campo e não preencheu cometeu um engano, e
+     * gravar senha vazia seria o pior desfecho possível.
+     */
+    novaSenha: z.string().min(8, 'A senha deve ter ao menos 8 caracteres.').optional()
+    // Continua sem `email`: a edição não o aceita nem mesmo em payload
+    // forjado (FR-002, contracts E-01).
 })
 
-/** FR-008 — edição de nome e papel de uma conta já existente. */
+/**
+ * FR-008 — edição de nome e papel de uma conta já existente e, desde
+ * 008-admin-password-reset, redefinição da senha de contas com senha própria.
+ */
 export async function editarUsuario(entrada: unknown): Promise<ResultadoAction<{ id: string }>> {
     const ator = await obterSessao()
     if (!ator || ator.role !== 'administrador') {
@@ -69,8 +80,16 @@ export async function editarUsuario(entrada: unknown): Promise<ResultadoAction<{
     const parse = esquemaEditar.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Dados de edição inválidos.')
 
-    const useCase = new EditarUsuarioUseCase(criarUsuarioRepository())
-    const resultado = await comAtorDaSessao(ator, () => useCase.executar(parse.data))
+    const useCase = new EditarUsuarioUseCase(criarUsuarioRepository(), autenticacaoService)
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            ...parse.data,
+            // Preserva a sessão de quem executa: sem isto, redefinir a própria
+            // senha deslogaria a pessoa administradora no mesmo instante em que
+            // ela vê a confirmação (FR-016).
+            sessaoPreservada: ator.sessionToken
+        })
+    )
 
     if (resultado.ok) {
         updateTag(CACHE_TAGS.identidadeListagem)

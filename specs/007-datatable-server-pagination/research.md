@@ -13,6 +13,7 @@ Todas as NEEDS CLARIFICATION do Technical Context foram resolvidas aqui.
 **Rationale**: FR-017 exige um componente compartilhado único e FR-016 exige o mesmo rodapé em todas as listagens. Hoje cada tela monta `<Table>` + `<Pagination>` lado a lado e repete a função `navegar()` — três cópias quase idênticas (`tabela-usuarios.tsx`, `tabela-voluntarios.tsx`, `tabela-estoque.tsx`). Acoplar o rodapé ao `Table` remove a chance de uma tela esquecer parte da barra. Prop opcional evita quebrar os call sites sem paginação.
 
 **Alternativas rejeitadas**:
+
 - Componente `TableFooter` separado exportado do barrel: mantém o risco de composição divergente por tela (é o problema atual).
 - `Table` sempre paginado: quebraria `painel-relatorios.tsx` (tabelas em abas) e a galeria, e forçaria dados falsos de `totalCount`.
 
@@ -43,11 +44,13 @@ listarUsuariosAction(params) →  [checa sessão/role]  →  listarUsuarios(para
 A server function faz o gate de autorização (lê `cookies`/sessão) e delega para a query `'use cache'` já existente, que permanece pura e cacheável.
 
 **Rationale**:
+
 - `'use cache'` **não pode ler `cookies()`/`headers()`** (doc `use-cache.md`: "read them outside cached scopes and pass values as arguments"). A checagem de sessão precisa acontecer fora do escopo cacheado.
 - Server Actions **não herdam** o gate do Server Component (padrão já documentado em `src/modules/identidade/presentation/actions/usuarios.ts`) — Princípio IV, defesa em profundidade. Sem o wrapper, o cliente chamaria a leitura sem role.
 - A query `'use cache'` continua reusável pelo RSC no primeiro render (ver D5).
 
 **Alternativas rejeitadas**:
+
 - Route Handlers `GET /api/...`: seriam cacheáveis pelo browser e paralelizáveis, mas a constituição fixa "TanStack Query + Server Actions" (§Stack), e criar uma segunda superfície HTTP para leitura duplicaria o gate de autorização já implementado em Server Actions.
 - Chamar a query `'use cache'` direto do cliente: impossível — é `import 'server-only'` e não é uma server function.
 
@@ -122,13 +125,13 @@ Defaults: `staleTime: 30_000`, `gcTime: 5min`, `refetchOnWindowFocus: false`, `r
 
 Telas que hoje renderizam `<Table>`:
 
-| Tela | Arquivo | Situação | Ação |
-|---|---|---|---|
-| `/admin` | `admin/tabela-usuarios.tsx` | paginada server-side, sem rodapé | rodapé + TanStack Query (P1) |
-| `/voluntarios` | `voluntarios/tabela-voluntarios.tsx` | paginada server-side, sem rodapé, com filtros | rodapé + TanStack Query, preservar filtros (FR-019) |
-| `/estoque` | `estoque/tabela-estoque.tsx` | idem, filtro por categoria | idem |
-| `/relatorios` | `relatorios/painel-relatorios.tsx` | **não paginada** — `inventarioParaExportacao()`/`saidasParaExportacao()` carregam tudo | violação de FR-008; separar leitura de tela (paginada) da leitura de exportação |
-| `/design-system` | `design-system/galeria.tsx` | vitrine | atualizar demo do `Table` com rodapé sobre dados fixos |
+| Tela             | Arquivo                              | Situação                                                                               | Ação                                                                            |
+| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `/admin`         | `admin/tabela-usuarios.tsx`          | paginada server-side, sem rodapé                                                       | rodapé + TanStack Query (P1)                                                    |
+| `/voluntarios`   | `voluntarios/tabela-voluntarios.tsx` | paginada server-side, sem rodapé, com filtros                                          | rodapé + TanStack Query, preservar filtros (FR-019)                             |
+| `/estoque`       | `estoque/tabela-estoque.tsx`         | idem, filtro por categoria                                                             | idem                                                                            |
+| `/relatorios`    | `relatorios/painel-relatorios.tsx`   | **não paginada** — `inventarioParaExportacao()`/`saidasParaExportacao()` carregam tudo | violação de FR-008; separar leitura de tela (paginada) da leitura de exportação |
+| `/design-system` | `design-system/galeria.tsx`          | vitrine                                                                                | atualizar demo do `Table` com rodapé sobre dados fixos                          |
 
 **Decisão para `/relatorios`**: as tabelas de tela passam a consumir `listarEstoque` (já paginada) e uma nova `listarSaidas({page,pageSize})`; as funções `*ParaExportacao` permanecem intactas e exclusivas do Route Handler de download (`<a download>`, DESIGN.md §14), que precisa do conjunto completo por natureza.
 

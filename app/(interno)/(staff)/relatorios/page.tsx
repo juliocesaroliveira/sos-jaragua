@@ -66,10 +66,7 @@ async function Conteudo({ searchParams }: Props) {
     const consultaInventario = normalizarPaginacao({ page: params.invPage, pageSize: params.invPageSize })
     const consultaSaidas = normalizarPaginacao({ page: params.saidasPage, pageSize: params.saidasPageSize })
 
-    const [inventario, saidas] = await Promise.all([
-        listarEstoque(consultaInventario),
-        listarSaidas(consultaSaidas)
-    ])
+    const [inventario, saidas] = await Promise.all([listarEstoque(consultaInventario), listarSaidas(consultaSaidas)])
 
     return (
         <HydrationBoundary

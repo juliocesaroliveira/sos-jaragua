@@ -25,7 +25,9 @@ import type { ItemComSaldo, LinhaSaidaPlana } from '@/src/modules/estoque/presen
  * Cada aba tem seu próprio par de parâmetros na URL (`inv*`/`saidas*`) para que
  * paginar uma não desloque a outra.
  */
-export function PainelRelatorios({ podeGerarContingencia }: {
+export function PainelRelatorios({
+    podeGerarContingencia
+}: {
     /** Decidido no servidor: o pacote de contingência tem autorização própria. */
     podeGerarContingencia: boolean
 }) {

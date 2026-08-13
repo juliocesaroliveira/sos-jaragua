@@ -44,12 +44,12 @@ export interface PaginacaoTabela {
 
 Da esquerda para a direita em `sm+`, empilhado em telas estreitas (FR-015, SC-007):
 
-| Elemento | Regra |
-|---|---|
-| Totais | `Exibindo {primeiro}–{ultimo} de {totalCount} registros` — com `totalCount === 0`, `Nenhum registro`. Dentro de `aria-live="polite"` (FR-002/FR-003) |
-| Página | `Página {page} de {totalPaginas}` (FR-003) |
-| Seletor | `Select` do barrel, opções `5 / 10 / 20 / 50`, rótulo acessível `Registros por página` visualmente oculto (FR-004) |
-| Paginação | `Pagination` (U-03) (FR-006) |
+| Elemento  | Regra                                                                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Totais    | `Exibindo {primeiro}–{ultimo} de {totalCount} registros` — com `totalCount === 0`, `Nenhum registro`. Dentro de `aria-live="polite"` (FR-002/FR-003) |
+| Página    | `Página {page} de {totalPaginas}` (FR-003)                                                                                                           |
+| Seletor   | `Select` do barrel, opções `5 / 10 / 20 / 50`, rótulo acessível `Registros por página` visualmente oculto (FR-004)                                   |
+| Paginação | `Pagination` (U-03) (FR-006)                                                                                                                         |
 
 - **U-02.1**: escolher um tamanho dispara `onPageSizeChange` — e é o consumidor que reseta `page` para 1 (FR-005). O rodapé não decide navegação.
 - **U-02.2**: nenhum texto em inglês; números formatados em `pt-BR`.

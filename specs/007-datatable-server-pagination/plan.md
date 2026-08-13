@@ -34,16 +34,16 @@ Abordagem técnica (detalhada em [research.md](./research.md)): o rodapé passa 
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Princípio | Gate | Status |
-|---|---|---|
-| I. Clean Architecture por Módulo | Server functions de leitura ficam em `presentation/actions/` e chamam a query do próprio módulo; nenhum `domain/` tocado; nenhum módulo lê tabela de outro | ✅ PASS |
-| II. Tipagem Estrita e Qualidade | Sem `any`; genéricos preservados em `Table<TData>`; textos pt-BR; commits Conventional | ✅ PASS |
-| III. Testes de Regra de Negócio | A feature é presentation/UI — não altera `domain`/`application`. Cobertura: unitário do saneamento de parâmetros (`src/shared/paginacao`, regra pura) + contrato das server functions | ✅ PASS |
-| IV. Segurança e Defesa em Profundidade | Cada server function de leitura revalida sessão/role independentemente do gate da página (mesmo padrão de `actions/usuarios.ts`) | ✅ PASS |
-| V. Auditoria Não Bloqueante | Feature só faz leitura — `withAudit` não se aplica | ✅ N/A |
-| VI. Simplicidade Operacional | Zero dependências novas (`nuqs` rejeitado, D9); reusa `Pagination`/`Select`/`Table` existentes; decisões registradas aqui antes do código | ✅ PASS |
-| §Stack: "TanStack Query + Server Actions; TanStack Table com paginação obrigatoriamente server-side" | A feature **corrige** um drift: TanStack Query estava instalado mas sem `QueryClient` | ✅ PASS (aproxima da constituição) |
-| §Fluxo: responsividade mobile como critério de aceitação | SC-007 e D11 tratam 360px explicitamente | ✅ PASS |
+| Princípio                                                                                            | Gate                                                                                                                                                                                  | Status                             |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| I. Clean Architecture por Módulo                                                                     | Server functions de leitura ficam em `presentation/actions/` e chamam a query do próprio módulo; nenhum `domain/` tocado; nenhum módulo lê tabela de outro                            | ✅ PASS                            |
+| II. Tipagem Estrita e Qualidade                                                                      | Sem `any`; genéricos preservados em `Table<TData>`; textos pt-BR; commits Conventional                                                                                                | ✅ PASS                            |
+| III. Testes de Regra de Negócio                                                                      | A feature é presentation/UI — não altera `domain`/`application`. Cobertura: unitário do saneamento de parâmetros (`src/shared/paginacao`, regra pura) + contrato das server functions | ✅ PASS                            |
+| IV. Segurança e Defesa em Profundidade                                                               | Cada server function de leitura revalida sessão/role independentemente do gate da página (mesmo padrão de `actions/usuarios.ts`)                                                      | ✅ PASS                            |
+| V. Auditoria Não Bloqueante                                                                          | Feature só faz leitura — `withAudit` não se aplica                                                                                                                                    | ✅ N/A                             |
+| VI. Simplicidade Operacional                                                                         | Zero dependências novas (`nuqs` rejeitado, D9); reusa `Pagination`/`Select`/`Table` existentes; decisões registradas aqui antes do código                                             | ✅ PASS                            |
+| §Stack: "TanStack Query + Server Actions; TanStack Table com paginação obrigatoriamente server-side" | A feature **corrige** um drift: TanStack Query estava instalado mas sem `QueryClient`                                                                                                 | ✅ PASS (aproxima da constituição) |
+| §Fluxo: responsividade mobile como critério de aceitação                                             | SC-007 e D11 tratam 360px explicitamente                                                                                                                                              | ✅ PASS                            |
 
 **Resultado**: nenhuma violação. Complexity Tracking não se aplica.
 

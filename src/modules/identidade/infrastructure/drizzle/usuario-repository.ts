@@ -1,6 +1,6 @@
-import { count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, isNotNull, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
-import { user } from '@/db/schema/identidade'
+import { account, user } from '@/db/schema/identidade'
 import type { Role } from '@/src/shared/auth/roles'
 import type { LinhaUsuario, UsuarioRepository } from '../../application/ports/usuario-repository'
 
@@ -15,6 +15,26 @@ import type { LinhaUsuario, UsuarioRepository } from '../../application/ports/us
  */
 type Executor = typeof db | Transacao
 
+/**
+ * Provedor de credencial do better-auth para contas com senha própria — as
+ * criadas manualmente em `/admin`. Contas sociais gravam `google`/`facebook`
+ * (008-admin-password-reset, D2).
+ */
+const PROVEDOR_SENHA = 'credential'
+
+/**
+ * Subconsulta correlacionada em vez de uma consulta por linha: a listagem de
+ * `/admin` já é paginada e um N+1 aqui apareceria justamente na tela de
+ * administração durante uma crise. Mesmo padrão de `HABILIDADES_DO_PERFIL`
+ * em `voluntariado`.
+ */
+const POSSUI_SENHA_PROPRIA = sql<boolean>`exists (
+    select 1 from "account"
+    where "account"."user_id" = "user"."id"
+      and "account"."provider_id" = ${PROVEDOR_SENHA}
+      and "account"."password" is not null
+)`
+
 export function criarUsuarioRepository(executor: Executor = db): UsuarioRepository {
     return {
         async listar({ page, pageSize }) {
@@ -25,7 +45,8 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
                         nome: user.name,
                         email: user.email,
                         role: user.role,
-                        criadoEm: user.createdAt
+                        criadoEm: user.createdAt,
+                        podeTrocarSenha: POSSUI_SENHA_PROPRIA
                     })
                     .from(user)
                     .orderBy(desc(user.createdAt))
@@ -46,6 +67,18 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
 
         async atualizarRole(userId, role) {
             await executor.update(user).set({ role }).where(eq(user.id, userId))
+        },
+
+        async possuiSenhaPropria(userId) {
+            const [linha] = await executor
+                .select({ id: account.id })
+                .from(account)
+                .where(
+                    and(eq(account.userId, userId), eq(account.providerId, PROVEDOR_SENHA), isNotNull(account.password))
+                )
+                .limit(1)
+
+            return linha !== undefined
         },
 
         async buscarRole(userId) {
