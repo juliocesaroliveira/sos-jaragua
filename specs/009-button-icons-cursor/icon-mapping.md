@@ -12,32 +12,32 @@
 
 All icons imported from `lucide-react`. Use these mappings when adding icons to buttons across the application.
 
-| Action | Icon Name | Import | Typical Use Cases |
-|--------|-----------|--------|-------------------|
-| Create / Add | `Plus` | `import { Plus } from 'lucide-react'` | "Criar Usuário", "Adicionar Item", "Nova Entrada" |
-| Edit / Modify | `Pencil` | `import { Pencil } from 'lucide-react'` | "Editar Perfil", "Alterar Dados", "Modificar" |
-| Delete / Remove | `Trash2` | `import { Trash2 } from 'lucide-react'` | "Remover", "Deletar", "Excluir" |
-| Save | `Save` | `import { Save } from 'lucide-react'` | "Salvar Alterações", "Gravar" |
-| Submit / Confirm | `Check` or `CheckCircle` | `import { Check } from 'lucide-react'` | "Enviar Formulário", "Confirmar", "Aceitar" |
-| Cancel / Close | `X` or `XCircle` | `import { X } from 'lucide-react'` | "Cancelar", "Fechar", "Descartar" |
-| Download / Export | `Download` | `import { Download } from 'lucide-react'` | "Exportar", "Baixar Relatório", "Salvar Como" |
-| Upload / Import | `Upload` | `import { Upload } from 'lucide-react'` | "Importar", "Enviar Arquivo", "Carregar Dados" |
-| Print | `Printer` | `import { Printer } from 'lucide-react'` | "Imprimir", "Gerar PDF" |
-| Search | `Search` | `import { Search } from 'lucide-react'` | "Buscar", "Filtrar", "Pesquisar" |
-| Settings / Configuration | `Settings` or `Gear` | `import { Settings } from 'lucide-react'` | "Configurações", "Preferências", "Opções Avançadas" |
-| Logout / Exit | `LogOut` | `import { LogOut } from 'lucide-react'` | "Sair", "Desconectar", "Encerrar Sessão" |
-| Menu / More Options | `Menu` or `MoreVertical` | `import { Menu } from 'lucide-react'` | "Opções", "Mais", "Ações" |
-| Refresh / Reload | `RotateCcw` | `import { RotateCcw } from 'lucide-react'` | "Atualizar", "Recarregar", "Sincronizar" |
-| Back / Previous | `ArrowLeft` or `ChevronLeft` | `import { ArrowLeft } from 'lucide-react'` | "Voltar", "Página Anterior", "Retornar" |
-| Next / Forward | `ArrowRight` or `ChevronRight` | `import { ArrowRight } from 'lucide-react'` | "Próximo", "Página Seguinte", "Avançar" |
-| Help / Info | `HelpCircle` or `Info` | `import { HelpCircle } from 'lucide-react'` | "Ajuda", "Informações", "Documentação" |
-| Copy | `Copy` | `import { Copy } from 'lucide-react'` | "Copiar", "Duplicar" |
-| Archive | `Archive` | `import { Archive } from 'lucide-react'` | "Arquivar", "Guardar" |
-| Eye / View | `Eye` | `import { Eye } from 'lucide-react'` | "Visualizar", "Ver Detalhes", "Expandir" |
-| Eye Off / Hide | `EyeOff` | `import { EyeOff } from 'lucide-react'` | "Ocultar", "Minimizar" |
-| Trash / Recycle | `Trash` | `import { Trash } from 'lucide-react'` | "Ir para Lixeira", "Soft Delete" |
-| Check All | `CheckSquare` | `import { CheckSquare } from 'lucide-react'` | "Selecionar Todos", "Marcar Todos" |
-| Uncheck All | `Square` | `import { Square } from 'lucide-react'` | "Desselecionar Todos", "Desmarcar Todos" |
+| Action                   | Icon Name                      | Import                                       | Typical Use Cases                                   |
+| ------------------------ | ------------------------------ | -------------------------------------------- | --------------------------------------------------- |
+| Create / Add             | `Plus`                         | `import { Plus } from 'lucide-react'`        | "Criar Usuário", "Adicionar Item", "Nova Entrada"   |
+| Edit / Modify            | `Pencil`                       | `import { Pencil } from 'lucide-react'`      | "Editar Perfil", "Alterar Dados", "Modificar"       |
+| Delete / Remove          | `Trash2`                       | `import { Trash2 } from 'lucide-react'`      | "Remover", "Deletar", "Excluir"                     |
+| Save                     | `Save`                         | `import { Save } from 'lucide-react'`        | "Salvar Alterações", "Gravar"                       |
+| Submit / Confirm         | `Check` or `CheckCircle`       | `import { Check } from 'lucide-react'`       | "Enviar Formulário", "Confirmar", "Aceitar"         |
+| Cancel / Close           | `X` or `XCircle`               | `import { X } from 'lucide-react'`           | "Cancelar", "Fechar", "Descartar"                   |
+| Download / Export        | `Download`                     | `import { Download } from 'lucide-react'`    | "Exportar", "Baixar Relatório", "Salvar Como"       |
+| Upload / Import          | `Upload`                       | `import { Upload } from 'lucide-react'`      | "Importar", "Enviar Arquivo", "Carregar Dados"      |
+| Print                    | `Printer`                      | `import { Printer } from 'lucide-react'`     | "Imprimir", "Gerar PDF"                             |
+| Search                   | `Search`                       | `import { Search } from 'lucide-react'`      | "Buscar", "Filtrar", "Pesquisar"                    |
+| Settings / Configuration | `Settings` or `Gear`           | `import { Settings } from 'lucide-react'`    | "Configurações", "Preferências", "Opções Avançadas" |
+| Logout / Exit            | `LogOut`                       | `import { LogOut } from 'lucide-react'`      | "Sair", "Desconectar", "Encerrar Sessão"            |
+| Menu / More Options      | `Menu` or `MoreVertical`       | `import { Menu } from 'lucide-react'`        | "Opções", "Mais", "Ações"                           |
+| Refresh / Reload         | `RotateCcw`                    | `import { RotateCcw } from 'lucide-react'`   | "Atualizar", "Recarregar", "Sincronizar"            |
+| Back / Previous          | `ArrowLeft` or `ChevronLeft`   | `import { ArrowLeft } from 'lucide-react'`   | "Voltar", "Página Anterior", "Retornar"             |
+| Next / Forward           | `ArrowRight` or `ChevronRight` | `import { ArrowRight } from 'lucide-react'`  | "Próximo", "Página Seguinte", "Avançar"             |
+| Help / Info              | `HelpCircle` or `Info`         | `import { HelpCircle } from 'lucide-react'`  | "Ajuda", "Informações", "Documentação"              |
+| Copy                     | `Copy`                         | `import { Copy } from 'lucide-react'`        | "Copiar", "Duplicar"                                |
+| Archive                  | `Archive`                      | `import { Archive } from 'lucide-react'`     | "Arquivar", "Guardar"                               |
+| Eye / View               | `Eye`                          | `import { Eye } from 'lucide-react'`         | "Visualizar", "Ver Detalhes", "Expandir"            |
+| Eye Off / Hide           | `EyeOff`                       | `import { EyeOff } from 'lucide-react'`      | "Ocultar", "Minimizar"                              |
+| Trash / Recycle          | `Trash`                        | `import { Trash } from 'lucide-react'`       | "Ir para Lixeira", "Soft Delete"                    |
+| Check All                | `CheckSquare`                  | `import { CheckSquare } from 'lucide-react'` | "Selecionar Todos", "Marcar Todos"                  |
+| Uncheck All              | `Square`                       | `import { Square } from 'lucide-react'`      | "Desselecionar Todos", "Desmarcar Todos"            |
 
 ---
 
@@ -50,11 +50,7 @@ import { Button } from '@/shared/ui/button'
 import { Plus } from 'lucide-react'
 
 export function CreateUserButton() {
-  return (
-    <Button iconeInicio={<Plus className="size-4" />}>
-      Criar Usuário
-    </Button>
-  )
+    return <Button iconeInicio={<Plus className="size-4" />}>Criar Usuário</Button>
 }
 ```
 
@@ -65,29 +61,29 @@ import { Button } from '@/shared/ui/button'
 import { Save, X, Pencil, Trash2 } from 'lucide-react'
 
 export function FormActions() {
-  return (
-    <>
-      {/* Primary */}
-      <Button variant="primary" iconeInicio={<Save className="size-4" />}>
-        Salvar
-      </Button>
-      
-      {/* Secondary */}
-      <Button variant="secondary" iconeInicio={<X className="size-4" />}>
-        Cancelar
-      </Button>
-      
-      {/* Ghost */}
-      <Button variant="ghost" iconeInicio={<Pencil className="size-4" />}>
-        Editar
-      </Button>
-      
-      {/* Danger */}
-      <Button variant="danger" iconeInicio={<Trash2 className="size-4" />}>
-        Deletar
-      </Button>
-    </>
-  )
+    return (
+        <>
+            {/* Primary */}
+            <Button variant="primary" iconeInicio={<Save className="size-4" />}>
+                Salvar
+            </Button>
+
+            {/* Secondary */}
+            <Button variant="secondary" iconeInicio={<X className="size-4" />}>
+                Cancelar
+            </Button>
+
+            {/* Ghost */}
+            <Button variant="ghost" iconeInicio={<Pencil className="size-4" />}>
+                Editar
+            </Button>
+
+            {/* Danger */}
+            <Button variant="danger" iconeInicio={<Trash2 className="size-4" />}>
+                Deletar
+            </Button>
+        </>
+    )
 }
 ```
 
@@ -116,16 +112,16 @@ No additional work needed - the Button component handles this automatically.
 ## Accessibility Considerations
 
 1. **Icon as Decorative**: Icons in buttons are decorative; button text provides the semantic meaning
-   - Screen readers announce button text, not icon
-   - Icon serves visual affordance only
+    - Screen readers announce button text, not icon
+    - Icon serves visual affordance only
 
 2. **Icon-Only Buttons**: Not recommended by this design
-   - Always include readable button text
-   - If icon-only is necessary, add `aria-label` to button
+    - Always include readable button text
+    - If icon-only is necessary, add `aria-label` to button
 
 3. **Focus Management**: Built-in via `ANEL_FOCO` class
-   - Focus ring visible on all buttons for keyboard navigation
-   - No additional accessibility work needed
+    - Focus ring visible on all buttons for keyboard navigation
+    - No additional accessibility work needed
 
 ---
 
@@ -143,11 +139,11 @@ No additional work needed - the Button component handles this automatically.
 
 ### Current Button Usage (2026-08-13)
 
-| File | Buttons | Actions | Icon Status |
-|------|---------|---------|-------------|
-| `src/shared/ui/dialog/dialog.tsx` | 2 | Close, Primary Action | To be updated |
-| `src/shared/ui/icon-button/icon-button.tsx` | 1 | Icon-only button | N/A - Icon button component |
-| `src/shared/ui/shell/topbar.tsx` | 2-3 | Menu, Actions | To be updated |
+| File                                        | Buttons | Actions               | Icon Status                 |
+| ------------------------------------------- | ------- | --------------------- | --------------------------- |
+| `src/shared/ui/dialog/dialog.tsx`           | 2       | Close, Primary Action | To be updated               |
+| `src/shared/ui/icon-button/icon-button.tsx` | 1       | Icon-only button      | N/A - Icon button component |
+| `src/shared/ui/shell/topbar.tsx`            | 2-3     | Menu, Actions         | To be updated               |
 
 **Total Estimated Buttons**: ~5-10 in current implementation (early development stage)
 

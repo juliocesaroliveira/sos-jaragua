@@ -137,11 +137,11 @@
 ### User Story Dependencies
 
 - **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-  - Can be tested independently by checking User Management page buttons
+    - Can be tested independently by checking User Management page buttons
 - **User Story 2 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-  - Can be tested independently by hovering over buttons and inspecting CSS classes
+    - Can be tested independently by hovering over buttons and inspecting CSS classes
 - **User Story 3 (P2)**: Can start after Foundational (Phase 2) - Should integrate with US1 & US2 results
-  - Can be tested independently by verifying all buttons follow the established pattern
+    - Can be tested independently by verifying all buttons follow the established pattern
 
 ### Within Each User Story
 

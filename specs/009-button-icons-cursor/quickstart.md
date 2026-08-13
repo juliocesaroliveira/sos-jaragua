@@ -22,10 +22,12 @@
 **Steps**:
 
 1. Start the development server:
-   ```bash
-   npm run dev
-   ```
-   Wait for compilation to complete.
+
+    ```bash
+    npm run dev
+    ```
+
+    Wait for compilation to complete.
 
 2. Open the application in browser (typically `http://localhost:3000`)
 
@@ -38,15 +40,15 @@
 6. Hover your mouse over the button
 
 7. **Expected Result**:
-   - Visual cursor changes to pointer (hand icon)
-   - CSS class `hover:cursor-pointer` is present in button's className
-   - Button background color changes per variant (hover effect)
+    - Visual cursor changes to pointer (hand icon)
+    - CSS class `hover:cursor-pointer` is present in button's className
+    - Button background color changes per variant (hover effect)
 
 8. Move mouse away from button
 
 9. **Expected Result**:
-   - Cursor reverts to default arrow
-   - Button returns to normal state
+    - Cursor reverts to default arrow
+    - Button returns to normal state
 
 **Pass Criteria**: ✓ Pointer cursor appears on hover; reverts on mouse leave
 
@@ -65,12 +67,12 @@
 3. Locate action buttons in the page (Create User, Edit, Delete buttons, etc.)
 
 4. **Expected Result**:
-   - Each button displays an icon to the LEFT of the text
-   - Icon visually matches the button action:
-     - "Criar Usuário" → Plus icon
-     - "Editar" → Pencil icon
-     - "Deletar" → Trash icon
-   - Icons are properly sized and aligned with text
+    - Each button displays an icon to the LEFT of the text
+    - Icon visually matches the button action:
+        - "Criar Usuário" → Plus icon
+        - "Editar" → Pencil icon
+        - "Deletar" → Trash icon
+    - Icons are properly sized and aligned with text
 
 5. Inspect button element in Developer Tools
 
@@ -89,15 +91,15 @@
 1. Application is running (from Scenario 1)
 
 2. Navigate to a page with a disabled button
-   - Example: Submit button before required fields are filled
-   - Or: A disabled action button in the user list (if editing is disabled for some users)
+    - Example: Submit button before required fields are filled
+    - Or: A disabled action button in the user list (if editing is disabled for some users)
 
 3. Hover your mouse over the disabled button
 
 4. **Expected Result**:
-   - Cursor shows "not-allowed" symbol (circle with slash)
-   - NOT pointer cursor
-   - Button appears faded/disabled (lower opacity)
+    - Cursor shows "not-allowed" symbol (circle with slash)
+    - NOT pointer cursor
+    - Button appears faded/disabled (lower opacity)
 
 5. Inspect disabled button element in Developer Tools
 
@@ -116,15 +118,15 @@
 1. Application is running (from Scenario 1)
 
 2. Look for icon-only buttons in the UI
-   - Example: Close/minimize buttons, compact action buttons in data tables
-   - If none exist, this scenario is N/A
+    - Example: Close/minimize buttons, compact action buttons in data tables
+    - If none exist, this scenario is N/A
 
 3. Hover over an icon-only button
 
 4. **Expected Result**:
-   - Icon is displayed and visible
-   - Pointer cursor appears on hover
-   - Button is clearly clickable
+    - Icon is displayed and visible
+    - Pointer cursor appears on hover
+    - Button is clearly clickable
 
 5. Inspect icon-only button in Developer Tools
 
@@ -149,9 +151,9 @@
 4. While submission is in progress, hover over the submit button
 
 5. **Expected Result**:
-   - Cursor shows "not-allowed" symbol (button is disabled during loading)
-   - Loading spinner is visible (replaces start icon)
-   - Button text is still visible (layout doesn't collapse)
+    - Cursor shows "not-allowed" symbol (button is disabled during loading)
+    - Loading spinner is visible (replaces start icon)
+    - Button text is still visible (layout doesn't collapse)
 
 6. Inspect button element in Developer Tools
 
@@ -170,16 +172,16 @@
 1. Application is running (from Scenario 1)
 
 2. Find buttons of different variants on the page:
-   - Primary button (solid background) with icon
-   - Secondary button (border/surface) with icon
-   - Ghost button (minimal styling) with icon
-   - Danger button (red) with icon
+    - Primary button (solid background) with icon
+    - Secondary button (border/surface) with icon
+    - Ghost button (minimal styling) with icon
+    - Danger button (red) with icon
 
 3. For each variant:
-   - Hover over the button
-   - Verify pointer cursor appears
-   - Verify icon is visible and left-aligned
-   - Verify button styling matches variant design
+    - Hover over the button
+    - Verify pointer cursor appears
+    - Verify icon is visible and left-aligned
+    - Verify button styling matches variant design
 
 4. Inspect each button's className in Developer Tools
 
@@ -206,9 +208,9 @@
 5. Stop the recording
 
 6. **Expected Result**:
-   - Cursor change is instant (< 50ms latency)
-   - No layout shifts or reflows triggered by cursor change
-   - No JavaScript execution time > 50ms for cursor feedback
+    - Cursor change is instant (< 50ms latency)
+    - No layout shifts or reflows triggered by cursor change
+    - No JavaScript execution time > 50ms for cursor feedback
 
 7. Timeline should show minimal activity for hover events
 
@@ -231,16 +233,16 @@
 4. Navigate to a page with buttons (User Management or similar)
 
 5. **Expected Result**:
-   - Icons are displayed on the left side of button text
-   - Buttons are touch-enabled and respond to taps
-   - Buttons are appropriately sized for mobile (min 44x44px recommended)
-   - Text is readable without zooming
+    - Icons are displayed on the left side of button text
+    - Buttons are touch-enabled and respond to taps
+    - Buttons are appropriately sized for mobile (min 44x44px recommended)
+    - Text is readable without zooming
 
 6. Tap on a button
 
 7. **Expected Result**:
-   - Button click event fires correctly
-   - Navigation or action completes as expected
+    - Button click event fires correctly
+    - Navigation or action completes as expected
 
 **Pass Criteria**: ✓ Icons display on mobile; buttons are touch-responsive; text is readable
 
@@ -259,21 +261,21 @@
 3. Press `Tab` key to navigate through interactive elements
 
 4. **Expected Result**:
-   - Focus moves to button
-   - Visual focus ring is visible (ANEL_FOCO styling)
-   - Button text is readable and clear
+    - Focus moves to button
+    - Visual focus ring is visible (ANEL_FOCO styling)
+    - Button text is readable and clear
 
 5. Press `Enter` or `Space` while focused on button
 
 6. **Expected Result**:
-   - Button click event fires
-   - Action completes as expected
+    - Button click event fires
+    - Action completes as expected
 
 7. (Optional) Enable screen reader (Windows: Narrator, macOS: VoiceOver)
 
 8. **Expected Result**:
-   - Screen reader announces button text and role
-   - Button action is clear from text alone (icon is not announced, which is correct if decorative)
+    - Screen reader announces button text and role
+    - Button action is clear from text alone (icon is not announced, which is correct if decorative)
 
 **Pass Criteria**: ✓ Buttons are keyboard-navigable; focus is visible; screen reader compatibility maintained
 
@@ -284,11 +286,13 @@
 **Vitest Unit Tests**:
 
 Run component tests to verify implementation:
+
 ```bash
 npm test -- button.test.tsx
 ```
 
 **Expected Test Output**:
+
 - ✓ Button renders with cursor-pointer class
 - ✓ Button renders iconeInicio when provided
 - ✓ Disabled button has cursor-not-allowed class
@@ -299,6 +303,7 @@ npm test -- button.test.tsx
 **Browser Compatibility Tests**:
 
 Run in multiple browsers (via CI or manual):
+
 - Chrome/Edge (Chromium)
 - Firefox
 - Safari
