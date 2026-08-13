@@ -666,3 +666,41 @@ com o usuário, sem pendências para a implementação:
 | Reenvio de candidatura rejeitada    | Permitido, reaproveitando a mesma linha                                            |
 | Timeout de inatividade (staff)      | Mecanismo customizado `lastActivityAt`, escopado a Coordenador/Membro Defesa Civil |
 | Criptografia de dados sensíveis     | At-rest nativa do Neon Postgres + TLS em trânsito (sem pgcrypto)                   |
+
+---
+
+## 20. PWA — instalação em campo
+
+A aplicação é instalável na tela inicial (`app/manifest.ts`, `display: standalone`). O caso de uso
+justifica: a operação acontece no celular, em campo, e um atalho que abre em tela cheia encurta o
+caminho de quem precisa registrar uma saída de estoque no meio de uma ocorrência.
+
+**Ícones** são gerados por `scripts/gerar-icones-pwa.mjs` — sem dependência, escrevendo o PNG
+sobre o `zlib` do Node. A escolha é por reprodutibilidade: mudar a cor da marca é editar o script
+e rodar de novo, em vez de recriar binários num editor externo e commitá-los sem origem conhecida.
+Há uma variante `maskable` full-bleed, porque o ícone `any` ganharia bordas brancas ao ser
+recortado pela máscara do sistema.
+
+**`webmanifest` precisou entrar na isenção do `proxy.ts`.** Sem isso o navegador recebia um
+redirect para `/login` ao buscar o manifest, e a aplicação não era instalável — falha silenciosa,
+porque nada na interface indica que o manifest não carregou. Está na mesma classe de
+`favicon.ico`/`robots.txt`: metadata pública, sem dado de sessão.
+
+**Cabeçalhos de segurança** (`next.config.ts`) valem para toda a aplicação, não só para a
+instalação: rodando em tela cheia num dispositivo de campo, o custo de uma página embutida em
+iframe hostil sobe. `Permissions-Policy` desliga câmera, microfone e geolocalização — se
+georreferenciar uma ocorrência entrar no escopo, é ali que se libera conscientemente.
+
+### O que deliberadamente **não** foi feito
+
+**Sem service worker e sem cache offline.** A opção indicada pela documentação do Next é o
+Serwist, uma dependência nova — e, mais importante, cachear respostas autenticadas gravaria `cpf`
+e `restricoesSaude` no dispositivo, fora do alcance da criptografia at-rest do Neon (§6.4). Isso
+inverte a decisão registrada ali e precisa ser escolha explícita, não efeito colateral de "virar
+PWA".
+
+Há uma alternativa sem dependência para o problema de conectividade: o `experimental.useOffline`
+do Next 16, que dá interface ciente de conexão e repetição automática de navegações e Server
+Actions falhadas. É experimental, então também merece decisão própria antes de entrar.
+
+**Sem Web Push.** Continua valendo a decisão do MVP: notificações in-app + e-mail, sem VAPID.

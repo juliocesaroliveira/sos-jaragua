@@ -94,6 +94,12 @@ export const config = {
         // Tudo, exceto o handler do better-auth, assets estáticos e arquivos
         // de metadata (DESIGN.md §6.2, item 4). A única rota de navegação
         // isenta de sessão é `/login` (`ehRotaPublica`, checado no corpo).
-        '/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js)$).*)'
+        //
+        // `webmanifest` entra na mesma classe de `favicon.ico`/`robots.txt`:
+        // metadata pública, sem dado de sessão. Sem a isenção, o navegador
+        // recebe um redirect para `/login` ao buscar o manifest e a aplicação
+        // deixa de ser instalável — falha silenciosa, porque nada na interface
+        // indica que o manifest não carregou.
+        '/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|webmanifest)$).*)'
     ]
 }
