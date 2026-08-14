@@ -163,6 +163,18 @@ export function Galeria() {
                     >
                         Toast de erro
                     </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => avisar.atencao('Saldo baixo', 'Restam 3 unidades de Cesta básica em estoque.')}
+                    >
+                        Toast de atenção
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => avisar.info('Turno encerrado', 'A escala do turno da tarde foi fechada.')}
+                    >
+                        Toast de informação
+                    </Button>
                     <Tooltip conteudo="Editar atividade">
                         <IconButton aria-label="Editar atividade" icone={<Pencil aria-hidden className="size-5" />} />
                     </Tooltip>

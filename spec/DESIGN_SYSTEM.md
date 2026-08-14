@@ -282,10 +282,24 @@ focus-visible:ring-offset-2`.
 
 ### 4.8. Toast
 
-- Ark UI `Toast` (via `createToaster`).
+- `react-toastify` pelo entry point **`unstyled`** — a biblioteca fornece só o comportamento
+  (fila, limite de 4, temporizador, pausa, desmontagem); a aparência inteira vem dos tokens
+  deste documento. `react-toastify/ReactToastify.css` **não** é importado: traria a paleta
+  própria da biblioteca, que teríamos de combater token a token.
+- Disparo pelos atalhos em pt-BR `avisar.sucesso` / `.erro` / `.atencao` / `.info`, com
+  assinatura `(titulo, descricao?)`. Duração, posição e tom são decisão do design system,
+  não da tela — não há opções por chamada.
 - Feedback de mutações client-side (ex.: "Saída registrada com sucesso", erros de
-  validação de saída de kit). Variantes `success`/`danger`/`info` seguem §3. Auto-dismiss
-  5s, pausável em hover/foco.
+  validação de saída de kit). Variantes `success`/`danger`/`warning`/`info` seguem §3.
+- Auto-dismiss por tom — sucesso e informação 5s, atenção 6s, erro 8s (ler um erro custa
+  mais que registrar um sucesso) —, pausável em hover e em perda de foco da janela.
+- Avisos em **coluna**, todos visíveis. Não empilhar colapsado: pilha só expande no hover,
+  e mobile não tem hover — em campo os avisos de baixo ficariam inalcançáveis.
+- O tema sai das variantes `dark:` do Tailwind, nunca da prop `theme` da biblioteca: assim
+  um aviso já aberto acompanha a troca de tema, em CSS puro.
+- ⚠️ Três regras em `app/globals.css` sustentam o componente e não podem ser removidas:
+  os keyframes de entrada/saída e — principalmente — a animação da barra de progresso, que
+  **é** o cronômetro do auto-dismiss (a biblioteca fecha o aviso no `animationend` dela).
 
 ### 4.9. Tabs / Accordion
 

@@ -20,7 +20,7 @@ export { DatePicker, type DatePickerProps } from './date-picker/date-picker'
 
 export { Dialog, type DialogProps } from './dialog/dialog'
 export { Drawer, type DrawerProps } from './drawer/drawer'
-export { Toaster, toaster, avisar } from './toast/toast'
+export { Toaster, avisar } from './toast/toast'
 export { Tooltip, type TooltipProps } from './tooltip/tooltip'
 export { Popover, type PopoverProps } from './popover/popover'
 export { Menu, type MenuProps, type ItemMenu } from './menu/menu'
