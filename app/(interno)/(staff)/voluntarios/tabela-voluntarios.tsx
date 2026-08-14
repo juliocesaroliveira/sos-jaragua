@@ -1,52 +1,45 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
 import { useMemo } from 'react'
+import { RotateCcw } from 'lucide-react'
 import {
+    Alert,
     Badge,
+    Button,
     COR_STATUS_VOLUNTARIO,
-    Pagination,
     ROTULO_STATUS_VOLUNTARIO,
     Select,
     Table,
     type ColunaTabela
 } from '@/src/shared/ui'
+import { chaveVoluntarios, useListagemPaginada } from '@/src/shared/query'
+import { listarVoluntariosAction } from '@/src/modules/voluntariado/presentation/actions/voluntarios'
 import type { LinhaVoluntario } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
 
 /**
  * Listagem paginada de voluntários (VOL-12).
  *
- * Página e filtros vivem na URL, não em estado local: a paginação é
- * server-side (NFR §2.1), então cada mudança é uma nova navegação — e o
- * operador consegue compartilhar/recarregar a visão em que estava.
+ * Filtros e página vivem na URL e cada página é buscada no servidor pela Server
+ * Function (007-datatable-server-pagination): trocar de página não recarrega a
+ * rota, mas a visão continua compartilhável e recarregável. Os filtros entram
+ * na `queryKey` e sobrevivem à navegação entre páginas (FR-019).
  */
 export function TabelaVoluntarios({
-    rows,
-    totalCount,
-    page,
-    pageSize,
     habilidades,
     filtros
 }: {
-    rows: LinhaVoluntario[]
-    totalCount: number
-    page: number
-    pageSize: number
     habilidades: Lookup[]
     filtros: { status?: string; habilidadeId?: string }
 }) {
-    const router = useRouter()
-    const searchParams = useSearchParams()
-
-    function navegar(mudancas: Record<string, string | undefined>) {
-        const params = new URLSearchParams(searchParams.toString())
-        for (const [chave, valor] of Object.entries(mudancas)) {
-            if (valor) params.set(chave, valor)
-            else params.delete(chave)
-        }
-        router.push(`/voluntarios?${params.toString()}`)
-    }
+    const { rows, carregando, atualizando, erro, refetch, paginacao, navegar } = useListagemPaginada<
+        LinhaVoluntario,
+        { status?: string; habilidadeId?: string }
+    >({
+        chave: chaveVoluntarios,
+        buscar: listarVoluntariosAction,
+        filtros
+    })
 
     const colunas = useMemo<ColunaTabela<LinhaVoluntario>[]>(
         () => [
@@ -84,6 +77,9 @@ export function TabelaVoluntarios({
                         { value: 'rejeitado', label: 'Rejeitado' }
                     ]}
                     value={filtros.status ? [filtros.status] : []}
+                    // Trocar filtro volta para a primeira página: manter `page`
+                    // levaria a um resultado vazio sempre que o novo filtro
+                    // tiver menos páginas que o anterior.
                     onValueChange={(v) => navegar({ status: v[0], page: undefined })}
                 />
                 <Select
@@ -96,20 +92,30 @@ export function TabelaVoluntarios({
                 />
             </div>
 
-            <Table
-                titulo="Voluntários cadastrados"
-                colunas={colunas}
-                dados={rows}
-                vazio="Nenhum voluntário encontrado com estes filtros."
-            />
-
-            <Pagination
-                aria-label="Paginação de voluntários"
-                totalCount={totalCount}
-                pageSize={pageSize}
-                page={page}
-                onPageChange={(p) => navegar({ page: String(p) })}
-            />
+            {erro ? (
+                <Alert tom="danger" titulo="Não foi possível carregar os voluntários">
+                    <div className="flex flex-col items-start gap-3">
+                        <p>{erro.message}</p>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<RotateCcw className="size-4" />}
+                            onClick={() => void refetch()}
+                        >
+                            Tentar novamente
+                        </Button>
+                    </div>
+                </Alert>
+            ) : (
+                <Table
+                    titulo="Voluntários cadastrados"
+                    colunas={colunas}
+                    dados={rows}
+                    carregando={carregando}
+                    atualizando={atualizando}
+                    vazio="Nenhum voluntário encontrado com estes filtros."
+                    paginacao={paginacao}
+                />
+            )}
         </div>
     )
 }

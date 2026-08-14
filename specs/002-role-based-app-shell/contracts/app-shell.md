@@ -31,29 +31,29 @@ export function AppShell(props: AppShellProps): ReactElement
 
 ### Topbar (FR-005 … FR-009)
 
-| Elemento | Condição | Requisito |
-|----------|----------|-----------|
-| Nome da aplicação | sempre | FR-005 |
-| Nome + rótulo do perfil | sempre; identificação completa pode recolher em telas estreitas, mas o avatar permanece | FR-005 |
-| Slot de notificações | quando `notificacoes` é fornecido | FR-008 |
-| Alternância de tema | sempre | FR-007 |
-| Ação de sair | sempre, para todos os perfis | FR-006 |
-| Botão de menu | apenas abaixo de `lg` | FR-009 |
+| Elemento                | Condição                                                                                | Requisito |
+| ----------------------- | --------------------------------------------------------------------------------------- | --------- |
+| Nome da aplicação       | sempre                                                                                  | FR-005    |
+| Nome + rótulo do perfil | sempre; identificação completa pode recolher em telas estreitas, mas o avatar permanece | FR-005    |
+| Slot de notificações    | quando `notificacoes` é fornecido                                                       | FR-008    |
+| Alternância de tema     | sempre                                                                                  | FR-007    |
+| Ação de sair            | sempre, para todos os perfis                                                            | FR-006    |
+| Botão de menu           | apenas abaixo de `lg`                                                                   | FR-009    |
 
 **Sair**: `signOut()` → `router.push('/login')` → `router.refresh()`. O `refresh` é obrigatório — sem ele o shell autenticado permaneceria no cache do roteador do cliente após a sessão terminar.
 
 ### Sidebar (FR-010 … FR-014, FR-022 … FR-026)
 
-| Comportamento | Requisito |
-|---------------|-----------|
-| Coluna fixa em `lg+`; gaveta abaixo disso, recolhida por padrão | FR-022 |
-| Fecha ao escolher um destino | FR-022 |
-| Itens agrupados por seção, grupos vazios omitidos | FR-026, D6 |
-| Item ativo com destaque visual **e** `aria-current="page"` | FR-014 |
+| Comportamento                                                        | Requisito             |
+| -------------------------------------------------------------------- | --------------------- |
+| Coluna fixa em `lg+`; gaveta abaixo disso, recolhida por padrão      | FR-022                |
+| Fecha ao escolher um destino                                         | FR-022                |
+| Itens agrupados por seção, grupos vazios omitidos                    | FR-026, D6            |
+| Item ativo com destaque visual **e** `aria-current="page"`           | FR-014                |
 | Sem itens visíveis → sidebar inteira não renderizada; topbar mantida | caso de borda da spec |
-| `<nav aria-label>` em pt-BR | FR-023, FR-025 |
-| Alvos ≥44px de altura | FR-024 |
-| Navegável por teclado, foco visível, sem armadilha de foco na gaveta | FR-023 |
+| `<nav aria-label>` em pt-BR                                          | FR-023, FR-025        |
+| Alvos ≥44px de altura                                                | FR-024                |
+| Navegável por teclado, foco visível, sem armadilha de foco na gaveta | FR-023                |
 
 ---
 
@@ -106,15 +106,15 @@ Reduzido ao gate de role. A checagem permanece por exigência do Princípio IV �
 
 Route groups não aparecem na URL. A movimentação de arquivos MUST preservar todos os caminhos:
 
-| De | Para | URL (inalterada) |
-|----|------|------------------|
-| `app/(auth)/login/` | `app/(publico)/login/` | `/login` |
-| `app/(auth)/cadastro/` | `app/(publico)/cadastro/` | `/cadastro` |
-| `app/(public)/page.tsx` | `app/(publico)/page.tsx` | `/` |
-| `app/(public)/voluntariado/candidatura/` | `app/(interno)/voluntariado/candidatura/` | `/voluntariado/candidatura` |
-| `app/voluntariado/minhas-atividades/` | `app/(interno)/voluntariado/minhas-atividades/` | `/voluntariado/minhas-atividades` |
-| `app/sem-permissao/` | `app/(interno)/sem-permissao/` | `/sem-permissao` |
-| `app/(staff)/*` | `app/(interno)/(staff)/*` | inalteradas |
+| De                                       | Para                                            | URL (inalterada)                  |
+| ---------------------------------------- | ----------------------------------------------- | --------------------------------- |
+| `app/(auth)/login/`                      | `app/(publico)/login/`                          | `/login`                          |
+| `app/(auth)/cadastro/`                   | `app/(publico)/cadastro/`                       | `/cadastro`                       |
+| `app/(public)/page.tsx`                  | `app/(publico)/page.tsx`                        | `/`                               |
+| `app/(public)/voluntariado/candidatura/` | `app/(interno)/voluntariado/candidatura/`       | `/voluntariado/candidatura`       |
+| `app/voluntariado/minhas-atividades/`    | `app/(interno)/voluntariado/minhas-atividades/` | `/voluntariado/minhas-atividades` |
+| `app/sem-permissao/`                     | `app/(interno)/sem-permissao/`                  | `/sem-permissao`                  |
+| `app/(staff)/*`                          | `app/(interno)/(staff)/*`                       | inalteradas                       |
 
 `proxy.ts` e `REGRAS_DE_ROTA` operam sobre caminhos públicos e por isso **não precisam de alteração alguma** — é o que torna esta reorganização segura.
 

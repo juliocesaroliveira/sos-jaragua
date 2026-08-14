@@ -177,9 +177,9 @@ estilo, ou padrões de PRs anteriores que a contradigam.
   governança exige (1) registro da motivação, (2) atualização deste arquivo via
   `/speckit-constitution`, e (3) bump de versão conforme a política abaixo.
 - **Versionamento semântico**:
-  - MAJOR: remoção ou redefinição incompatível de um princípio existente.
-  - MINOR: novo princípio ou seção, ou expansão material de orientação existente.
-  - PATCH: esclarecimentos de texto, correções de redação, sem mudança de regra.
+    - MAJOR: remoção ou redefinição incompatível de um princípio existente.
+    - MINOR: novo princípio ou seção, ou expansão material de orientação existente.
+    - PATCH: esclarecimentos de texto, correções de redação, sem mudança de regra.
 - **Revisão de conformidade**: mudanças de arquitetura (novo módulo, nova dependência de
   infraestrutura, alteração no fluxo de autenticação/autorização) devem ser verificadas
   contra os Princípios I, IV e VI antes do merge. Divergência exige justificativa explícita

@@ -15,6 +15,8 @@ export const CACHE_TAGS = {
     estoqueSaldo: 'estoque:saldo',
     /** Listagem paginada de estoque (TanStack Table). */
     estoqueListagem: 'estoque:listagem',
+    /** Histórico de saídas paginado — aba "Saídas" de `/relatorios`. */
+    estoqueSaidas: 'estoque:saidas',
     /** Receitas de kit — afetam a capacidade calculada no dashboard. */
     estoqueKits: 'estoque:kits',
     /** Indicadores "Kits Necessários"/"Kits Possíveis" (BR-INT-02). */
@@ -26,7 +28,9 @@ export const CACHE_TAGS = {
     /** Lista de atividades (CRUD do Coordenador). */
     atividades: 'atividades:lista',
     /** Tabelas lookup livres (habilidade, atividade_categoria). */
-    lookups: 'lookups'
+    lookups: 'lookups',
+    /** Listagem paginada de contas (Gestão de Usuários, `/admin`). */
+    identidadeListagem: 'identidade:listagem'
 } as const
 
 export type CacheTag = (typeof CACHE_TAGS)[keyof typeof CACHE_TAGS]

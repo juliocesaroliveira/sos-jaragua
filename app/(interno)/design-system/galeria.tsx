@@ -56,6 +56,7 @@ const COLUNAS = [
 
 export function Galeria() {
     const [pagina, setPagina] = useState(1)
+    const [tamanhoPagina, setTamanhoPagina] = useState(10)
     const [dialogAberto, setDialogAberto] = useState(false)
     const [drawerAberto, setDrawerAberto] = useState(false)
     const [temVeiculo, setTemVeiculo] = useState(false)
@@ -162,6 +163,18 @@ export function Galeria() {
                     >
                         Toast de erro
                     </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => avisar.atencao('Saldo baixo', 'Restam 3 unidades de Cesta básica em estoque.')}
+                    >
+                        Toast de atenção
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        onClick={() => avisar.info('Turno encerrado', 'A escala do turno da tarde foi fechada.')}
+                    >
+                        Toast de informação
+                    </Button>
                     <Tooltip conteudo="Editar atividade">
                         <IconButton aria-label="Editar atividade" icone={<Pencil aria-hidden className="size-5" />} />
                     </Tooltip>
@@ -251,8 +264,29 @@ export function Galeria() {
                     </div>
                 </div>
 
-                <Table titulo="Itens em estoque" colunas={COLUNAS} dados={LINHAS} />
-                <Pagination totalCount={57} pageSize={10} page={pagina} onPageChange={setPagina} />
+                {/* Com `paginacao`, o rodapé (totais, página, registros por
+                    página e navegação) vem junto do próprio Table. */}
+                <Table
+                    titulo="Itens em estoque"
+                    colunas={COLUNAS}
+                    dados={LINHAS}
+                    paginacao={{
+                        page: pagina,
+                        pageSize: tamanhoPagina,
+                        totalCount: 57,
+                        onPageChange: setPagina,
+                        onPageSizeChange: (tamanho) => {
+                            setTamanhoPagina(tamanho)
+                            setPagina(1)
+                        }
+                    }}
+                />
+
+                {/* Sem `paginacao`: o Table renderiza só a tabela. */}
+                <Table titulo="Itens em estoque (sem rodapé)" colunas={COLUNAS} dados={LINHAS} />
+
+                {/* O Pagination continua utilizável avulso, fora de uma tabela. */}
+                <Pagination totalCount={57} pageSize={tamanhoPagina} page={pagina} onPageChange={setPagina} />
 
                 <div className="flex flex-col gap-2">
                     <Skeleton altura="h-12" />

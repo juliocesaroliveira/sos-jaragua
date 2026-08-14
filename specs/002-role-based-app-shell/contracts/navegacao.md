@@ -51,28 +51,28 @@ export type SecaoNavegacao = {
 
 ### `itensDeNavegacao(role)`
 
-| Garantia | Descrição |
-|----------|-----------|
-| G-01 | Retorna exatamente os itens cujo `roles` contém `role`. |
-| G-02 | Preserva a ordem de declaração de `NAVEGACAO`. |
-| G-03 | Pode retornar `[]`. Não lança. |
-| G-04 | Pura e referencialmente transparente — mesma `role`, mesmo resultado. |
+| Garantia | Descrição                                                             |
+| -------- | --------------------------------------------------------------------- |
+| G-01     | Retorna exatamente os itens cujo `roles` contém `role`.               |
+| G-02     | Preserva a ordem de declaração de `NAVEGACAO`.                        |
+| G-03     | Pode retornar `[]`. Não lança.                                        |
+| G-04     | Pura e referencialmente transparente — mesma `role`, mesmo resultado. |
 
 ### `gruposVisiveis(itens)`
 
-| Garantia | Descrição |
-|----------|-----------|
-| G-05 | Nenhuma seção retornada tem `itens` vazio (FR-026). |
-| G-06 | Seções ordenadas por `GrupoNavegacao.ordem` crescente. |
-| G-07 | A união dos itens das seções é igual ao conjunto de entrada — nada é perdido nem duplicado. |
+| Garantia | Descrição                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------- |
+| G-05     | Nenhuma seção retornada tem `itens` vazio (FR-026).                                         |
+| G-06     | Seções ordenadas por `GrupoNavegacao.ordem` crescente.                                      |
+| G-07     | A união dos itens das seções é igual ao conjunto de entrada — nada é perdido nem duplicado. |
 
 ### `itemAtivo(pathname, itens)`
 
-| Garantia | Descrição |
-|----------|-----------|
-| G-08 | Casa por igualdade exata ou por prefixo de segmento (`/estoque` casa `/estoque/entrada`, mas **não** `/estoquex`). |
-| G-09 | Havendo múltiplas correspondências, retorna a de `href` **mais longo**. `/estoque/kits` → "Kits", nunca "Estoque". |
-| G-10 | Retorna `undefined` quando nenhum item corresponde — legítimo, ex.: `/sem-permissao`. |
+| Garantia | Descrição                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------ |
+| G-08     | Casa por igualdade exata ou por prefixo de segmento (`/estoque` casa `/estoque/entrada`, mas **não** `/estoquex`). |
+| G-09     | Havendo múltiplas correspondências, retorna a de `href` **mais longo**. `/estoque/kits` → "Kits", nunca "Estoque". |
+| G-10     | Retorna `undefined` quando nenhum item corresponde — legítimo, ex.: `/sem-permissao`.                              |
 
 G-09 corrige um defeito latente do shell atual, que usa a primeira correspondência e marcaria dois itens de estoque como ativos ao mesmo tempo.
 

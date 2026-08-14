@@ -14,7 +14,7 @@ Hoje o shell de navegação (barra superior + menu lateral) existe apenas na ár
 
 Esta feature torna o shell (topbar + sidebar) presente em **todas** as páginas autenticadas da aplicação e faz com que o conjunto de itens do menu seja determinado pelo perfil de acesso de quem está logado, de forma consistente com as regras de autorização já vigentes.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Navegação presente em toda página autenticada (Priority: P1)
 
@@ -78,7 +78,7 @@ Para perfis com muitos destinos (Coordenador, Administrador), os itens são agru
 - **Notificações para perfis não-staff**: a área de notificações da topbar só é exibida para perfis que efetivamente recebem notificações; para os demais, a topbar não apresenta um controle vazio.
 - **Divergência entre menu e autorização**: se um destino for exibido a um perfil que não pode acessá-lo, isso é tratado como defeito — a autorização continua sendo aplicada independentemente do que o menu mostra.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -131,7 +131,7 @@ Para perfis com muitos destinos (Coordenador, Administrador), os itens são agru
 - **Grupo de navegação**: agrupamento nomeado de itens por área (ex.: área pessoal, voluntariado, estoque, coordenação, administração). Existe apenas para legibilidade; não carrega autorização própria.
 - **Sessão autenticada**: identidade validada no servidor que fornece nome e perfil exibidos na topbar e usados para montar o menu.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

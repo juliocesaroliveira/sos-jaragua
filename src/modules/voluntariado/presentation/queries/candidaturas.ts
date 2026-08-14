@@ -5,6 +5,7 @@ import { db } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 import { voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
+import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
 
 /**
@@ -106,9 +107,7 @@ export async function contarCandidaturasPendentes(): Promise<number> {
 
 export type StatusVoluntarioFiltro = 'pendente' | 'aprovado' | 'rejeitado'
 
-export type FiltrosVoluntarios = {
-    page: number
-    pageSize: number
+export type FiltrosVoluntarios = ParametrosPaginacao & {
     status?: StatusVoluntarioFiltro
     habilidadeId?: string
 }
@@ -127,14 +126,22 @@ export type LinhaVoluntario = {
  * Listagem paginada de voluntários (VOL-12). Paginação **server-side**
  * obrigatória (NFR §2.1): a query recebe `{page, pageSize, filtros}` e devolve
  * `{ rows, totalCount }` — a tabela inteira nunca vai para o cliente.
+ *
+ * Devolve também `page`/`pageSize` efetivos, para que o rodapé anuncie a
+ * página que está de fato em tela quando a entrada foi corrigida
+ * (007-datatable-server-pagination, L-01.3).
  */
-export async function listarVoluntarios(
-    filtros: FiltrosVoluntarios
-): Promise<{ rows: LinhaVoluntario[]; totalCount: number }> {
+export async function listarVoluntarios(filtros: FiltrosVoluntarios): Promise<PaginaDe<LinhaVoluntario>> {
     'use cache'
     cacheTag(CACHE_TAGS.voluntariadoListagem)
     cacheLife(CACHE_LIFE.medio)
 
+    return paginarComClamp(filtros, (p) => buscarVoluntarios({ ...filtros, ...p }))
+}
+
+async function buscarVoluntarios(
+    filtros: FiltrosVoluntarios
+): Promise<{ rows: LinhaVoluntario[]; totalCount: number }> {
     const condicoes = [
         filtros.status ? eq(voluntarioPerfil.status, filtros.status) : undefined,
         filtros.habilidadeId

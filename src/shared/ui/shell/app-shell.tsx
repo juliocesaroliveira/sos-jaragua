@@ -1,9 +1,11 @@
 'use client'
 
+import { Menu as Ark, useMenu } from '@ark-ui/react/menu'
 import { useRouter } from 'next/navigation'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { signOut } from '../../auth/client'
 import type { ItemNavegacao } from '../../auth/navegacao'
+import { MenuMobile } from './menu-mobile'
 import { SidebarNav } from './sidebar-nav'
 import { Topbar } from './topbar'
 
@@ -33,6 +35,21 @@ export interface AppShellProps {
 export function AppShell({ itens, nome, rotuloRole, notificacoes, children }: AppShellProps) {
     const router = useRouter()
     const [menuAberto, setMenuAberto] = useState(false)
+    const topbarRef = useRef<HTMLElement>(null)
+
+    // Ancorado ao `<header>` inteiro (não ao botão de hambúrguer), para o
+    // painel sair com a largura do topbar em vez de um dropdown estreito
+    // preso ao gatilho (research.md D2, 005-mobile-menu-panel).
+    const menu = useMenu({
+        open: menuAberto,
+        onOpenChange: (detalhe) => setMenuAberto(detalhe.open),
+        positioning: {
+            getAnchorElement: () => topbarRef.current,
+            placement: 'bottom',
+            sameWidth: true,
+            gutter: 0
+        }
+    })
 
     async function sair() {
         await signOut()
@@ -43,22 +60,26 @@ export function AppShell({ itens, nome, rotuloRole, notificacoes, children }: Ap
     }
 
     return (
-        <div className="flex min-h-dvh flex-col lg:flex-row">
-            <SidebarNav itens={itens} menuAberto={menuAberto} onNavegar={() => setMenuAberto(false)} />
+        <Ark.RootProvider value={menu}>
+            <div className="flex h-dvh flex-col overflow-hidden lg:flex-row">
+                <SidebarNav itens={itens} />
 
-            <div className="flex min-w-0 flex-1 flex-col">
-                <Topbar
-                    nome={nome}
-                    rotuloRole={rotuloRole}
-                    notificacoes={notificacoes}
-                    menuAberto={menuAberto}
-                    onAlternarMenu={() => setMenuAberto((a) => !a)}
-                    mostrarBotaoMenu={itens.length > 0}
-                    onSair={sair}
-                />
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                    <Topbar
+                        ref={topbarRef}
+                        nome={nome}
+                        rotuloRole={rotuloRole}
+                        notificacoes={notificacoes}
+                        menuAberto={menuAberto}
+                        mostrarBotaoMenu={itens.length > 0}
+                        onSair={sair}
+                    />
 
-                <main className="min-w-0 flex-1 p-4">{children}</main>
+                    <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4">{children}</main>
+                </div>
             </div>
-        </div>
+
+            <MenuMobile itens={itens} />
+        </Ark.RootProvider>
     )
 }

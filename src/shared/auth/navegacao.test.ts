@@ -135,6 +135,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         ],
         administrador: [
             '/',
+            '/admin',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -176,9 +177,18 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
 
     it('relatórios e variáveis da crise pertencem à Defesa Civil, não à coordenação', () => {
         for (const destino of ['/relatorios', '/crise']) {
-            expect(itensDeNavegacao('membro_defesa_civil').map((i) => i.href), destino).toContain(destino)
-            expect(itensDeNavegacao('administrador').map((i) => i.href), destino).toContain(destino)
-            expect(itensDeNavegacao('coordenador').map((i) => i.href), destino).not.toContain(destino)
+            expect(
+                itensDeNavegacao('membro_defesa_civil').map((i) => i.href),
+                destino
+            ).toContain(destino)
+            expect(
+                itensDeNavegacao('administrador').map((i) => i.href),
+                destino
+            ).toContain(destino)
+            expect(
+                itensDeNavegacao('coordenador').map((i) => i.href),
+                destino
+            ).not.toContain(destino)
         }
     })
 })
@@ -257,7 +267,10 @@ describe('atalhos — cards de acesso rápido da home', () => {
 
     it('a home não vira card de si mesma', () => {
         for (const role of ROLES) {
-            expect(atalhosDeNavegacao(role).map((i) => i.href), role).not.toContain('/')
+            expect(
+                atalhosDeNavegacao(role).map((i) => i.href),
+                role
+            ).not.toContain('/')
         }
     })
 })
@@ -354,10 +367,11 @@ describe('gruposVisiveis — agrupamento (G-05, G-06, G-07)', () => {
         expect(ids).not.toContain('administracao')
     })
 
-    it('nenhum perfil produz a seção Administração enquanto a área não existir', () => {
+    it('só administrador recebe a seção Administração (006-user-management-page)', () => {
         for (const role of ROLES) {
             const ids = gruposVisiveis(itensDeNavegacao(role)).map((s) => s.grupo.id)
-            expect(ids, role).not.toContain('administracao')
+            if (role === 'administrador') expect(ids, role).toContain('administracao')
+            else expect(ids, role).not.toContain('administracao')
         }
     })
 

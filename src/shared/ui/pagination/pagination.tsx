@@ -25,8 +25,10 @@ const BOTAO =
     'inline-flex size-11 items-center justify-center rounded-lg text-sm font-medium text-foreground hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-40'
 
 export function Pagination({ totalCount, pageSize, page, onPageChange, ...rest }: PaginationProps) {
-    if (totalCount <= pageSize) return null
-
+    // Com uma única página os triggers ficam desabilitados, **não** ausentes
+    // (007-datatable-server-pagination, U-03.1): sumir com a barra a cada
+    // filtro que reduz o resultado sacode o layout sob o cursor de quem
+    // acabou de clicar ali.
     return (
         <Ark.Root
             count={totalCount}

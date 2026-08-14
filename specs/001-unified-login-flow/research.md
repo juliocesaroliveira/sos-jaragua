@@ -20,6 +20,7 @@ menos) e é consistente com Constitution Princípio IV (defesa em profundidade) 
 (simplicidade — uma exceção nomeada em vez de uma lista de exclusões implícitas).
 
 **Alternatives considered**:
+
 - Manter o modelo de allowlist e apenas adicionar `/`, `/cadastro`, `/voluntariado/candidatura`
   etc. à lista de rotas que exigem sessão (sem role específica). Rejeitado: mantém o padrão
   fail-open para qualquer rota futura esquecida — resolve o sintoma da spec, não a causa.

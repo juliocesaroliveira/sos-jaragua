@@ -1,5 +1,5 @@
 ---
-description: "Task list for feature implementation"
+description: 'Task list for feature implementation'
 ---
 
 # Tasks: Shell de Navegação por Perfil (Topbar + Sidebar)
@@ -28,9 +28,9 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 **Purpose**: Pré-requisitos de validação. Sem contas dos 5 perfis, nenhuma história pode ser verificada.
 
-- [X] T001 Garantir que `db/seed.ts` cria uma conta por perfil (`usuario`, `voluntario`, `membro_defesa_civil`, `coordenador`, `administrador`); estender o seed se algum estiver faltando, e registrar as credenciais em `specs/002-role-based-app-shell/quickstart.md` na seção de pré-requisitos
+- [x] T001 Garantir que `db/seed.ts` cria uma conta por perfil (`usuario`, `voluntario`, `membro_defesa_civil`, `coordenador`, `administrador`); estender o seed se algum estiver faltando, e registrar as credenciais em `specs/002-role-based-app-shell/quickstart.md` na seção de pré-requisitos
 
-- [X] T002 [P] Registrar o manifesto de rotas atual como linha de base para o check de preservação de URL: rodar `npm run build` e salvar a lista de rotas em `specs/002-role-based-app-shell/rotas-baseline.txt` (arquivo temporário, removido na T037)
+- [x] T002 [P] Registrar o manifesto de rotas atual como linha de base para o check de preservação de URL: rodar `npm run build` e salvar a lista de rotas em `specs/002-role-based-app-shell/rotas-baseline.txt` (arquivo temporário, removido na T037)
 
 ---
 
@@ -42,17 +42,17 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 **⚠️ Refatoração pura**: ao fim desta fase, a aplicação deve se comportar **exatamente** como antes — mesmo shell, mesmas telas, mesmos itens de menu. Só a localização do código muda. Se algo visível mudou, a extração saiu errada.
 
-- [X] T003 [P] Criar `src/shared/ui/shell/topbar.tsx` extraindo a região `<header>` de `app/(staff)/staff-shell.tsx` (identificação, slot de notificações, `ThemeToggle`, avatar/nome/perfil, sair, botão de menu), recebendo estado da gaveta e `onAlternarMenu` por props
+- [x] T003 [P] Criar `src/shared/ui/shell/topbar.tsx` extraindo a região `<header>` de `app/(staff)/staff-shell.tsx` (identificação, slot de notificações, `ThemeToggle`, avatar/nome/perfil, sair, botão de menu), recebendo estado da gaveta e `onAlternarMenu` por props
 
-- [X] T004 [P] Criar `src/shared/ui/shell/sidebar-nav.tsx` extraindo a região `<nav>` de `app/(staff)/staff-shell.tsx`, incluindo temporariamente a constante `NAV` e a filtragem por `podeAcessar` no estado em que estão hoje — ambas serão substituídas na T023
+- [x] T004 [P] Criar `src/shared/ui/shell/sidebar-nav.tsx` extraindo a região `<nav>` de `app/(staff)/staff-shell.tsx`, incluindo temporariamente a constante `NAV` e a filtragem por `podeAcessar` no estado em que estão hoje — ambas serão substituídas na T023
 
-- [X] T005 Criar `src/shared/ui/shell/app-shell.tsx` compondo `Topbar` + `SidebarNav` + `<main>`, com a interface `AppShellProps` de [contracts/app-shell.md](./contracts/app-shell.md) (`role`, `nome`, `rotuloRole`, `notificacoes?`, `children`), mantendo `'use client'` e o `useState` da gaveta (depende de T003, T004)
+- [x] T005 Criar `src/shared/ui/shell/app-shell.tsx` compondo `Topbar` + `SidebarNav` + `<main>`, com a interface `AppShellProps` de [contracts/app-shell.md](./contracts/app-shell.md) (`role`, `nome`, `rotuloRole`, `notificacoes?`, `children`), mantendo `'use client'` e o `useState` da gaveta (depende de T003, T004)
 
-- [X] T006 Exportar `AppShell` e `AppShellProps` no barrel `src/shared/ui/index.ts`, junto aos demais componentes de layout (depende de T005)
+- [x] T006 Exportar `AppShell` e `AppShellProps` no barrel `src/shared/ui/index.ts`, junto aos demais componentes de layout (depende de T005)
 
-- [X] T007 Apontar `app/(staff)/layout.tsx` para `AppShell` em vez de `StaffShell` e excluir `app/(staff)/staff-shell.tsx` (depende de T006)
+- [x] T007 Apontar `app/(staff)/layout.tsx` para `AppShell` em vez de `StaffShell` e excluir `app/(staff)/staff-shell.tsx` (depende de T006)
 
-- [X] T008 Verificar que a refatoração não alterou comportamento: `npx tsc --noEmit`, `npm run lint`, `npm test`, e conferir manualmente como `coordenador` que `/dashboard` e `/estoque` renderizam idênticos ao estado anterior (depende de T007)
+- [x] T008 Verificar que a refatoração não alterou comportamento: `npx tsc --noEmit`, `npm run lint`, `npm test`, e conferir manualmente como `coordenador` que `/dashboard` e `/estoque` renderizam idênticos ao estado anterior (depende de T007)
 
 **Checkpoint**: shell compartilhado existe e é consumido pela área de staff. Comportamento inalterado. As histórias podem começar.
 
@@ -68,29 +68,29 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 ### Implementação da User Story 1
 
-- [X] T009 [US1] Criar o grupo `app/(publico)/` e mover para dentro dele, preservando as URLs: `app/(public)/page.tsx` → `app/(publico)/page.tsx`, `app/(auth)/login/` → `app/(publico)/login/`, `app/(auth)/cadastro/` → `app/(publico)/cadastro/`; remover os diretórios `app/(auth)/` e `app/(public)/` já vazios
+- [x] T009 [US1] Criar o grupo `app/(publico)/` e mover para dentro dele, preservando as URLs: `app/(public)/page.tsx` → `app/(publico)/page.tsx`, `app/(auth)/login/` → `app/(publico)/login/`, `app/(auth)/cadastro/` → `app/(publico)/cadastro/`; remover os diretórios `app/(auth)/` e `app/(public)/` já vazios
 
-- [X] T010 [US1] Criar `app/(interno)/layout.tsx` como Server Component conforme [contracts/app-shell.md](./contracts/app-shell.md): `export const instant = false`, `exigirSessao()`, busca paralela de `listarNotificacoes`/`contarNaoLidas` por `ator.userId`, e render de `<AppShell>` com `SinoNotificacoes` no slot — o sino passa a valer para **todos** os perfis (research.md D5)
+- [x] T010 [US1] Criar `app/(interno)/layout.tsx` como Server Component conforme [contracts/app-shell.md](./contracts/app-shell.md): `export const instant = false`, `exigirSessao()`, busca paralela de `listarNotificacoes`/`contarNaoLidas` por `ator.userId`, e render de `<AppShell>` com `SinoNotificacoes` no slot — o sino passa a valer para **todos** os perfis (research.md D5)
 
-- [X] T011 [US1] Mover `app/(staff)/` para `app/(interno)/(staff)/` e reduzir `app/(interno)/(staff)/layout.tsx` a apenas `await exigirRoles(ROLES_STAFF)` + `return children`, removendo o render do shell, a busca de notificações e o `instant = false` (agora no pai); mover junto `sino-notificacoes.tsx` (depende de T010)
+- [x] T011 [US1] Mover `app/(staff)/` para `app/(interno)/(staff)/` e reduzir `app/(interno)/(staff)/layout.tsx` a apenas `await exigirRoles(ROLES_STAFF)` + `return children`, removendo o render do shell, a busca de notificações e o `instant = false` (agora no pai); mover junto `sino-notificacoes.tsx` (depende de T010)
 
-- [X] T012 [P] [US1] Mover `app/sem-permissao/` → `app/(interno)/sem-permissao/`, removendo o wrapper `min-h-dvh` e o `<main>` próprios da página, agora fornecidos pelo shell (depende de T010)
+- [x] T012 [P] [US1] Mover `app/sem-permissao/` → `app/(interno)/sem-permissao/`, removendo o wrapper `min-h-dvh` e o `<main>` próprios da página, agora fornecidos pelo shell (depende de T010)
 
-- [X] T013 [P] [US1] Mover `app/(public)/voluntariado/candidatura/` → `app/(interno)/voluntariado/candidatura/` (depende de T009, T010)
+- [x] T013 [P] [US1] Mover `app/(public)/voluntariado/candidatura/` → `app/(interno)/voluntariado/candidatura/` (depende de T009, T010)
 
-- [X] T014 [P] [US1] Mover `app/voluntariado/minhas-atividades/` → `app/(interno)/voluntariado/minhas-atividades/`; remover o diretório `app/voluntariado/` já vazio (depende de T010)
+- [x] T014 [P] [US1] Mover `app/voluntariado/minhas-atividades/` → `app/(interno)/voluntariado/minhas-atividades/`; remover o diretório `app/voluntariado/` já vazio (depende de T010)
 
-- [X] T015 [P] [US1] Mover `app/design-system/` → `app/(interno)/design-system/` — a rota já exige sessão pelo deny-by-default do `proxy.ts`, então herdar o shell a torna coerente com SC-001; não entra no menu (é rota de desenvolvimento, não destino de produto) (depende de T010)
+- [x] T015 [P] [US1] Mover `app/design-system/` → `app/(interno)/design-system/` — a rota já exige sessão pelo deny-by-default do `proxy.ts`, então herdar o shell a torna coerente com SC-001; não entra no menu (é rota de desenvolvimento, não destino de produto) (depende de T010)
 
-- [X] T016 [US1] Remover de `app/(interno)/voluntariado/candidatura/page.tsx` o `<header>` improvisado com `Link` e `ThemeToggle` e o wrapper `min-h-dvh`/`<main>`, deixando a página com apenas seu conteúdo (depende de T013)
+- [x] T016 [US1] Remover de `app/(interno)/voluntariado/candidatura/page.tsx` o `<header>` improvisado com `Link` e `ThemeToggle` e o wrapper `min-h-dvh`/`<main>`, deixando a página com apenas seu conteúdo (depende de T013)
 
-- [X] T017 [US1] Remover de `app/(interno)/voluntariado/minhas-atividades/page.tsx` o `<header>` improvisado com `Link` e `ThemeToggle` e o wrapper `min-h-dvh`/`<main>`; manter o `export const instant = false` da página (depende de T014)
+- [x] T017 [US1] Remover de `app/(interno)/voluntariado/minhas-atividades/page.tsx` o `<header>` improvisado com `Link` e `ThemeToggle` e o wrapper `min-h-dvh`/`<main>`; manter o `export const instant = false` da página (depende de T014)
 
-- [X] T018 [US1] Confirmar que `app/(publico)/page.tsx` **mantém** seu header próprio — é pré-autenticação e não recebe shell (depende de T009)
+- [x] T018 [US1] Confirmar que `app/(publico)/page.tsx` **mantém** seu header próprio — é pré-autenticação e não recebe shell (depende de T009)
 
-- [X] T019 [US1] Tratar em `src/shared/ui/shell/sidebar-nav.tsx` o caso de lista vazia: não renderizar `<nav>` nem o botão de menu da topbar quando não há itens, preservando topbar e conteúdo (depende de T005)
+- [x] T019 [US1] Tratar em `src/shared/ui/shell/sidebar-nav.tsx` o caso de lista vazia: não renderizar `<nav>` nem o botão de menu da topbar quando não há itens, preservando topbar e conteúdo (depende de T005)
 
-- [X] T020 [US1] Verificar preservação de URL: rodar `npm run build` e comparar a lista de rotas com `specs/002-role-based-app-shell/rotas-baseline.txt` da T002 — nenhuma URL pode ter mudado; rodar `npx tsc --noEmit`, `npm run lint`, `npm test` (depende de T009–T019)
+- [x] T020 [US1] Verificar preservação de URL: rodar `npm run build` e comparar a lista de rotas com `specs/002-role-based-app-shell/rotas-baseline.txt` da T002 — nenhuma URL pode ter mudado; rodar `npx tsc --noEmit`, `npm run lint`, `npm test` (depende de T009–T019)
 
 - [ ] T021 [US1] Executar o Nível 2 do [quickstart.md](./quickstart.md): shell presente em todas as páginas autenticadas nos 5 perfis, e ausente em `/login`, `/cadastro`, `/` (depende de T020)
 
@@ -108,23 +108,23 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 > **Escrever primeiro; devem FALHAR (o módulo `navegacao.ts` ainda não existe).**
 
-- [X] T022 [US2] Criar `src/shared/auth/navegacao.test.ts` cobrindo as invariantes de [contracts/navegacao.md](./contracts/navegacao.md): INV-01 (igualdade — não subconjunto — entre `item.roles` e `rolesExigidas(href)` quando houver regra), INV-02 (`roles` não vazio), INV-03 (todo `href` corresponde a um `page.tsx` existente sob `app/`, normalizando os route groups `(publico)`/`(interno)`/`(staff)`), INV-04 (matriz por perfil: um caso por role, com a lista de `href` esperada escrita literalmente conforme data-model.md), INV-05 (`href` único), INV-06 (rótulos de item e grupo não vazios); incluir as garantias G-08/G-09 de `itemAtivo` (`/estoque` casa `/estoque/entrada` mas não `/estoquex`; `/estoque/kits` ativa "Kits", não "Estoque")
+- [x] T022 [US2] Criar `src/shared/auth/navegacao.test.ts` cobrindo as invariantes de [contracts/navegacao.md](./contracts/navegacao.md): INV-01 (igualdade — não subconjunto — entre `item.roles` e `rolesExigidas(href)` quando houver regra), INV-02 (`roles` não vazio), INV-03 (todo `href` corresponde a um `page.tsx` existente sob `app/`, normalizando os route groups `(publico)`/`(interno)`/`(staff)`), INV-04 (matriz por perfil: um caso por role, com a lista de `href` esperada escrita literalmente conforme data-model.md), INV-05 (`href` único), INV-06 (rótulos de item e grupo não vazios); incluir as garantias G-08/G-09 de `itemAtivo` (`/estoque` casa `/estoque/entrada` mas não `/estoquex`; `/estoque/kits` ativa "Kits", não "Estoque")
 
 ### Implementação da User Story 2
 
-- [X] T023 [US2] Criar `src/shared/auth/navegacao.ts` com os tipos `IdGrupo`/`NomeIcone`/`ItemNavegacao`/`GrupoNavegacao`/`SecaoNavegacao`, a constante `GRUPOS` com rótulos pt-BR e `ordem`, e a constante `NAVEGACAO` preenchida conforme a matriz de [data-model.md](./data-model.md) — ícones como **identificadores string**, nunca JSX, para o módulo permanecer puro e testável sem React (research.md D7); o módulo NÃO importa React, Next.js, Drizzle nem nada de `src/modules/` (depende de T022)
+- [x] T023 [US2] Criar `src/shared/auth/navegacao.ts` com os tipos `IdGrupo`/`NomeIcone`/`ItemNavegacao`/`GrupoNavegacao`/`SecaoNavegacao`, a constante `GRUPOS` com rótulos pt-BR e `ordem`, e a constante `NAVEGACAO` preenchida conforme a matriz de [data-model.md](./data-model.md) — ícones como **identificadores string**, nunca JSX, para o módulo permanecer puro e testável sem React (research.md D7); o módulo NÃO importa React, Next.js, Drizzle nem nada de `src/modules/` (depende de T022)
 
-- [X] T024 [US2] Implementar em `src/shared/auth/navegacao.ts` as funções `itensDeNavegacao(role)` (G-01…G-04) e `itemAtivo(pathname, itens)` com correspondência por segmento e desempate pelo `href` mais longo (G-08/G-09) — corrige o defeito latente do shell atual, que usa a primeira correspondência e marcaria dois itens de estoque como ativos ao mesmo tempo (depende de T023)
+- [x] T024 [US2] Implementar em `src/shared/auth/navegacao.ts` as funções `itensDeNavegacao(role)` (G-01…G-04) e `itemAtivo(pathname, itens)` com correspondência por segmento e desempate pelo `href` mais longo (G-08/G-09) — corrige o defeito latente do shell atual, que usa a primeira correspondência e marcaria dois itens de estoque como ativos ao mesmo tempo (depende de T023)
 
-- [X] T025 [US2] Criar `src/shared/ui/shell/icones.ts` mapeando `NomeIcone` → componente `lucide-react`, mantendo a fronteira entre o registro (dado puro) e a camada de UI (depende de T023)
+- [x] T025 [US2] Criar `src/shared/ui/shell/icones.ts` mapeando `NomeIcone` → componente `lucide-react`, mantendo a fronteira entre o registro (dado puro) e a camada de UI (depende de T023)
 
-- [X] T026 [US2] Alterar `src/shared/ui/shell/sidebar-nav.tsx` para receber `itens: readonly ItemNavegacao[]` por props e resolver ícones via `icones.ts`, removendo a constante `NAV` temporária e a chamada a `podeAcessar` introduzidas na T004; usar `itemAtivo` para o destaque e `aria-current="page"` (depende de T024, T025)
+- [x] T026 [US2] Alterar `src/shared/ui/shell/sidebar-nav.tsx` para receber `itens: readonly ItemNavegacao[]` por props e resolver ícones via `icones.ts`, removendo a constante `NAV` temporária e a chamada a `podeAcessar` introduzidas na T004; usar `itemAtivo` para o destaque e `aria-current="page"` (depende de T024, T025)
 
-- [X] T027 [US2] Propagar `itens` de `AppShell` para `SidebarNav` em `src/shared/ui/shell/app-shell.tsx`, acrescentando `itens` a `AppShellProps` (depende de T026)
+- [x] T027 [US2] Propagar `itens` de `AppShell` para `SidebarNav` em `src/shared/ui/shell/app-shell.tsx`, acrescentando `itens` a `AppShellProps` (depende de T026)
 
-- [X] T028 [US2] Chamar `itensDeNavegacao(ator.role)` **no servidor**, em `app/(interno)/layout.tsx`, e passar o resultado já filtrado como prop — o navegador de um voluntário nunca recebe a lista de destinos internos (S-02 de [contracts/app-shell.md](./contracts/app-shell.md)) (depende de T027)
+- [x] T028 [US2] Chamar `itensDeNavegacao(ator.role)` **no servidor**, em `app/(interno)/layout.tsx`, e passar o resultado já filtrado como prop — o navegador de um voluntário nunca recebe a lista de destinos internos (S-02 de [contracts/app-shell.md](./contracts/app-shell.md)) (depende de T027)
 
-- [X] T029 [US2] Rodar `npm test` e confirmar que T022 agora passa; rodar `npx tsc --noEmit` e `npm run lint` (depende de T028)
+- [x] T029 [US2] Rodar `npm test` e confirmar que T022 agora passa; rodar `npx tsc --noEmit` e `npm run lint` (depende de T028)
 
 - [ ] T030 [US2] Executar o Nível 3 do [quickstart.md](./quickstart.md): matriz conferida nos 5 perfis, item ativo correto em `/estoque/kits`, e todos os itens visíveis acionados sem 404 nem `/sem-permissao` (depende de T029)
 
@@ -140,13 +140,13 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 ### Testes da User Story 3 ⚠️
 
-- [X] T031 [US3] Acrescentar a `src/shared/auth/navegacao.test.ts` os casos de `gruposVisiveis`: G-05 (nenhuma seção com `itens` vazio), G-06 (seções ordenadas por `GrupoNavegacao.ordem`), G-07 (união das seções igual ao conjunto de entrada, sem perda nem duplicação); incluir o caso de `membro_defesa_civil` não produzir as seções "Coordenação" nem "Administração"
+- [x] T031 [US3] Acrescentar a `src/shared/auth/navegacao.test.ts` os casos de `gruposVisiveis`: G-05 (nenhuma seção com `itens` vazio), G-06 (seções ordenadas por `GrupoNavegacao.ordem`), G-07 (união das seções igual ao conjunto de entrada, sem perda nem duplicação); incluir o caso de `membro_defesa_civil` não produzir as seções "Coordenação" nem "Administração"
 
 ### Implementação da User Story 3
 
-- [X] T032 [US3] Implementar `gruposVisiveis(itens)` em `src/shared/auth/navegacao.ts`, derivando as seções **a partir da lista já filtrada** para que a poda de grupos vazios seja consequência estrutural e não uma regra a lembrar (research.md D6) (depende de T031)
+- [x] T032 [US3] Implementar `gruposVisiveis(itens)` em `src/shared/auth/navegacao.ts`, derivando as seções **a partir da lista já filtrada** para que a poda de grupos vazios seja consequência estrutural e não uma regra a lembrar (research.md D6) (depende de T031)
 
-- [X] T033 [US3] Renderizar seções em `src/shared/ui/shell/sidebar-nav.tsx` usando `gruposVisiveis`, com o rótulo do grupo como cabeçalho não interativo e a lista de itens abaixo, preservando a semântica de `<nav>` e o `aria-current` do item ativo (depende de T032)
+- [x] T033 [US3] Renderizar seções em `src/shared/ui/shell/sidebar-nav.tsx` usando `gruposVisiveis`, com o rótulo do grupo como cabeçalho não interativo e a lista de itens abaixo, preservando a semântica de `<nav>` e o `aria-current` do item ativo (depende de T032)
 
 - [ ] T034 [US3] Rodar `npm test`, `npx tsc --noEmit`, `npm run lint` e executar o Nível 4 do [quickstart.md](./quickstart.md) (depende de T033)
 
@@ -166,9 +166,9 @@ Monolito modular Next.js: rotas em `app/` na raiz, código compartilhado em `src
 
 - [ ] T038 Verificar performance (SC-009, Nível 7 do quickstart): `npm run build && npm run start`, comparando a primeira renderização útil de `/dashboard` e `/estoque` com o estado anterior — atenção às duas consultas de notificação, que passaram a rodar para todos os perfis (research.md D5)
 
-- [X] T039 [P] Registrar em `spec/DESIGN.md` a nova estrutura de route groups (`(publico)` / `(interno)` / `(staff)` aninhado) e o registro de navegação como fonte única dos itens de menu — a constituição (Princípio VI) exige que decisão arquitetural seja registrada, não implícita no código
+- [x] T039 [P] Registrar em `spec/DESIGN.md` a nova estrutura de route groups (`(publico)` / `(interno)` / `(staff)` aninhado) e o registro de navegação como fonte única dos itens de menu — a constituição (Princípio VI) exige que decisão arquitetural seja registrada, não implícita no código
 
-- [X] T040 Remover o arquivo temporário `specs/002-role-based-app-shell/rotas-baseline.txt` criado na T002 (depende de T020)
+- [x] T040 Remover o arquivo temporário `specs/002-role-based-app-shell/rotas-baseline.txt` criado na T002 (depende de T020)
 
 - [ ] T041 Executar o [quickstart.md](./quickstart.md) completo, do Nível 1 ao 7, confirmando SC-001 a SC-009; rodar `npm run test:tudo`, `npx tsc --noEmit` e `npm run lint` (depende de todas as anteriores)
 
@@ -236,10 +236,10 @@ Task: "Criar src/shared/ui/shell/sidebar-nav.tsx a partir do <nav> de staff-shel
 ### Entrega incremental
 
 1. Setup + Foundational → shell compartilhado, comportamento inalterado
-2. + US1 → shell em toda página autenticada (**MVP**)
-3. + US2 → menu correto por perfil, travado por teste contra a autorização
-4. + US3 → menu agrupado e legível para perfis com muitos destinos
-5. + Polish → acessibilidade, responsividade, casos de borda de sessão, performance
+2.  - US1 → shell em toda página autenticada (**MVP**)
+3.  - US2 → menu correto por perfil, travado por teste contra a autorização
+4.  - US3 → menu agrupado e legível para perfis com muitos destinos
+5.  - Polish → acessibilidade, responsividade, casos de borda de sessão, performance
 
 Cada incremento é demonstrável e não quebra o anterior.
 

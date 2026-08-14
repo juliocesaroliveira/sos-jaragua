@@ -13,13 +13,13 @@ do `config.matcher` de `proxy.ts`, que não mudam nesta feature: `/api/auth/*`,
 
 ## Saída (uma das quatro)
 
-| Condição | Resposta |
-|---|---|
-| `pathname === '/login'` | `NextResponse.next()` — sempre acessível, sem checagem de sessão. |
-| Sem cookie de sessão, `pathname !== '/login'` | `redirect('/login?redirecionar=<pathname original>')` |
-| Sessão expirada por inatividade (staff, DESIGN.md §6.3) | `redirect('/login?redirecionar=<pathname>&motivo=expirado')` |
-| Sessão válida, mas rota exige role que o usuário não tem (`REGRAS_DE_ROTA`) | `redirect('/sem-permissao')` |
-| Sessão válida e (rota sem exigência de role OU role compatível) | `NextResponse.next()` |
+| Condição                                                                    | Resposta                                                          |
+| --------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `pathname === '/login'`                                                     | `NextResponse.next()` — sempre acessível, sem checagem de sessão. |
+| Sem cookie de sessão, `pathname !== '/login'`                               | `redirect('/login?redirecionar=<pathname original>')`             |
+| Sessão expirada por inatividade (staff, DESIGN.md §6.3)                     | `redirect('/login?redirecionar=<pathname>&motivo=expirado')`      |
+| Sessão válida, mas rota exige role que o usuário não tem (`REGRAS_DE_ROTA`) | `redirect('/sem-permissao')`                                      |
+| Sessão válida e (rota sem exigência de role OU role compatível)             | `NextResponse.next()`                                             |
 
 ## Regressão a evitar
 

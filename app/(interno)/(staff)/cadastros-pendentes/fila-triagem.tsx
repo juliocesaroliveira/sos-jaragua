@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { Check, Eye, Trash2, X } from 'lucide-react'
 import { Alert, Badge, Button, Dialog, Textarea, avisar } from '@/src/shared/ui'
 import { formatarCep, formatarCpf, formatarTelefone } from '@/src/modules/identidade/domain'
 import { ROTULO_DISPONIBILIDADE, ROTULO_TIPO_VEICULO } from '@/src/modules/voluntariado/domain/candidatura'
@@ -82,13 +83,25 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                         </div>
 
                         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-                            <Button variant="secondary" onClick={() => setDetalhe(c)}>
+                            <Button
+                                variant="secondary"
+                                iconeInicio={<Eye className="size-4" />}
+                                onClick={() => setDetalhe(c)}
+                            >
                                 Ver detalhes
                             </Button>
-                            <Button loading={emAndamento} onClick={() => aprovar(c)}>
+                            <Button
+                                iconeInicio={<Check className="size-4" />}
+                                loading={emAndamento}
+                                onClick={() => aprovar(c)}
+                            >
                                 Aprovar
                             </Button>
-                            <Button variant="danger" onClick={() => setARejeitar(c)}>
+                            <Button
+                                variant="danger"
+                                iconeInicio={<Trash2 className="size-4" />}
+                                onClick={() => setARejeitar(c)}
+                            >
                                 Rejeitar
                             </Button>
                         </div>
@@ -107,13 +120,18 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                         <>
                             <Button
                                 variant="danger"
+                                iconeInicio={<Trash2 className="size-4" />}
                                 onClick={() => {
                                     setARejeitar(detalhe)
                                 }}
                             >
                                 Rejeitar
                             </Button>
-                            <Button loading={emAndamento} onClick={() => aprovar(detalhe)}>
+                            <Button
+                                iconeInicio={<Check className="size-4" />}
+                                loading={emAndamento}
+                                onClick={() => aprovar(detalhe)}
+                            >
                                 Aprovar
                             </Button>
                         </>
@@ -164,10 +182,19 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                 descricao={`O motivo é enviado a ${aRejeitar?.nomeCompleto ?? 'o candidato'}, que pode corrigir e reenviar.`}
                 acoes={
                     <>
-                        <Button variant="secondary" onClick={() => setARejeitar(null)}>
+                        <Button
+                            variant="secondary"
+                            iconeInicio={<X className="size-4" />}
+                            onClick={() => setARejeitar(null)}
+                        >
                             Cancelar
                         </Button>
-                        <Button variant="danger" loading={emAndamento} onClick={confirmarRejeicao}>
+                        <Button
+                            variant="danger"
+                            iconeInicio={<Trash2 className="size-4" />}
+                            loading={emAndamento}
+                            onClick={confirmarRejeicao}
+                        >
                             Rejeitar
                         </Button>
                     </>

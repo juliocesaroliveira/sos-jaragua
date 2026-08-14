@@ -31,14 +31,21 @@ export interface CampoProps {
     apoio?: string
     erro?: string
     obrigatorio?: boolean
+    /**
+     * Mantém o rótulo apenas para leitores de tela. Para controles cujo
+     * propósito já é evidente pelo contexto visual — o seletor de registros por
+     * página dentro do rodapé da tabela —, o rótulo impresso só ocuparia
+     * espaço, mas removê-lo do DOM quebraria a navegação por leitor de tela.
+     */
+    rotuloOculto?: boolean
     children: ReactNode
 }
 
-export function Campo({ id, label, apoio, erro, obrigatorio, children }: CampoProps) {
+export function Campo({ id, label, apoio, erro, obrigatorio, rotuloOculto, children }: CampoProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     return (
-        <div className="flex flex-col gap-1.5">
-            <label htmlFor={id} className="text-sm font-medium text-foreground">
+        <div className={cn('flex flex-col', rotuloOculto ? 'gap-0' : 'gap-1.5')}>
+            <label htmlFor={id} className={cn('text-sm font-medium text-foreground', rotuloOculto && 'sr-only')}>
                 {label}
                 {obrigatorio && (
                     <span aria-hidden className="ml-1 text-danger-600 dark:text-danger-400">

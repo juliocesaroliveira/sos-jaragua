@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { Trash2 } from 'lucide-react'
 import { Alert, Button, NumberInput, Select, Textarea, avisar } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
@@ -101,7 +102,13 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
             />
 
             <div className="flex justify-end">
-                <Button variant="danger" size="lg" loading={enviando} onClick={salvar}>
+                <Button
+                    variant="danger"
+                    iconeInicio={<Trash2 className="size-4" />}
+                    size="lg"
+                    loading={enviando}
+                    onClick={salvar}
+                >
                     Registrar descarte
                 </Button>
             </div>

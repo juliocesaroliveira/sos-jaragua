@@ -1,6 +1,5 @@
 ---
-
-description: "Task list for feature implementation"
+description: 'Task list for feature implementation'
 ---
 
 # Tasks: Fluxo Unificado de Login
@@ -28,7 +27,7 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 
 **Purpose**: Confirm a clean baseline before touching the auth/routing code path.
 
-- [X] T001 Run `npm run lint` and `npm test` on the current branch to confirm a clean, passing baseline before making changes (no code changes in this task).
+- [x] T001 Run `npm run lint` and `npm test` on the current branch to confirm a clean, passing baseline before making changes (no code changes in this task).
 
 **Checkpoint**: Baseline confirmed clean — safe to start Foundational/story work.
 
@@ -36,11 +35,11 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Shared scaffold that both US2 and US3 build on — the login page needs a single `modo` state machine (`'opcoes' | 'credenciais'`); building only half of it would leave the page in a broken state, so the scaffold itself is foundational even though the story-specific *behavior* inside each branch is delivered by US2/US3.
+**Purpose**: Shared scaffold that both US2 and US3 build on — the login page needs a single `modo` state machine (`'opcoes' | 'credenciais'`); building only half of it would leave the page in a broken state, so the scaffold itself is foundational even though the story-specific _behavior_ inside each branch is delivered by US2/US3.
 
 **⚠️ CRITICAL**: No user story 2 or 3 work can begin until this phase is complete. User Story 1 (routing gate) is independent of this phase and can be done in parallel.
 
-- [X] T002 In `app/(auth)/login/login-form.tsx`, introduce local state `modo: 'opcoes' | 'credenciais'` (default `'opcoes'`) per `data-model.md` §2. Render two mutually exclusive blocks driven by `modo`: an `opcoes` block (currently empty/placeholder) and a `credenciais` block containing the existing e-mail/senha form + OAuth "ou continue com" section moved as-is (no behavior change yet, just relocated under the `credenciais` branch) — this is the scaffold both US2 and US3 will fill in.
+- [x] T002 In `app/(auth)/login/login-form.tsx`, introduce local state `modo: 'opcoes' | 'credenciais'` (default `'opcoes'`) per `data-model.md` §2. Render two mutually exclusive blocks driven by `modo`: an `opcoes` block (currently empty/placeholder) and a `credenciais` block containing the existing e-mail/senha form + OAuth "ou continue com" section moved as-is (no behavior change yet, just relocated under the `credenciais` branch) — this is the scaffold both US2 and US3 will fill in.
 
 **Checkpoint**: `login-form.tsx` has a working two-branch state machine; app still compiles and the (temporarily relocated) existing login flow still works end-to-end from the `credenciais` branch.
 
@@ -54,11 +53,11 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 
 ### Implementation for User Story 1
 
-- [X] T003 [P] [US1] Rewrite route classification in `src/shared/auth/rotas.ts` per `data-model.md` §1 / `contracts/routing-gate.md`: replace the "public unless listed" model with "protected unless `/login`". Keep `REGRAS_DE_ROTA` (role matrix) unchanged as a second-stage check. Export a function equivalent to today's `rolesExigidas(pathname)` plus a new `ehRotaPublica(pathname)` (or fold into one classification function) that returns whether a session is required and, if so, which roles (if any) are additionally required.
-- [X] T004 [US1] Update `proxy.ts` to consult the new classification from T003: (1) if the route is public (`/login`) → `NextResponse.next()` without any session check; (2) else if no session cookie → redirect to `/login?redirecionar=...`; (3) else apply the existing inactivity-timeout and role-matrix checks unchanged. Preserve the existing fast-path behavior (no DB hit on the happy path) and the existing `config.matcher` exclusions (`/api/auth/*`, static assets). (Depends on T003.)
-- [X] T005 [P] [US1] Add `areaPadraoPorRole(role: Role): string` helper (e.g. in `src/shared/auth/rotas.ts`) mapping each role to its default authenticated landing route (`coordenador`/`membro_defesa_civil`/`administrador` → `/dashboard`, `voluntario` → `/voluntariado/minhas-atividades`, `usuario` → `/voluntariado/candidatura` or another sensible default), for reuse in T006.
-- [X] T006 [US1] In `app/(auth)/login/page.tsx` (Server Component), check for a valid session via `auth.api.getSession` (same pattern already used in `app/(staff)/layout.tsx`) before rendering; if valid, `redirect()` to the route from `areaPadraoPorRole` (T005) instead of rendering `LoginForm` (FR-003). (Depends on T005.)
-- [X] T007 [P] [US1] Add unit tests in `src/shared/auth/rotas.test.ts` covering the classification table in `contracts/routing-gate.md`: `/login` → public; `/` , `/cadastro`, `/voluntariado/candidatura`, `/design-system`, `/sem-permissao` → session required, no specific role; `/estoque/descarte`, `/estoque/kits` → session + `coordenador`/`administrador`; other `REGRAS_DE_ROTA` entries unchanged. (Depends on T003.)
+- [x] T003 [P] [US1] Rewrite route classification in `src/shared/auth/rotas.ts` per `data-model.md` §1 / `contracts/routing-gate.md`: replace the "public unless listed" model with "protected unless `/login`". Keep `REGRAS_DE_ROTA` (role matrix) unchanged as a second-stage check. Export a function equivalent to today's `rolesExigidas(pathname)` plus a new `ehRotaPublica(pathname)` (or fold into one classification function) that returns whether a session is required and, if so, which roles (if any) are additionally required.
+- [x] T004 [US1] Update `proxy.ts` to consult the new classification from T003: (1) if the route is public (`/login`) → `NextResponse.next()` without any session check; (2) else if no session cookie → redirect to `/login?redirecionar=...`; (3) else apply the existing inactivity-timeout and role-matrix checks unchanged. Preserve the existing fast-path behavior (no DB hit on the happy path) and the existing `config.matcher` exclusions (`/api/auth/*`, static assets). (Depends on T003.)
+- [x] T005 [P] [US1] Add `areaPadraoPorRole(role: Role): string` helper (e.g. in `src/shared/auth/rotas.ts`) mapping each role to its default authenticated landing route (`coordenador`/`membro_defesa_civil`/`administrador` → `/dashboard`, `voluntario` → `/voluntariado/minhas-atividades`, `usuario` → `/voluntariado/candidatura` or another sensible default), for reuse in T006.
+- [x] T006 [US1] In `app/(auth)/login/page.tsx` (Server Component), check for a valid session via `auth.api.getSession` (same pattern already used in `app/(staff)/layout.tsx`) before rendering; if valid, `redirect()` to the route from `areaPadraoPorRole` (T005) instead of rendering `LoginForm` (FR-003). (Depends on T005.)
+- [x] T007 [P] [US1] Add unit tests in `src/shared/auth/rotas.test.ts` covering the classification table in `contracts/routing-gate.md`: `/login` → public; `/` , `/cadastro`, `/voluntariado/candidatura`, `/design-system`, `/sem-permissao` → session required, no specific role; `/estoque/descarte`, `/estoque/kits` → session + `coordenador`/`administrador`; other `REGRAS_DE_ROTA` entries unchanged. (Depends on T003.)
 
 **Checkpoint**: User Story 1 is fully functional and independently testable — run Cenário 1 and Cenário 4.1 of `quickstart.md`.
 
@@ -72,8 +71,8 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 
 ### Implementation for User Story 2
 
-- [X] T008 [US2] In `app/(auth)/login/login-form.tsx`, populate the `opcoes` branch (from T002) with the "Acessar com Google" and "Acessar com Facebook" buttons, wired to the existing `entrarComRedeSocial('google' | 'facebook')` handler (`signIn.social`) — moved as-is from the old flat layout, no logic change (FR-005). Preserve loading state (`carregandoSocial`) and error handling (`erroServidor`) exactly as today.
-- [X] T009 [US2] Confirm button label/order in the `opcoes` branch matches FR-004: "Acessar com Google", "Acessar com Facebook", "Usar usuário e senha" (the third button's behavior is delivered in US3; its label and position must exist now so the initial state is complete per FR-004).
+- [x] T008 [US2] In `app/(auth)/login/login-form.tsx`, populate the `opcoes` branch (from T002) with the "Acessar com Google" and "Acessar com Facebook" buttons, wired to the existing `entrarComRedeSocial('google' | 'facebook')` handler (`signIn.social`) — moved as-is from the old flat layout, no logic change (FR-005). Preserve loading state (`carregandoSocial`) and error handling (`erroServidor`) exactly as today.
+- [x] T009 [US2] Confirm button label/order in the `opcoes` branch matches FR-004: "Acessar com Google", "Acessar com Facebook", "Usar usuário e senha" (the third button's behavior is delivered in US3; its label and position must exist now so the initial state is complete per FR-004).
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — run Cenário 2 of `quickstart.md`, plus re-run Cenário 1.
 
@@ -87,10 +86,10 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 
 ### Implementation for User Story 3
 
-- [X] T010 [US3] Wire the "Usar usuário e senha" button in the `opcoes` branch (T009) to set `modo = 'credenciais'` (FR-006). (Depends on T008/T009.)
-- [X] T011 [US3] In the `credenciais` branch of `login-form.tsx`, add a "Voltar" button before/alongside the existing "Acessar"/submit button that sets `modo = 'opcoes'` and resets the form (react-hook-form `reset()`) so e-mail/senha are discarded (FR-007).
-- [X] T012 [P] [US3] Confirm the existing zod schema (`esquema` in `login-form.tsx`) already blocks submission with empty e-mail/senha and surfaces field-level errors without a network call (FR-010) — adjust messages only if needed; no schema logic change expected.
-- [X] T013 [P] [US3] Confirm the existing invalid-credentials handling (`setErroServidor('E-mail ou senha incorretos.')`) still fires from the `credenciais` branch and keeps the user in `modo: 'credenciais'` (FR-009) — no behavior change expected, verify after the T002/T011 relocation.
+- [x] T010 [US3] Wire the "Usar usuário e senha" button in the `opcoes` branch (T009) to set `modo = 'credenciais'` (FR-006). (Depends on T008/T009.)
+- [x] T011 [US3] In the `credenciais` branch of `login-form.tsx`, add a "Voltar" button before/alongside the existing "Acessar"/submit button that sets `modo = 'opcoes'` and resets the form (react-hook-form `reset()`) so e-mail/senha are discarded (FR-007).
+- [x] T012 [P] [US3] Confirm the existing zod schema (`esquema` in `login-form.tsx`) already blocks submission with empty e-mail/senha and surfaces field-level errors without a network call (FR-010) — adjust messages only if needed; no schema logic change expected.
+- [x] T013 [P] [US3] Confirm the existing invalid-credentials handling (`setErroServidor('E-mail ou senha incorretos.')`) still fires from the `credenciais` branch and keeps the user in `modo: 'credenciais'` (FR-009) — no behavior change expected, verify after the T002/T011 relocation.
 
 **Checkpoint**: All three user stories independently functional — run Cenário 3 and Cenário 4.2/4.3 of `quickstart.md`.
 
@@ -101,8 +100,8 @@ Existing Next.js App Router monolith (see `plan.md` Project Structure). No new t
 **Purpose**: Final validation and documentation alignment across all stories.
 
 - [x] T014 Run the full `quickstart.md` validation (Cenários 1–4) end-to-end manually against `npm run dev`.
-- [X] T015 [P] Update `spec/DESIGN.md` §6.2 (`proxy.ts` gate description) and the route table to reflect the deny-by-default model (public route is only `/login`), replacing the outdated "landing pública" exclusion note.
-- [X] T016 Run `npm run lint` and `npm test` (full suite, including `src/shared/auth/rotas.test.ts` from T007) to confirm no regressions.
+- [x] T015 [P] Update `spec/DESIGN.md` §6.2 (`proxy.ts` gate description) and the route table to reflect the deny-by-default model (public route is only `/login`), replacing the outdated "landing pública" exclusion note.
+- [x] T016 Run `npm run lint` and `npm test` (full suite, including `src/shared/auth/rotas.test.ts` from T007) to confirm no regressions.
 
 ---
 
@@ -152,7 +151,7 @@ Task: "Add unit tests in src/shared/auth/rotas.test.ts (T007)"
 3. Complete Phase 3: User Story 1 (routing gate) — can run in parallel with Phase 2.
 4. Complete Phase 4: User Story 2 (social login buttons in the new scaffold).
 5. **STOP and VALIDATE**: Run Cenário 1 and Cenário 2 of `quickstart.md`. At this point the app is secure (deny-by-default) and the primary login path (social) works — the "Usar usuário e senha" button is visible but not yet wired to a working credentials screen, which is acceptable for an MVP checkpoint but not for shipping (see below).
-6. Note: because `credenciais` already contains the relocated original form from T002, MVP users still have a *technically working* fallback credentials path even before US3's polish (T010–T013) — but do not consider the feature complete/shippable until US3 is done, since FR-006/007/010/011 (the toggle UX itself) are unmet.
+6. Note: because `credenciais` already contains the relocated original form from T002, MVP users still have a _technically working_ fallback credentials path even before US3's polish (T010–T013) — but do not consider the feature complete/shippable until US3 is done, since FR-006/007/010/011 (the toggle UX itself) are unmet.
 
 ### Incremental Delivery
 

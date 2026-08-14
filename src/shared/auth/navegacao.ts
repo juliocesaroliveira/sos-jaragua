@@ -21,13 +21,7 @@ import { ROLES, type Role } from './roles'
  */
 
 export type IdGrupo =
-    | 'principal'
-    | 'pessoal'
-    | 'voluntariado'
-    | 'operacao'
-    | 'estoque'
-    | 'coordenacao'
-    | 'administracao'
+    'principal' | 'pessoal' | 'voluntariado' | 'operacao' | 'estoque' | 'coordenacao' | 'administracao'
 
 /** Identificador de ícone, não um componente React. */
 export type NomeIcone = string
@@ -191,7 +185,11 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         grupo: 'coordenacao',
         roles: COORDENACAO,
         atalho: { descricao: 'Acione voluntários em massa para uma ocorrência.' }
-    }
+    },
+
+    // Primeiro item do grupo `administracao` (006-user-management-page,
+    // research.md D2) — a rota já era reservada em REGRAS_DE_ROTA.
+    { href: '/admin', rotulo: 'Usuários', icone: 'Users', grupo: 'administracao', roles: ['administrador'] }
 ]
 
 /** Itens visíveis ao perfil, na ordem de declaração. Pode ser vazio. */
@@ -207,9 +205,7 @@ export function itensDeNavegacao(role: Role): readonly ItemNavegacao[] {
  * segunda lista poderia divergir da autorização sem ninguém perceber, que é
  * exatamente o modo de falha que o registro existe para eliminar.
  */
-export function atalhosDeNavegacao(
-    role: Role
-): readonly (ItemNavegacao & { atalho: { descricao: string } })[] {
+export function atalhosDeNavegacao(role: Role): readonly (ItemNavegacao & { atalho: { descricao: string } })[] {
     return itensDeNavegacao(role).filter(
         (item): item is ItemNavegacao & { atalho: { descricao: string } } => item.atalho !== undefined
     )

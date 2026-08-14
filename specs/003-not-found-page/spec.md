@@ -19,7 +19,7 @@ Esta feature cria uma página própria para endereço não encontrado, em pt-BR,
 
 Nos dois casos há um botão explícito de retorno.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Endereço inexistente com sessão ativa (Priority: P1)
 
@@ -80,7 +80,7 @@ Uma pessoa autenticada abre o endereço de um registro específico que não exis
 - **Retorno quando a página inicial não é acessível**: se a pessoa não tiver sessão, o botão a leva ao ponto de entrada de quem não está autenticado, e não a um destino que a rejeitaria em seguida.
 - **Chamadas que não são de página** (integrações e downloads): permanecem respondendo em seu próprio formato; esta página é para navegação, não para respostas de integração.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -120,7 +120,7 @@ Uma pessoa autenticada abre o endereço de um registro específico que não exis
 - **FR-020**: O botão de retorno MUST ter alvo de toque adequado ao uso em campo com uma das mãos.
 - **FR-021**: A página MUST comunicar sua condição a tecnologias assistivas, e não apenas por cor ou ilustração.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -137,7 +137,7 @@ Uma pessoa autenticada abre o endereço de um registro específico que não exis
 
 - **Página inicial como destino de retorno**: "voltar para a home" significa a página inicial autenticada da aplicação, que já monta atalhos conforme o perfil. Para quem não tem sessão, o equivalente é a tela de entrada — mandar um visitante à página inicial só o faria ser redirecionado em seguida.
 - **Reaproveitamento do shell existente**: a apresentação com sessão usa o mesmo shell das demais páginas autenticadas, não uma barra ou menu próprios desta tela.
-- **Alcance da variante sem sessão** *(restrição importante — ver nota abaixo)*: o modelo de acesso vigente exige sessão para praticamente toda rota de navegação, então um visitante sem sessão que digite um endereço desconhecido é enviado à tela de entrada **antes** de chegar a esta página. A variante sem shell permanece especificada e implementada porque é o comportamento correto onde a verificação de sessão não se aplica, e porque qualquer ampliação futura das rotas públicas passaria a exercitá-la.
+- **Alcance da variante sem sessão** _(restrição importante — ver nota abaixo)_: o modelo de acesso vigente exige sessão para praticamente toda rota de navegação, então um visitante sem sessão que digite um endereço desconhecido é enviado à tela de entrada **antes** de chegar a esta página. A variante sem shell permanece especificada e implementada porque é o comportamento correto onde a verificação de sessão não se aplica, e porque qualquer ampliação futura das rotas públicas passaria a exercitá-la.
 - **Nenhuma mudança no modelo de acesso**: esta feature não altera quais endereços exigem sessão nem quais perfis acessam o quê.
 - **Sem registro de ocorrências**: não é escopo desta feature contabilizar ou reportar endereços não encontrados; se isso for desejado, é trabalho próprio.
 - **Sem sugestões de destino**: a página não tenta adivinhar o endereço pretendido nem oferecer busca — o menu lateral já cumpre esse papel para quem está autenticado.

@@ -155,3 +155,104 @@ body {
         outline-color: var(--color-primary-400);
     }
 }
+
+/* -----------------------------------------------------------------------------
+ * Animação do Toast (DESIGN_SYSTEM.md §4.8)
+ *
+ * O `react-toastify` é consumido pelo entry point `unstyled`, que entrega o
+ * comportamento sem folha de estilo alguma — inclusive sem as animações. Estas
+ * duas regras são o que o projeto passa a possuir em troca de não herdar a
+ * paleta, o raio e a sombra padrão da biblioteca (specs/010, decisão D1).
+ *
+ * Os avisos entram pela base da tela, então a translação é vertical e para
+ * cima. As classes são aplicadas via `cssTransition` em
+ * `src/shared/ui/toast/toast.tsx`.
+ * -------------------------------------------------------------------------- */
+@keyframes aviso-entrada {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 1rem, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes aviso-saida {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, 1rem, 0);
+    }
+}
+
+.aviso-entrada {
+    animation: aviso-entrada 0.24s ease-out both;
+}
+
+.aviso-saida {
+    animation: aviso-saida 0.18s ease-in both;
+}
+
+/*
+ * A contagem do auto-dismiss NÃO é um `setTimeout` — é esta animação.
+ *
+ * O `react-toastify` renderiza uma barra de progresso, escreve nela
+ * `animation-duration` e `animation-play-state` inline, e fecha o aviso no
+ * `animationend` dela. O `animation-name`, porém, vem da folha de estilo da
+ * biblioteca — que o entry point `unstyled` não traz. Sem a regra abaixo o
+ * aviso **nunca se fecharia sozinho**, e a pausa em hover (que é apenas
+ * `animation-play-state: paused`) também não funcionaria.
+ *
+ * A barra fica invisível, para manter a paridade com o componente anterior,
+ * que não exibia progresso. `opacity: 0` e não `display: none`: elemento com
+ * `display: none` não anima, e sem animação não há `animationend` — ou seja,
+ * escondê-la do jeito errado quebraria o fechamento automático.
+ */
+@keyframes aviso-progresso {
+    from {
+        transform: scaleX(1);
+    }
+    to {
+        transform: scaleX(0);
+    }
+}
+
+.Toastify__progress-bar--animated {
+    animation: aviso-progresso linear 1 forwards;
+    transform-origin: left;
+}
+
+.Toastify__progress-bar--wrp[data-hidden='true'] {
+    opacity: 0;
+}
+
+/*
+ * Movimento reduzido não é enfeite aqui: o sistema é operado sob estresse, e
+ * cartões que deslizam pela tela incomodam quem é sensível a movimento. A
+ * opacidade permanece — sem ela o aviso apareceria por corte seco, o que
+ * prejudica a percepção de que algo novo entrou na tela.
+ */
+@media (prefers-reduced-motion: reduce) {
+    @keyframes aviso-entrada {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    @keyframes aviso-saida {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+}

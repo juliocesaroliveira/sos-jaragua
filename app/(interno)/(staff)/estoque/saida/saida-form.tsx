@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useId, useRef, useState, useTransition } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Check, Plus, Trash2 } from 'lucide-react'
 import { Alert, Button, IconButton, Input, NumberInput, RadioGroup, Select, avisar } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE, type TipoSaida } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
@@ -199,7 +199,7 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
             </div>
 
             <div className="flex justify-end">
-                <Button size="lg" loading={enviando} onClick={salvar}>
+                <Button size="lg" iconeInicio={<Check className="size-4" />} loading={enviando} onClick={salvar}>
                     Registrar saída
                 </Button>
             </div>

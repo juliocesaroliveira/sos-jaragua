@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react'
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { ANEL_FOCO, cn, type TamanhoControle } from '../cn'
 import type { VarianteBotao } from '../button/button'
 
@@ -29,24 +29,20 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
     icone: ReactNode
 }
 
-export function IconButton({
-    variant = 'ghost',
-    size = 'md',
-    loading = false,
-    icone,
-    disabled,
-    type = 'button',
-    ...props
-}: IconButtonProps) {
+export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
+    { variant = 'ghost', size = 'md', loading = false, icone, disabled, type = 'button', ...props },
+    ref
+) {
     return (
         <button
             {...props}
+            ref={ref}
             type={type}
             disabled={disabled || loading}
             aria-busy={loading || undefined}
             className={cn(
                 'inline-flex shrink-0 items-center justify-center rounded-lg transition-colors',
-                'disabled:cursor-not-allowed disabled:opacity-50',
+                'hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
                 ANEL_FOCO,
                 VARIANTES[variant],
                 DIMENSAO[size]
@@ -55,4 +51,4 @@ export function IconButton({
             {loading ? <Loader2 aria-hidden className="size-5 animate-spin" /> : icone}
         </button>
     )
-}
+})

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useCallback, useState, useTransition } from 'react'
+import { Check, RotateCcw } from 'lucide-react'
 import { Alert, Button, Combobox, DatePicker, NumberInput, Select, Switch, avisar } from '@/src/shared/ui'
 import {
     CATEGORIAS_ITEM,
@@ -226,10 +227,16 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
             />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <Button variant="secondary" onClick={limpar} disabled={enviando}>
+                <Button
+                    size="lg"
+                    variant="secondary"
+                    iconeInicio={<RotateCcw className="size-4" />}
+                    onClick={limpar}
+                    disabled={enviando}
+                >
                     Limpar
                 </Button>
-                <Button size="lg" loading={enviando} onClick={salvar}>
+                <Button size="lg" iconeInicio={<Check className="size-4" />} loading={enviando} onClick={salvar}>
                     Registrar entrada
                 </Button>
             </div>

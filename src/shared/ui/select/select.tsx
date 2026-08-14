@@ -28,6 +28,8 @@ export interface SelectProps {
     multiple?: boolean
     disabled?: boolean
     placeholder?: string
+    /** Rótulo só para leitores de tela — ver `CampoProps.rotuloOculto`. */
+    rotuloOculto?: boolean
 }
 
 export function Select({
@@ -43,7 +45,8 @@ export function Select({
     onValueChange,
     multiple = false,
     disabled,
-    placeholder = 'Selecione…'
+    placeholder = 'Selecione…',
+    rotuloOculto
 }: SelectProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     const collection = useMemo(
@@ -58,7 +61,7 @@ export function Select({
     )
 
     return (
-        <Campo id={id} label={label} apoio={apoio} erro={erro} obrigatorio={obrigatorio}>
+        <Campo id={id} label={label} apoio={apoio} erro={erro} obrigatorio={obrigatorio} rotuloOculto={rotuloOculto}>
             <Ark.Root
                 ids={{ trigger: id }}
                 collection={collection}
