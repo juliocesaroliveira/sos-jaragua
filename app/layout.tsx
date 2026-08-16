@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider, themeInitScript } from '@/src/shared/ui/theme/theme-provider'
+import { preferenciaColunaInitScript } from '@/src/shared/ui/shell/preferencia-coluna'
 import { Toaster } from '@/src/shared/ui/toast/toast'
 import '@/app/globals.css'
 
@@ -47,6 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
             <head>
                 <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+                {/* Mesma razão do script de tema: aplicar antes da hidratação
+                    evita que a coluna de navegação apareça expandida e salte
+                    para recolhida a cada navegação
+                    (013-navegacao-lateral-responsiva, C-02). */}
+                <script dangerouslySetInnerHTML={{ __html: preferenciaColunaInitScript }} />
             </head>
             <body>
                 <ThemeProvider>

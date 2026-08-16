@@ -1,8 +1,7 @@
 'use client'
 
-import { Menu as Ark } from '@ark-ui/react/menu'
-import { LogOut, Menu as MenuIcon, X } from 'lucide-react'
-import { forwardRef, type ReactNode } from 'react'
+import { LogOut, Menu as MenuIcon } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Avatar } from '../avatar/avatar'
 import { IconButton } from '../icon-button/icon-button'
 import { ThemeToggle } from '../theme/theme-toggle'
@@ -12,10 +11,10 @@ export interface TopbarProps {
     rotuloRole: string
     /** Slot do sino de notificações (NOT-09). Ausente = sino não renderizado. */
     notificacoes?: ReactNode
-    /** Estado do painel mobile/tablet, controlado pelo `AppShell` via `Ark.RootProvider` (005-mobile-menu-panel). */
-    menuAberto: boolean
-    /** `false` quando não há itens de navegação — sem menu a abrir. */
+    /** `false` quando não há itens de navegação — sem gaveta a abrir. */
     mostrarBotaoMenu?: boolean
+    /** Abre a gaveta de navegação (013-navegacao-lateral-responsiva). */
+    onAbrirNavegacao: () => void
     onSair: () => void
 }
 
@@ -26,36 +25,34 @@ export interface TopbarProps {
  * Presente em **toda** página autenticada, para todos os perfis — sair e
  * alternar tema não podem depender de o usuário ser staff.
  *
- * O `ref` encaminhado ao `<header>` é a âncora de posicionamento do painel
- * mobile/tablet (`menu-mobile.tsx`) — o painel sai com a largura do topbar
- * inteiro, não do botão de hambúrguer (research.md D2, 005-mobile-menu-panel).
+ * **Aderente ao topo** (013-navegacao-lateral-responsiva, R-02): permanece
+ * visível durante a rolagem do documento, sem ser um contêiner rolante.
+ *
+ * O botão de navegação é um botão comum. Antes ele era o gatilho de um menu
+ * suspenso do Ark, e este componente precisava encaminhar um `ref` para servir
+ * de âncora de posicionamento e conhecer o estado `menuAberto`. Uma gaveta se
+ * posiciona pela borda da viewport — âncora e estado compartilhado deixaram de
+ * existir, e a topbar deixou de ser acoplada à navegação (G-07).
  */
-export const Topbar = forwardRef<HTMLElement, TopbarProps>(function Topbar(
-    { nome, rotuloRole, notificacoes, menuAberto, mostrarBotaoMenu = true, onSair },
-    ref
-) {
+export function Topbar({
+    nome,
+    rotuloRole,
+    notificacoes,
+    mostrarBotaoMenu = true,
+    onAbrirNavegacao,
+    onSair
+}: TopbarProps) {
     return (
-        <header
-            ref={ref}
-            className="flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface p-3"
-        >
+        <header className="sticky top-0 z-30 flex shrink-0 items-center justify-between gap-2 border-b border-border bg-surface p-3">
             <div className="flex items-center gap-2">
-                {/* Só abaixo de `lg`: em telas largas a navegação é coluna
-                    fixa, e o botão não teria o que alternar (FR-009). */}
+                {/* Só abaixo de `lg`: em telas largas a navegação é a coluna. */}
                 {mostrarBotaoMenu && (
                     <span className="lg:hidden">
-                        <Ark.Trigger asChild>
-                            <IconButton
-                                aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
-                                icone={
-                                    menuAberto ? (
-                                        <X aria-hidden className="size-5" />
-                                    ) : (
-                                        <MenuIcon aria-hidden className="size-5" />
-                                    )
-                                }
-                            />
-                        </Ark.Trigger>
+                        <IconButton
+                            aria-label="Abrir navegação"
+                            icone={<MenuIcon aria-hidden className="size-5" />}
+                            onClick={onAbrirNavegacao}
+                        />
                     </span>
                 )}
                 <span className="text-lg font-semibold text-foreground lg:hidden">SOS Jaraguá</span>
@@ -75,4 +72,4 @@ export const Topbar = forwardRef<HTMLElement, TopbarProps>(function Topbar(
             </div>
         </header>
     )
-})
+}
