@@ -21,13 +21,24 @@ export interface DrawerProps {
     gatilho?: ReactNode
     children: ReactNode
     acoes?: ReactNode
-    /** `bottom` é o padrão em mobile; `right` para painéis de desktop. */
-    lado?: 'bottom' | 'right'
+    /**
+     * `bottom` é o padrão em mobile; `right` para painéis de desktop; `left`
+     * para a gaveta de navegação (013-navegacao-lateral-responsiva).
+     */
+    lado?: 'bottom' | 'right' | 'left'
 }
 
 const POSICAO = {
     bottom: 'inset-x-0 bottom-0 max-h-[85dvh] w-full rounded-t-xl border-t',
-    right: 'inset-y-0 right-0 h-full w-full max-w-md border-l sm:rounded-l-xl'
+    right: 'inset-y-0 right-0 h-full w-full max-w-md border-l sm:rounded-l-xl',
+    /**
+     * Mais estreito que `right` de propósito: a gaveta de navegação precisa
+     * deixar parte do fundo escurecido visível, senão o toque fora — um dos
+     * caminhos de fechamento — deixa de ser descobrível
+     * (contracts/gaveta-navegacao.md G-05). Em um aparelho de 360px, `85%`
+     * deixa ~54px de fundo à mostra.
+     */
+    left: 'inset-y-0 left-0 h-full w-[85%] max-w-xs border-r sm:rounded-r-xl'
 } as const
 
 export function Drawer({
@@ -75,7 +86,13 @@ export function Drawer({
                                 <X aria-hidden className="size-5" />
                             </Ark.CloseTrigger>
                         </header>
-                        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+                        {/*
+                          `overscroll-contain`: chegar ao fim desta lista não
+                          transfere o gesto para a página atrás
+                          (013-navegacao-lateral-responsiva, R-04). Vale para
+                          todos os drawers, não só o de navegação.
+                        */}
+                        <div className="flex-1 overflow-y-auto overscroll-contain p-4">{children}</div>
                         {acoes && (
                             <footer className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
                                 {acoes}
