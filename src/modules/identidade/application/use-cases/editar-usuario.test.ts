@@ -28,7 +28,9 @@ function repositorioComConta(roleAtual: Role | null, temSenhaPropria = true) {
         atualizarNomeERole,
         atualizarRole: vi.fn(),
         buscarRole,
-        possuiSenhaPropria
+        possuiSenhaPropria,
+        definirDataNascimentoSeAusente: vi.fn(),
+        buscarDataNascimento: vi.fn()
     }
     return { usuarios, buscarRole, atualizarNomeERole, possuiSenhaPropria }
 }

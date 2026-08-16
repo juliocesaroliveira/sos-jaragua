@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { account, user } from '@/db/schema/identidade'
 import type { Role } from '@/src/shared/auth/roles'
@@ -84,6 +84,26 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
         async buscarRole(userId) {
             const [linha] = await executor.select({ role: user.role }).from(user).where(eq(user.id, userId)).limit(1)
             return (linha?.role as Role) ?? null
+        },
+
+        async definirDataNascimentoSeAusente(userId, data) {
+            // `isNull` no WHERE, e não um `select` antes: é o que torna a
+            // escrita idempotente e imune a corrida entre dois envios
+            // simultâneos, sem precisar de lock explícito.
+            await executor
+                .update(user)
+                .set({ dataNascimento: data })
+                .where(and(eq(user.id, userId), isNull(user.dataNascimento)))
+        },
+
+        async buscarDataNascimento(userId) {
+            const [linha] = await executor
+                .select({ dataNascimento: user.dataNascimento })
+                .from(user)
+                .where(eq(user.id, userId))
+                .limit(1)
+
+            return linha?.dataNascimento ?? null
         }
     }
 }

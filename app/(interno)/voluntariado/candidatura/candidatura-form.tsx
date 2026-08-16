@@ -35,6 +35,11 @@ const obrigatorio = (mensagem: string) => z.string({ error: mensagem }).min(1, m
 
 const esquema = z.object({
     nomeCompleto: obrigatorio('Informe o nome completo.'),
+    /**
+     * Continua obrigatório na validação de forma: quando a conta já tem a data,
+     * o campo entra pré-preenchido com ela e a regra passa de graça; quando não
+     * tem, o candidato precisa informá-la (011-auto-cadastro-provedor, FR-014).
+     */
     dataNascimento: obrigatorio('Informe a data de nascimento.'),
     cpf: obrigatorio('Informe o CPF.'),
     telefone: obrigatorio('Informe o telefone.'),
@@ -55,12 +60,36 @@ export type CandidaturaFormProps = {
     /** Status da candidatura existente, quando houver (permite reenvio). */
     statusAtual?: 'pendente' | 'aprovado' | 'rejeitado'
     motivoRejeicao?: string | null
+    /** E-mail da conta — exibição e conferência apenas, nunca enviado (FR-019). */
+    email: string
+    /** Nome já confirmado na candidatura anterior, ou o nome da conta. */
+    nomeInicial: string
+    /** `YYYY-MM-DD` quando a conta já tem o dado; `null` no primeiro envio. */
+    dataNascimentoDaConta: string | null
 }
 
-export function CandidaturaForm({ habilidades, statusAtual, motivoRejeicao }: CandidaturaFormProps) {
+/** Exibe `YYYY-MM-DD` como `dd/mm/aaaa`, sem passar por fuso horário. */
+function formatarDataBR(iso: string): string {
+    const [ano, mes, dia] = iso.split('-')
+    return dia && mes && ano ? `${dia}/${mes}/${ano}` : iso
+}
+
+export function CandidaturaForm({
+    habilidades,
+    statusAtual,
+    motivoRejeicao,
+    email,
+    nomeInicial,
+    dataNascimentoDaConta
+}: CandidaturaFormProps) {
     const router = useRouter()
     const [erroGeral, setErroGeral] = useState<string | null>(null)
     const [enviada, setEnviada] = useState(false)
+
+    // A conta é a autoridade sobre a data (FR-017): quando ela já tem o valor,
+    // o campo entra travado. O servidor reconfere de qualquer forma — isto aqui
+    // é conveniência, não segurança.
+    const dataVemDaConta = dataNascimentoDaConta !== null
 
     const {
         register,
@@ -71,7 +100,13 @@ export function CandidaturaForm({ habilidades, statusAtual, motivoRejeicao }: Ca
         formState: { errors, isSubmitting }
     } = useForm<Formulario>({
         resolver: zodResolver(esquema),
-        defaultValues: { veiculoProprio: false, disponibilidade: [], habilidadeIds: [] }
+        defaultValues: {
+            nomeCompleto: nomeInicial,
+            dataNascimento: dataNascimentoDaConta ?? '',
+            veiculoProprio: false,
+            disponibilidade: [],
+            habilidadeIds: []
+        }
     })
 
     const veiculoProprio = watch('veiculoProprio')
@@ -130,30 +165,70 @@ export function CandidaturaForm({ habilidades, statusAtual, motivoRejeicao }: Ca
             {erroGeral && <Alert tom="danger" titulo={erroGeral} />}
 
             <div className="grid gap-4 md:grid-cols-2">
+                {/*
+                  E-mail sempre somente leitura (FR-012): não é campo da
+                  candidatura, é a identificação de sob qual conta ela está
+                  sendo enviada. Fora do `register` de propósito — o formulário
+                  não o envia, e a Server Action não o aceita (FR-019).
+                */}
+                <Input
+                    id="emailDaConta"
+                    label="E-mail"
+                    apoio="Vem da sua conta. É por ele que avisamos o resultado da triagem."
+                    value={email}
+                    vemDaConta
+                    readOnly
+                    autoComplete="email"
+                />
+
+                {/*
+                  Nome pré-preenchido mas editável (FR-013): Google e Facebook
+                  costumam trazer apelido ou nome parcial, e a triagem confere o
+                  nome contra o CPF. Travar aqui empurraria a correção para a
+                  fila da Defesa Civil.
+                */}
                 <Input
                     id="nomeCompleto"
                     label="Nome completo"
                     obrigatorio
+                    apoio="Como está no seu documento. Corrija se necessário."
                     autoComplete="name"
                     erro={errors.nomeCompleto?.message}
                     {...register('nomeCompleto')}
                 />
 
-                <Controller
-                    control={control}
-                    name="dataNascimento"
-                    render={({ field }) => (
-                        <DatePicker
-                            id="dataNascimento"
-                            label="Data de nascimento"
-                            obrigatorio
-                            apoio="É necessário ter 18 anos ou mais."
-                            value={field.value}
-                            onValueChange={(v) => field.onChange(v ?? '')}
-                            erro={errors.dataNascimento?.message}
-                        />
-                    )}
-                />
+                {dataVemDaConta ? (
+                    /*
+                      Texto formatado em vez do DatePicker (FR-014): o primitivo
+                      Ark só expõe `disabled`, e um calendário que não abre é
+                      pior que um valor legível. Como `Input` somente leitura, o
+                      leitor de tela anuncia o campo com a data.
+                    */
+                    <Input
+                        id="dataNascimento"
+                        label="Data de nascimento"
+                        apoio="Vem da sua conta."
+                        value={formatarDataBR(dataNascimentoDaConta)}
+                        vemDaConta
+                        readOnly
+                    />
+                ) : (
+                    <Controller
+                        control={control}
+                        name="dataNascimento"
+                        render={({ field }) => (
+                            <DatePicker
+                                id="dataNascimento"
+                                label="Data de nascimento"
+                                obrigatorio
+                                apoio="É necessário ter 18 anos ou mais."
+                                value={field.value}
+                                onValueChange={(v) => field.onChange(v ?? '')}
+                                erro={errors.dataNascimento?.message}
+                            />
+                        )}
+                    />
+                )}
 
                 <Input
                     id="cpf"

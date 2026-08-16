@@ -24,6 +24,29 @@ type Formulario = z.infer<typeof esquema>
  */
 type ModoLogin = 'opcoes' | 'credenciais'
 
+/**
+ * Recusas do login social traduzidas (011-auto-cadastro-provedor, FR-005a e
+ * FR-007). O better-auth aborta o callback OAuth redirecionando para
+ * `errorCallbackURL` com `?error=<código>`; sem este mapa o candidato via um
+ * erro cru em inglês, ou nada, e não tinha como saber o que fazer.
+ *
+ * `account_not_linked` é o caso mais provável na prática: o e-mail já tem conta
+ * criada com senha, e a vinculação automática exige e-mail verificado
+ * localmente — verificação que o projeto ainda não faz. Manter esse gate é
+ * decisão de segurança deliberada (research.md D4), então o caminho de saída
+ * precisa ser explicado, não escondido.
+ */
+const MENSAGEM_POR_ERRO_SOCIAL: Record<string, string> = {
+    account_not_linked:
+        'Este e-mail já tem conta no sistema, criada com senha. Entre com e-mail e senha para continuar.',
+    email_not_found:
+        'O provedor não informou seu e-mail, que é necessário para criar sua conta. Use outra forma de acesso ou libere o e-mail nas permissões do provedor.',
+    unable_to_link_account:
+        'Não foi possível vincular esta conta ao seu acesso. Entre com e-mail e senha para continuar.'
+}
+
+const ERRO_SOCIAL_GENERICO = 'Não foi possível concluir o acesso pelo provedor. Tente novamente ou use e-mail e senha.'
+
 export function LoginForm() {
     const router = useRouter()
     const params = useSearchParams()
@@ -33,6 +56,12 @@ export function LoginForm() {
     // e `voluntario` direto para `/sem-permissao`.
     const destino = params.get('redirecionar') ?? AREA_PADRAO
     const expirouPorInatividade = params.get('motivo') === 'expirado'
+
+    // Recusa do callback OAuth: chega como `?error=<código>` porque passamos
+    // `errorCallbackURL` abaixo. Sem isso o better-auth redirecionaria para a
+    // própria página de erro da biblioteca, em inglês e fora do nosso layout.
+    const codigoErroSocial = params.get('error')
+    const erroSocial = codigoErroSocial ? (MENSAGEM_POR_ERRO_SOCIAL[codigoErroSocial] ?? ERRO_SOCIAL_GENERICO) : null
 
     const [modo, setModo] = useState<ModoLogin>('opcoes')
     const [erroServidor, setErroServidor] = useState<string | null>(null)
@@ -60,7 +89,13 @@ export function LoginForm() {
     async function entrarComRedeSocial(provider: 'google' | 'facebook') {
         setErroServidor(null)
         setCarregandoSocial(provider)
-        const { error } = await signIn.social({ provider, callbackURL: destino })
+        const { error } = await signIn.social({
+            provider,
+            callbackURL: destino,
+            // Traz a recusa de volta para esta tela, em pt-BR, em vez de largar
+            // o usuário na página de erro padrão do better-auth (FR-005a).
+            errorCallbackURL: '/login'
+        })
         if (error) {
             setErroServidor('Não foi possível iniciar o login. Tente novamente.')
             setCarregandoSocial(null)
@@ -87,6 +122,8 @@ export function LoginForm() {
                     continuar.
                 </Alert>
             )}
+
+            {erroSocial && !erroServidor && <Alert tom="danger" titulo={erroSocial} />}
 
             {erroServidor && <Alert tom="danger" titulo={erroServidor} />}
 
@@ -119,6 +156,15 @@ export function LoginForm() {
                     >
                         Usar usuário e senha
                     </Button>
+
+                    {/*
+                      FR-010 — transparência antes do redirecionamento: a pessoa
+                      precisa saber o que sai da conta dela antes de autorizar,
+                      não depois, na tela de consentimento do provedor.
+                    */}
+                    <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                        Ao entrar com Google ou Facebook, recebemos apenas seu nome e e-mail para criar sua conta.
+                    </p>
                 </div>
             ) : (
                 <form onSubmit={handleSubmit(entrar)} className="flex flex-col gap-4" noValidate>

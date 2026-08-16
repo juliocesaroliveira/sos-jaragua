@@ -5,7 +5,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
-import { criarVoluntarioRepository } from '../../infrastructure/drizzle/voluntario-repository'
+import { unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from '../../application/use-cases/submeter-candidatura'
 import { DISPONIBILIDADES, TIPOS_VEICULO } from '../../domain/candidatura'
 
@@ -16,7 +16,16 @@ import { DISPONIBILIDADES, TIPOS_VEICULO } from '../../domain/candidatura'
  */
 const esquema = z.object({
     nomeCompleto: z.string().min(1),
-    dataNascimento: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida.'),
+    /**
+     * Opcional: quando a conta já tem data de nascimento, o formulário nem a
+     * envia — e mesmo que envie, o caso de uso descarta (FR-017). **Não existe
+     * campo de e-mail aqui de propósito**: o e-mail é lido da sessão e nunca
+     * aceito do cliente (FR-019).
+     */
+    dataNascimento: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida.')
+        .optional(),
     cpf: z.string().min(1),
     telefone: z.string().min(1),
     cep: z.string().min(1),
@@ -42,8 +51,17 @@ export async function submeterCandidatura(
     const parse = esquema.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
-    const useCase = new SubmeterCandidaturaUseCase(criarVoluntarioRepository())
-    const resultado = await comAtorDaSessao(ator, () => useCase.executar({ userId: ator.userId, dados: parse.data }))
+    const useCase = new SubmeterCandidaturaUseCase(unidadeDeTrabalho)
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            userId: ator.userId,
+            dados: { ...parse.data, dataNascimento: parse.data.dataNascimento ?? '' },
+            // Da **sessão**, nunca do corpo do POST: é o que impede que um
+            // campo desabilitado adulterado no navegador mude a data de
+            // nascimento de uma conta (FR-017).
+            dataNascimentoDaConta: ator.dataNascimento
+        })
+    )
 
     if (resultado.ok) {
         // A fila de triagem precisa refletir a nova candidatura imediatamente.
