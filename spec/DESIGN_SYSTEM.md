@@ -272,6 +272,38 @@ focus-visible:ring-offset-2`.
   `DecrementTrigger`) — usado em quantidade de estoque (decimal, `min=0`).
 - **Estado de erro**: borda `danger-500` + `text-danger-600` abaixo do campo (mensagem
   de validação Zod), com `aria-invalid`/`aria-describedby`.
+- **Texto de apoio e erro** — ver §4.2.1.
+
+#### 4.2.1. Faixa de mensagem: apoio e erro
+
+Vale para **todos** os campos que usam a moldura compartilhada `Campo` — Input, Textarea,
+NumberInput, Select, Combobox e DatePicker.
+
+**Layout**: rótulo → controle → **faixa de mensagem**. O texto de apoio fica **abaixo do
+controle**, no mesmo lugar da mensagem de erro — nunca entre o rótulo e o controle.
+
+**Regra de exclusão**: apoio e erro **nunca aparecem juntos**. Havendo erro, ele ocupa a
+faixa e o apoio deixa de ser exibido; corrigido o erro, o apoio volta.
+
+| Situação            | O que é exibido na faixa                        |
+| ------------------- | ----------------------------------------------- |
+| Sem erro, com apoio | Apoio, `text-sm text-neutral-500`               |
+| Com erro            | Erro, `text-sm text-danger-600`, `role="alert"` |
+| Com erro e apoio    | Somente o erro                                  |
+
+**Por que substituir em vez de empilhar**: o erro é a informação acionável do momento e
+perde destaque competindo com a dica; e empilhar mudaria a altura do campo a cada
+validação, empurrando o restante do formulário para baixo.
+
+**Consequência em acessibilidade — não opcional**: quando há erro, o apoio some do DOM,
+então seu id **precisa sair** do `aria-describedby`. Referenciar elemento inexistente faz o
+leitor de tela não anunciar nada no lugar da dica, e o usuário perderia a mensagem de erro
+por causa de uma referência quebrada antes dela. A regra está centralizada em `idsCampo`,
+que só inclui o id do apoio quando não há erro — nenhum componente de campo repete essa
+lógica.
+
+**Exceção**: o `Switch` (§4.5) não usa a moldura `Campo` e não tem estado de erro — seu
+apoio fica junto ao rótulo, ao lado do controle, que é o correto para esse padrão.
 
 ### 4.3. Select
 

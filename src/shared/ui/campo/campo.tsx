@@ -19,7 +19,16 @@ export interface IdsCampo {
 
 export function idsCampo(id: string, temErro: boolean, temApoio: boolean): IdsCampo {
     const idErro = temErro ? `${id}-erro` : undefined
-    const idApoio = temApoio ? `${id}-apoio` : undefined
+
+    /**
+     * Com erro presente, o apoio **não é renderizado** — o erro toma o lugar
+     * dele. Logo o id do apoio também não pode continuar no `aria-describedby`:
+     * apontar para um elemento inexistente faz o leitor de tela não anunciar
+     * nada no lugar da dica, e o usuário perderia justamente a mensagem de erro
+     * por causa de uma referência quebrada antes dela.
+     */
+    const idApoio = temApoio && !temErro ? `${id}-apoio` : undefined
+
     const describedBy = [idApoio, idErro].filter(Boolean).join(' ') || undefined
     return { idControle: id, idErro, idApoio, describedBy }
 }
@@ -54,16 +63,41 @@ export function Campo({ id, label, apoio, erro, obrigatorio, rotuloOculto, child
                 )}
                 {obrigatorio && <span className="sr-only"> (obrigatório)</span>}
             </label>
-            {apoio && (
-                <p id={ids.idApoio} className="text-sm text-neutral-500 dark:text-neutral-400">
-                    {apoio}
-                </p>
-            )}
             {children}
-            {erro && (
-                <p id={ids.idErro} role="alert" className={cn('text-sm text-danger-600 dark:text-danger-400')}>
+
+            {/*
+              Apoio e erro dividem **a mesma faixa**, abaixo do controle: o erro
+              substitui o apoio quando existe, em vez de os dois se empilharem.
+              Duas razões:
+              - O erro é a informação acionável do momento; competindo com a
+                dica, ele perde destaque justamente quando mais importa.
+              - Sem substituição, o campo mudaria de altura ao ganhar erro,
+                empurrando o restante do formulário para baixo a cada validação.
+
+              A dica volta a aparecer assim que o erro é corrigido.
+
+              `mt-1.5` com `rotuloOculto`: nesse modo o contêiner usa `gap-0`,
+              porque o rótulo `sr-only` é posicionado de forma absoluta e não
+              conta como item flex — sem a margem, a mensagem encostaria no
+              controle. Enquanto o apoio ficava acima, esse caso não existia.
+            */}
+            {erro ? (
+                <p
+                    id={ids.idErro}
+                    role="alert"
+                    className={cn('text-sm text-danger-600 dark:text-danger-400', rotuloOculto && 'mt-1.5')}
+                >
                     {erro}
                 </p>
+            ) : (
+                apoio && (
+                    <p
+                        id={ids.idApoio}
+                        className={cn('text-sm text-neutral-500 dark:text-neutral-400', rotuloOculto && 'mt-1.5')}
+                    >
+                        {apoio}
+                    </p>
+                )
             )}
         </div>
     )
