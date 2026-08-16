@@ -161,6 +161,39 @@ Escala padrão do Tailwind (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`
   standalone (ícone de card, header de seção).
 - **`stroke-width`**: `2` (padrão da biblioteca) em todo o app, para consistência visual.
 
+### 1.9. Barras de rolagem
+
+Definidas uma única vez em `app/globals.css`, dentro de `@layer base`. Nenhum componente
+declara estilo de barra próprio.
+
+| Propriedade        | Valor                                    | Onde    |
+| ------------------ | ---------------------------------------- | ------- |
+| `scrollbar-width`  | `thin`                                   | `*`     |
+| `scrollbar-color`  | `var(--color-border-strong) transparent` | `:root` |
+| `scrollbar-gutter` | `stable`                                 | `html`  |
+
+**Polegar em `--border-strong`**, o mesmo token dos divisores com ênfase (§2). Como esse
+token já é definido nos três blocos de tema, claro e escuro saem sem nenhuma regra
+adicional — a barra acompanha o tema pelo mesmo caminho que todo o resto.
+
+**Trilho transparente.** A barra é cromo, não conteúdo: deixar a superfície aparecer atrás
+mantém o polegar como único elemento visível, coerente com o estilo suave/amigável (§1.4).
+
+**Propriedades padrão, não `::-webkit-scrollbar`.** Manter as duas em paralelo criaria duas
+fontes de verdade para a mesma cor, e navegadores que suportam ambas dão precedência às
+padrão — a versão webkit viraria código morto divergindo em silêncio. Onde as padrão não
+são suportadas, o navegador desenha a barra do sistema operacional, que é utilizável:
+degradação, não defeito.
+
+**`scrollbar-gutter: stable` só no documento.** Reserva o espaço da barra mesmo quando a
+página não rola, evitando o salto horizontal ao navegar de uma tela curta para uma longa.
+Não se aplica a painéis: ali o salto é local, e reservar espaço sempre desperdiçaria
+largura numa gaveta que já é estreita.
+
+**Alcance.** Em celular e tablet a barra é transitória e desenhada pelo sistema; estas
+regras têm efeito prático no desktop, onde a barra é persistente e o cinza padrão do Chrome
+no Windows destoa do tema escuro.
+
 ---
 
 ## 2. Tabela de Tokens de Superfície — Claro/Escuro
