@@ -275,16 +275,51 @@ focus-visible:ring-offset-2`.
 
 ### 4.3. Select
 
-- Ark UI `Select` (`Root`, `Trigger`, `Content`, `Item`, `ItemGroup`).
+- Ark UI `Select` (`Root`, `Trigger`, `Content`, `Item`, `ItemGroup`, `ClearTrigger`).
 - Uso: categoria de item, condição, unidade de medida, tipo de veículo, disponibilidade.
 - Trigger com mesma altura/estilo do `Input` (`h-11`, `rounded-lg`) para consistência
   visual entre campos de formulário.
+- **Limpar seleção** — ver §4.3.1.
+
+#### 4.3.1. Limpar seleção (Select e Combobox)
+
+**Regra**: o botão de limpar aparece quando o campo **não é obrigatório** e não está
+desabilitado. O primitivo já o esconde sozinho enquanto não houver valor selecionado, então
+o componente condiciona apenas por obrigatoriedade.
+
+**Por que só em campo opcional.** Num campo obrigatório limpar não tem uso: troca-se a
+opção escolhendo outra, e o único efeito de esvaziar seria criar um estado inválido que o
+usuário precisaria desfazer. Já nos campos opcionais — os filtros de listagem, com
+placeholder "Todos"/"Todas" — sem o botão **não existe caminho de volta** para "sem filtro"
+depois da primeira escolha.
+
+| Aspecto          | Definição                                                    |
+| ---------------- | ------------------------------------------------------------ |
+| Ícone            | `X` (`lucide-react`), `size-4`                               |
+| Cor              | `text-neutral-500`, `hover:text-foreground`                  |
+| Alvo de toque    | `w-11` × altura do campo — 44px (§1.3), sem exceção          |
+| Posição          | Antes do indicador de abertura (chevron), à direita do valor |
+| Rótulo acessível | `Limpar seleção` via `translations.clearTriggerLabel`        |
+
+**Rótulo em pt-BR é obrigatório**: o padrão do primitivo é `"Clear value"`, e §6 proíbe
+texto em inglês na interface.
+
+**Estrutura**: `Trigger` e `ClearTrigger` são ambos `<button>` e precisam ser **irmãos** —
+botão aninhado em botão é HTML inválido. No `Select`, o `Control` recebe `relative` e o
+limpar é posicionado por cima, para ficar antes do chevron sem tirá-lo de dentro do
+trigger (onde clicar nele abre a lista). No `Combobox`, o `Control` já é uma linha flex e o
+limpar entra como irmão do input.
+
+**Limite conhecido**: no `Combobox` com `permitirValorLivre`, texto digitado e ainda não
+escolhido não é "valor selecionado" — o botão permanece oculto, e esse texto continua sendo
+apagado pelo teclado.
 
 ### 4.4. Combobox
 
-- Ark UI `Combobox` (`Root`, `Input`, `Content`, `Item`).
+- Ark UI `Combobox` (`Root`, `Input`, `Content`, `Item`, `ClearTrigger`).
 - **Uso único e crítico**: autocomplete de "Nome do Item" na tela de Entrada (BR-EST-01),
   consultando `item.nome` via índice trigram. Debounce de 200–300ms na digitação.
+- **Limpar seleção** — ver §4.3.1.
 
 ### 4.5. CheckboxGroup / RadioGroup / Switch
 

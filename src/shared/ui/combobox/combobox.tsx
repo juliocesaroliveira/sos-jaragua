@@ -2,7 +2,7 @@
 
 import { Combobox as Ark, createListCollection } from '@ark-ui/react/combobox'
 import { Portal } from '@ark-ui/react/portal'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
@@ -117,6 +117,9 @@ export function Combobox({
                 // A filtragem acontece no servidor (índice trigram); o
                 // componente só exibe o que recebeu.
                 openOnClick
+                // O rótulo padrão do primitivo é "Clear value"; a interface é
+                // 100% pt-BR (DESIGN_SYSTEM.md §6).
+                translations={{ clearTriggerLabel: 'Limpar seleção' }}
             >
                 <Ark.Control
                     className={cn(
@@ -129,9 +132,32 @@ export function Combobox({
                         placeholder={placeholder}
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}
-                        className="w-full bg-transparent px-3 text-base text-foreground outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        // `min-w-0 flex-1` e não `w-full`: com o botão de limpar
+                        // como irmão flex, `w-full` empurraria o botão para fora
+                        // da borda em vez de dividir a largura.
+                        className="min-w-0 flex-1 bg-transparent px-3 text-base text-foreground outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     {carregando && <Loader2 aria-hidden className="mr-3 size-5 animate-spin text-neutral-400" />}
+
+                    {/*
+                      Limpar só em campo opcional (DESIGN_SYSTEM.md §4.4): num
+                      campo obrigatório, esvaziar só produz estado inválido.
+                      O primitivo esconde o botão sozinho enquanto não houver
+                      valor **selecionado** — texto livre digitado e ainda não
+                      escolhido não é "valor selecionado" e continua sendo
+                      apagado pelo teclado.
+                    */}
+                    {!obrigatorio && !disabled && (
+                        <Ark.ClearTrigger
+                            className={cn(
+                                'flex w-11 shrink-0 items-center justify-center self-stretch rounded-lg',
+                                'text-neutral-500 hover:text-foreground',
+                                ANEL_FOCO
+                            )}
+                        >
+                            <X aria-hidden className="size-4" />
+                        </Ark.ClearTrigger>
+                    )}
                 </Ark.Control>
                 <Portal>
                     <Ark.Positioner className={CLASSE_FLUTUANTE}>
