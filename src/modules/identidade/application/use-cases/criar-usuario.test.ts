@@ -50,7 +50,9 @@ function repositorioQueAceita() {
         atualizarNomeERole,
         atualizarRole: vi.fn(),
         buscarRole: vi.fn(),
-        possuiSenhaPropria: vi.fn()
+        possuiSenhaPropria: vi.fn(),
+        definirDataNascimentoSeAusente: vi.fn(),
+        buscarDataNascimento: vi.fn()
     }
     return { usuarios, atualizarNomeERole }
 }
@@ -64,7 +66,9 @@ function repositorioQueFalha() {
         atualizarNomeERole,
         atualizarRole: vi.fn(),
         buscarRole: vi.fn(),
-        possuiSenhaPropria: vi.fn()
+        possuiSenhaPropria: vi.fn(),
+        definirDataNascimentoSeAusente: vi.fn(),
+        buscarDataNascimento: vi.fn()
     }
     return { usuarios, atualizarNomeERole }
 }

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
-import { Check, MoreVertical } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { Alert, Button, NumberInput, Select, avisar } from '@/src/shared/ui'
 import { BASES_DEMANDA, ROTULO_BASE_DEMANDA, type BaseDemanda } from '@/src/modules/logistica/domain/projecao'
 import type {

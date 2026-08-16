@@ -59,6 +59,24 @@ export type CandidaturaValidada = Omit<DadosCandidatura, 'cpf' | 'telefone' | 'c
 }
 
 /**
+ * Decide qual data de nascimento vale: a da conta sempre vence
+ * (011-auto-cadastro-provedor, FR-017, data-model.md R1).
+ *
+ * Existe porque campo desabilitado no navegador **não é enforcement** — a
+ * Server Action é um POST alcançável fora da navegação normal, e o valor no
+ * corpo pode ter sido forjado. Quando a conta já tem a data, o que veio do
+ * formulário é descartado em silêncio: não é erro de preenchimento do
+ * candidato, é simplesmente um campo que ele não controla.
+ *
+ * Devolve `undefined` quando nenhuma das duas fontes tem valor — cabe a
+ * `validarCandidatura` transformar isso na mensagem de campo obrigatório, para
+ * que a regra de "informe a data" continue existindo num lugar só.
+ */
+export function resolverDataNascimento(daConta: string | null, doFormulario: string | undefined): string | undefined {
+    return daConta ?? (doFormulario || undefined)
+}
+
+/**
  * Valida e normaliza uma candidatura. Devolve **todos** os erros de uma vez
  * (`detalhes.campos`) — quem preenche o formulário no celular, em campo, não
  * deve descobrir um problema por vez.

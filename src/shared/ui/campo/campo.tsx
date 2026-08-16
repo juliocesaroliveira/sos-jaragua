@@ -76,3 +76,23 @@ export const CLASSES_CONTROLE_TEXTO =
 export function bordaControle(temErro: boolean): string {
     return temErro ? 'border-danger-500' : 'border-border'
 }
+
+/**
+ * Campo preenchido pela conta do usuário e não editável
+ * (011-auto-cadastro-provedor, FR-015/FR-022).
+ *
+ * **Deliberadamente não usa `disabled`.** Duas razões:
+ *
+ * 1. **Contraste.** O `disabled:opacity-50` acima derruba `text-foreground`
+ *    abaixo da razão 4.5:1 exigida pelo WCAG AA — pior ainda no tema escuro.
+ *    Aqui o texto fica em contraste pleno e a distinção vem do fundo.
+ * 2. **Leitor de tela.** Um campo `disabled` sai da ordem de foco e costuma não
+ *    ser anunciado; `readOnly` é lido normalmente, **com seu valor**. Quem
+ *    navega por leitor de tela precisa saber sob qual e-mail está se
+ *    candidatando, não encontrar um campo mudo.
+ *
+ * Opacidade comunicaria "indisponível/quebrado"; o que queremos comunicar é
+ * "isto já sabemos, veio da sua conta".
+ */
+export const CLASSES_CONTROLE_SOMENTE_LEITURA =
+    'cursor-default bg-neutral-100 text-foreground dark:bg-neutral-800 read-only:focus:ring-0 read-only:focus:ring-offset-0'

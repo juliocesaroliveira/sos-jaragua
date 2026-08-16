@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { boolean, index, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, date, index, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 /**
  * Módulo Identidade (DB_SCHEMA.md §4).
@@ -33,6 +33,22 @@ export const user = pgTable(
         // additionalFields (DESIGN.md §6.1)
         role: roleEnum().notNull().default('usuario'),
         ativo: boolean().notNull().default(true),
+        /**
+         * additionalField (011-auto-cadastro-provedor, FR-003).
+         *
+         * **Nunca vem de provedor externo.** Google e Facebook não entregam
+         * data de nascimento nos escopos básicos, e pedir os escopos extras
+         * custaria App Review para um dado informado uma única vez — decisão
+         * registrada em `specs/011-auto-cadastro-provedor/research.md` D2.
+         * A conta nasce com o campo nulo e ele é gravado no primeiro envio de
+         * candidatura, via `UsuarioRepository.definirDataNascimentoSeAusente`.
+         *
+         * `date` e não `timestamp`: o domínio compara datas civis
+         * (`ehMaiorDeIdade`) e o `DatePicker` compartilhado já fala
+         * `YYYY-MM-DD` justamente para casar com esta coluna. Hora aqui só
+         * traria fuso onde não existe.
+         */
+        dataNascimento: date(),
         createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp({ withTimezone: true })
             .notNull()

@@ -75,6 +75,15 @@ async function ConteudoCandidatura() {
             habilidades={habilidades}
             statusAtual={candidatura?.status}
             motivoRejeicao={candidatura?.motivoRejeicao}
+            email={ator.email}
+            /*
+             * No reenvio, o nome já confirmado na candidatura anterior vence o
+             * rótulo social da conta (011-auto-cadastro-provedor, data-model.md
+             * R3): quem corrigiu "Ju Oliveira" para o nome civil uma vez não
+             * pode ver a correção desfeita ao revisar o formulário.
+             */
+            nomeInicial={candidatura?.nomeCompleto ?? ator.nome}
+            dataNascimentoDaConta={ator.dataNascimento}
         />
     )
 }

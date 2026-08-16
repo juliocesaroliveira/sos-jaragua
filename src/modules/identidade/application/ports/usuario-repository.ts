@@ -54,6 +54,24 @@ export interface UsuarioRepository {
     buscarRole(userId: string): Promise<Role | null>
 
     /**
+     * Grava a data de nascimento **apenas se a conta ainda não tiver uma**
+     * (011-auto-cadastro-provedor, FR-016).
+     *
+     * A condição "se ausente" pertence ao `WHERE` do UPDATE, não a uma leitura
+     * anterior seguida de escrita: dois envios simultâneos de candidatura não
+     * podem competir, e a operação precisa ser idempotente. Chamar duas vezes
+     * com valores diferentes deixa o primeiro valor intacto — é o que garante
+     * que a data seja gravada uma única vez, na primeira candidatura que a
+     * informa.
+     *
+     * `data` no formato `YYYY-MM-DD`, o mesmo da coluna `date`.
+     */
+    definirDataNascimentoSeAusente(userId: string, data: string): Promise<void>
+
+    /** `YYYY-MM-DD` ou `null`. A sessão já traz o valor; isto serve a testes e consumidores futuros. */
+    buscarDataNascimento(userId: string): Promise<string | null>
+
+    /**
      * `true` quando existe credencial de senha para a conta. Reconsultado no
      * servidor no momento da escrita: o valor que a tela conhece pode estar
      * defasado, e a ausência do botão não pode ser a única proteção

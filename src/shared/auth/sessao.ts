@@ -14,7 +14,28 @@ export type SessaoAtor = {
     nome: string
     email: string
     ativo: boolean
+    /**
+     * `YYYY-MM-DD` ou `null` — 011-auto-cadastro-provedor, FR-011. Vem do
+     * `additionalField` que o `getSession` já devolve, sem consulta extra: é o
+     * que permite ao formulário de candidatura decidir no servidor se o campo
+     * de data entra bloqueado ou editável, sem um segundo hit no banco.
+     */
+    dataNascimento: string | null
     sessionToken: string
+}
+
+/**
+ * A coluna é `date` no Postgres e o driver a devolve como `YYYY-MM-DD`, mas o
+ * cookie cache serializa/desserializa o campo e pode reidratá-lo como `Date`.
+ * Normalizamos para a string de data civil que o domínio usa — sem passar por
+ * fuso, que é justamente o que a coluna `date` existe para evitar.
+ */
+function normalizarDataNascimento(valor: unknown): string | null {
+    if (typeof valor === 'string') return valor.slice(0, 10) || null
+    if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
+        return `${valor.getUTCFullYear()}-${String(valor.getUTCMonth() + 1).padStart(2, '0')}-${String(valor.getUTCDate()).padStart(2, '0')}`
+    }
+    return null
 }
 
 /**
@@ -59,6 +80,7 @@ export const obterSessao = cache(async function obterSessao(): Promise<SessaoAto
         nome: sessao.user.name,
         email: sessao.user.email,
         ativo: sessao.user.ativo,
+        dataNascimento: normalizarDataNascimento(sessao.user.dataNascimento),
         sessionToken: sessao.session.token
     }
 })
