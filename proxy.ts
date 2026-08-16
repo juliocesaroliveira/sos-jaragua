@@ -91,15 +91,24 @@ async function registrarAtividade(token: string) {
 
 export const config = {
     matcher: [
-        // Tudo, exceto o handler do better-auth, assets estáticos e arquivos
-        // de metadata (DESIGN.md §6.2, item 4). A única rota de navegação
-        // isenta de sessão é `/login` (`ehRotaPublica`, checado no corpo).
+        // Tudo, exceto o handler do better-auth, a leitura periódica do sino,
+        // assets estáticos e arquivos de metadata (DESIGN.md §6.2, item 4). A
+        // única rota de navegação isenta de sessão é `/login` (`ehRotaPublica`,
+        // checado no corpo).
+        //
+        // `api/notificacoes` é isenta por duas razões (012-notificacoes-tempo-real):
+        // o proxy **redireciona** quem não tem sessão, e um `fetch` seguiria o
+        // 302 recebendo o HTML do login com status 200 — o cliente nunca veria
+        // o 401 que o faz parar; e o passo 5 abaixo renovaria `lastActivityAt` a
+        // cada consulta automática, anulando o timeout de inatividade de staff,
+        // que o Princípio IV declara não contornável. A rota faz sua própria
+        // checagem autoritativa com `obterSessao()`.
         //
         // `webmanifest` entra na mesma classe de `favicon.ico`/`robots.txt`:
         // metadata pública, sem dado de sessão. Sem a isenção, o navegador
         // recebe um redirect para `/login` ao buscar o manifest e a aplicação
         // deixa de ser instalável — falha silenciosa, porque nada na interface
         // indica que o manifest não carregou.
-        '/((?!api/auth|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|webmanifest)$).*)'
+        '/((?!api/auth|api/notificacoes|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|webmanifest)$).*)'
     ]
 }
