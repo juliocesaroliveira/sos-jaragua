@@ -1,11 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { Bell, CheckSquare } from 'lucide-react'
 import { Badge, Button, Drawer, IconButton, cn } from '@/src/shared/ui'
 import type { NotificacaoInApp } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
-import { marcarComoLida, marcarTodasComoLidas } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
+import { useNotificacoes } from '@/src/modules/notificacoes/presentation/client/use-notificacoes'
 
 /**
  * Sino de notificações in-app (NOT-09).
@@ -35,40 +34,41 @@ const ROTULO_POR_EVENTO: Record<string, string> = {
     deficit_atendimento: 'Déficit'
 }
 
+/**
+ * As props são a **semente** resolvida pelo Server Component
+ * (012-notificacoes-tempo-real): o estado exibido a partir daí vem do hook, que
+ * reconsulta sozinho a cada 30s com a aba visível e imediatamente ao recuperar
+ * o foco.
+ */
 export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: NotificacaoInApp[]; naoLidas: number }) {
-    const router = useRouter()
     const [aberto, setAberto] = useState(false)
-    const [processando, iniciarTransicao] = useTransition()
+    const {
+        notificacoes: lista,
+        naoLidas: totalNaoLidas,
+        marcarUma,
+        marcarTodas,
+        processando
+    } = useNotificacoes({ notificacoes, naoLidas })
 
     function abrirEMarcar(id: string, lida: boolean) {
         if (lida) return
-        iniciarTransicao(async () => {
-            await marcarComoLida({ id })
-            router.refresh()
-        })
-    }
-
-    function marcarTudo() {
-        iniciarTransicao(async () => {
-            await marcarTodasComoLidas()
-            router.refresh()
-        })
+        marcarUma(id)
     }
 
     return (
         <>
             <div className="relative">
                 <IconButton
-                    aria-label={naoLidas > 0 ? `Notificações (${naoLidas} não lidas)` : 'Notificações'}
+                    aria-label={totalNaoLidas > 0 ? `Notificações (${totalNaoLidas} não lidas)` : 'Notificações'}
                     icone={<Bell aria-hidden className="size-5" />}
                     onClick={() => setAberto(true)}
                 />
-                {naoLidas > 0 && (
+                {totalNaoLidas > 0 && (
                     <span
                         aria-hidden
                         className="pointer-events-none absolute -top-0.5 -right-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-danger-600 px-1 text-xs font-semibold text-white"
                     >
-                        {naoLidas > 99 ? '99+' : naoLidas}
+                        {totalNaoLidas > 99 ? '99+' : totalNaoLidas}
                     </span>
                 )}
             </div>
@@ -78,27 +78,27 @@ export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: Not
                 onOpenChange={setAberto}
                 lado="right"
                 titulo="Notificações"
-                descricao={naoLidas > 0 ? `${naoLidas} não lida(s)` : 'Tudo em dia'}
+                descricao={totalNaoLidas > 0 ? `${totalNaoLidas} não lida(s)` : 'Tudo em dia'}
                 acoes={
-                    naoLidas > 0 && (
+                    totalNaoLidas > 0 && (
                         <Button
                             variant="secondary"
                             iconeInicio={<CheckSquare className="size-4" />}
                             loading={processando}
-                            onClick={marcarTudo}
+                            onClick={marcarTodas}
                         >
                             Marcar todas como lidas
                         </Button>
                     )
                 }
             >
-                {notificacoes.length === 0 ? (
+                {lista.length === 0 ? (
                     <p className="text-base text-neutral-500 dark:text-neutral-400">
                         Você ainda não recebeu notificações.
                     </p>
                 ) : (
                     <ul className="flex flex-col gap-2">
-                        {notificacoes.map((n) => (
+                        {lista.map((n) => (
                             <li key={n.id}>
                                 <button
                                     type="button"

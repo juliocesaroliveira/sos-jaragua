@@ -28,6 +28,12 @@ import { SinoNotificacoes } from '../(interno)/sino-notificacoes'
 export async function ShellAutenticado({ ator, children }: { ator: SessaoAtor; children: ReactNode }) {
     // Notificações são por-usuário e nunca cacheadas (DESIGN.md §7). Valem para
     // todos os perfis, não só staff (feature 002, research D5).
+    //
+    // A partir de 012-notificacoes-tempo-real estes dois valores são a
+    // **semente** do cache do cliente, não mais a única fonte: o sino passa a se
+    // reconsultar sozinho a cada 30s com a aba visível. Resolvê-los aqui
+    // continua valendo a pena — é o que evita abrir o sino vazio e só então
+    // disparar a primeira consulta.
     const [notificacoes, naoLidas] = await Promise.all([listarNotificacoes(ator.userId), contarNaoLidas(ator.userId)])
 
     return (

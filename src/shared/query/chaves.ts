@@ -40,3 +40,22 @@ export function chaveEstoque(params: ParametrosPaginacao & { categoria?: string 
 export function chaveSaidas(params: ParametrosPaginacao) {
     return [...RAIZ_SAIDAS, params] as const
 }
+
+/**
+ * Sino de notificações (012-notificacoes-tempo-real).
+ *
+ * **Duas divergências deliberadas** em relação às chaves acima:
+ *
+ * 1. **Não deriva de `CACHE_TAGS`.** Notificações são por-usuário e nunca são
+ *    cacheadas no servidor (DESIGN.md §7), então não existe — e não deve
+ *    existir — uma `cacheTag` correspondente para espelhar. A convenção de
+ *    espelho vale para o que é cacheado; forçá-la aqui exigiria criar uma tag
+ *    que ninguém pode usar.
+ * 2. **Não inclui `userId`.** O destinatário é decidido pela sessão no
+ *    servidor; colocá-lo na chave sugeriria que o cliente escolhe de quem são
+ *    as notificações, que é exatamente o que o endpoint proíbe. O isolamento
+ *    entre usuários vem do `QueryClient` ser por aba, não da chave.
+ */
+export function chaveNotificacoes() {
+    return ['notificacoes'] as const
+}

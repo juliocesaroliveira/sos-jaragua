@@ -11,6 +11,7 @@ export {
     chaveVoluntarios,
     chaveEstoque,
     chaveSaidas,
+    chaveNotificacoes,
     RAIZ_USUARIOS,
     RAIZ_VOLUNTARIOS,
     RAIZ_ESTOQUE,
