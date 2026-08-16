@@ -161,6 +161,39 @@ Escala padrão do Tailwind (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`
   standalone (ícone de card, header de seção).
 - **`stroke-width`**: `2` (padrão da biblioteca) em todo o app, para consistência visual.
 
+### 1.9. Barras de rolagem
+
+Definidas uma única vez em `app/globals.css`, dentro de `@layer base`. Nenhum componente
+declara estilo de barra próprio.
+
+| Propriedade        | Valor                                    | Onde    |
+| ------------------ | ---------------------------------------- | ------- |
+| `scrollbar-width`  | `thin`                                   | `*`     |
+| `scrollbar-color`  | `var(--color-border-strong) transparent` | `:root` |
+| `scrollbar-gutter` | `stable`                                 | `html`  |
+
+**Polegar em `--border-strong`**, o mesmo token dos divisores com ênfase (§2). Como esse
+token já é definido nos três blocos de tema, claro e escuro saem sem nenhuma regra
+adicional — a barra acompanha o tema pelo mesmo caminho que todo o resto.
+
+**Trilho transparente.** A barra é cromo, não conteúdo: deixar a superfície aparecer atrás
+mantém o polegar como único elemento visível, coerente com o estilo suave/amigável (§1.4).
+
+**Propriedades padrão, não `::-webkit-scrollbar`.** Manter as duas em paralelo criaria duas
+fontes de verdade para a mesma cor, e navegadores que suportam ambas dão precedência às
+padrão — a versão webkit viraria código morto divergindo em silêncio. Onde as padrão não
+são suportadas, o navegador desenha a barra do sistema operacional, que é utilizável:
+degradação, não defeito.
+
+**`scrollbar-gutter: stable` só no documento.** Reserva o espaço da barra mesmo quando a
+página não rola, evitando o salto horizontal ao navegar de uma tela curta para uma longa.
+Não se aplica a painéis: ali o salto é local, e reservar espaço sempre desperdiçaria
+largura numa gaveta que já é estreita.
+
+**Alcance.** Em celular e tablet a barra é transitória e desenhada pelo sistema; estas
+regras têm efeito prático no desktop, onde a barra é persistente e o cinza padrão do Chrome
+no Windows destoa do tema escuro.
+
 ---
 
 ## 2. Tabela de Tokens de Superfície — Claro/Escuro
@@ -239,19 +272,86 @@ focus-visible:ring-offset-2`.
   `DecrementTrigger`) — usado em quantidade de estoque (decimal, `min=0`).
 - **Estado de erro**: borda `danger-500` + `text-danger-600` abaixo do campo (mensagem
   de validação Zod), com `aria-invalid`/`aria-describedby`.
+- **Texto de apoio e erro** — ver §4.2.1.
+
+#### 4.2.1. Faixa de mensagem: apoio e erro
+
+Vale para **todos** os campos que usam a moldura compartilhada `Campo` — Input, Textarea,
+NumberInput, Select, Combobox e DatePicker.
+
+**Layout**: rótulo → controle → **faixa de mensagem**. O texto de apoio fica **abaixo do
+controle**, no mesmo lugar da mensagem de erro — nunca entre o rótulo e o controle.
+
+**Regra de exclusão**: apoio e erro **nunca aparecem juntos**. Havendo erro, ele ocupa a
+faixa e o apoio deixa de ser exibido; corrigido o erro, o apoio volta.
+
+| Situação            | O que é exibido na faixa                        |
+| ------------------- | ----------------------------------------------- |
+| Sem erro, com apoio | Apoio, `text-sm text-neutral-500`               |
+| Com erro            | Erro, `text-sm text-danger-600`, `role="alert"` |
+| Com erro e apoio    | Somente o erro                                  |
+
+**Por que substituir em vez de empilhar**: o erro é a informação acionável do momento e
+perde destaque competindo com a dica; e empilhar mudaria a altura do campo a cada
+validação, empurrando o restante do formulário para baixo.
+
+**Consequência em acessibilidade — não opcional**: quando há erro, o apoio some do DOM,
+então seu id **precisa sair** do `aria-describedby`. Referenciar elemento inexistente faz o
+leitor de tela não anunciar nada no lugar da dica, e o usuário perderia a mensagem de erro
+por causa de uma referência quebrada antes dela. A regra está centralizada em `idsCampo`,
+que só inclui o id do apoio quando não há erro — nenhum componente de campo repete essa
+lógica.
+
+**Exceção**: o `Switch` (§4.5) não usa a moldura `Campo` e não tem estado de erro — seu
+apoio fica junto ao rótulo, ao lado do controle, que é o correto para esse padrão.
 
 ### 4.3. Select
 
-- Ark UI `Select` (`Root`, `Trigger`, `Content`, `Item`, `ItemGroup`).
+- Ark UI `Select` (`Root`, `Trigger`, `Content`, `Item`, `ItemGroup`, `ClearTrigger`).
 - Uso: categoria de item, condição, unidade de medida, tipo de veículo, disponibilidade.
 - Trigger com mesma altura/estilo do `Input` (`h-11`, `rounded-lg`) para consistência
   visual entre campos de formulário.
+- **Limpar seleção** — ver §4.3.1.
+
+#### 4.3.1. Limpar seleção (Select e Combobox)
+
+**Regra**: o botão de limpar aparece quando o campo **não é obrigatório** e não está
+desabilitado. O primitivo já o esconde sozinho enquanto não houver valor selecionado, então
+o componente condiciona apenas por obrigatoriedade.
+
+**Por que só em campo opcional.** Num campo obrigatório limpar não tem uso: troca-se a
+opção escolhendo outra, e o único efeito de esvaziar seria criar um estado inválido que o
+usuário precisaria desfazer. Já nos campos opcionais — os filtros de listagem, com
+placeholder "Todos"/"Todas" — sem o botão **não existe caminho de volta** para "sem filtro"
+depois da primeira escolha.
+
+| Aspecto          | Definição                                                    |
+| ---------------- | ------------------------------------------------------------ |
+| Ícone            | `X` (`lucide-react`), `size-4`                               |
+| Cor              | `text-neutral-500`, `hover:text-foreground`                  |
+| Alvo de toque    | `w-11` × altura do campo — 44px (§1.3), sem exceção          |
+| Posição          | Antes do indicador de abertura (chevron), à direita do valor |
+| Rótulo acessível | `Limpar seleção` via `translations.clearTriggerLabel`        |
+
+**Rótulo em pt-BR é obrigatório**: o padrão do primitivo é `"Clear value"`, e §6 proíbe
+texto em inglês na interface.
+
+**Estrutura**: `Trigger` e `ClearTrigger` são ambos `<button>` e precisam ser **irmãos** —
+botão aninhado em botão é HTML inválido. No `Select`, o `Control` recebe `relative` e o
+limpar é posicionado por cima, para ficar antes do chevron sem tirá-lo de dentro do
+trigger (onde clicar nele abre a lista). No `Combobox`, o `Control` já é uma linha flex e o
+limpar entra como irmão do input.
+
+**Limite conhecido**: no `Combobox` com `permitirValorLivre`, texto digitado e ainda não
+escolhido não é "valor selecionado" — o botão permanece oculto, e esse texto continua sendo
+apagado pelo teclado.
 
 ### 4.4. Combobox
 
-- Ark UI `Combobox` (`Root`, `Input`, `Content`, `Item`).
+- Ark UI `Combobox` (`Root`, `Input`, `Content`, `Item`, `ClearTrigger`).
 - **Uso único e crítico**: autocomplete de "Nome do Item" na tela de Entrada (BR-EST-01),
   consultando `item.nome` via índice trigram. Debounce de 200–300ms na digitação.
+- **Limpar seleção** — ver §4.3.1.
 
 ### 4.5. CheckboxGroup / RadioGroup / Switch
 

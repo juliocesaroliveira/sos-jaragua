@@ -2,7 +2,7 @@
 
 import { Portal } from '@ark-ui/react/portal'
 import { Select as Ark, createListCollection } from '@ark-ui/react/select'
-import { Check, ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
@@ -49,6 +49,22 @@ export function Select({
     rotuloOculto
 }: SelectProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
+
+    /**
+     * Botão de limpar apenas em campo **opcional** (DESIGN_SYSTEM.md §4.3).
+     *
+     * Num campo obrigatório limpar não tem uso: o usuário troca a opção
+     * escolhendo outra, e o único efeito de esvaziar seria criar um estado
+     * inválido que ele precisaria desfazer. Já no campo opcional — os filtros
+     * de listagem, com placeholder "Todos"/"Todas" — sem isto **não existe
+     * caminho de volta** para "sem filtro" depois da primeira escolha.
+     *
+     * O primitivo esconde o botão sozinho quando não há valor selecionado
+     * (`hidden: !hasSelectedItems`), então não é preciso condicionar por valor
+     * aqui — só por obrigatoriedade.
+     */
+    const limpavel = !obrigatorio && !disabled
+
     const collection = useMemo(
         () =>
             createListCollection({
@@ -72,8 +88,19 @@ export function Select({
                 multiple={multiple}
                 disabled={disabled}
                 required={obrigatorio}
+                // O rótulo padrão do primitivo é "Clear value"; a interface é
+                // 100% pt-BR (DESIGN_SYSTEM.md §6).
+                translations={{ clearTriggerLabel: 'Limpar seleção' }}
             >
-                <Ark.Control>
+                {/*
+                  `Trigger` e `ClearTrigger` são ambos `<button>` e precisam ser
+                  irmãos — botão aninhado em botão é HTML inválido. Daí o
+                  `relative` aqui e o posicionamento absoluto do limpar: ele
+                  fica **antes** do chevron, que é a convenção, sem exigir que o
+                  chevron saia de dentro do trigger (onde clicar nele abre a
+                  lista).
+                */}
+                <Ark.Control className="relative flex">
                     <Ark.Trigger
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}
@@ -84,9 +111,29 @@ export function Select({
                             ANEL_FOCO
                         )}
                     >
-                        <Ark.ValueText placeholder={placeholder} className="truncate" />
+                        {/*
+                          A margem reserva a faixa que o botão de limpar ocupa
+                          por cima — sem ela, um rótulo longo passaria por baixo
+                          dele em vez de ser truncado antes.
+                        */}
+                        <Ark.ValueText placeholder={placeholder} className={cn('truncate', limpavel && 'mr-11')} />
                         <ChevronsUpDown aria-hidden className="size-5 shrink-0 text-neutral-500" />
                     </Ark.Trigger>
+
+                    {limpavel && (
+                        <Ark.ClearTrigger
+                            className={cn(
+                                // 44px de alvo de toque (§1.3), sem exceção —
+                                // em filtro de listagem, limpar é o único
+                                // caminho de volta para "sem filtro".
+                                'absolute inset-y-0 right-8 flex w-11 items-center justify-center rounded-lg',
+                                'text-neutral-500 hover:text-foreground',
+                                ANEL_FOCO
+                            )}
+                        >
+                            <X aria-hidden className="size-4" />
+                        </Ark.ClearTrigger>
+                    )}
                 </Ark.Control>
                 <Portal>
                     <Ark.Positioner className={CLASSE_FLUTUANTE}>

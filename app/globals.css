@@ -157,6 +157,66 @@ body {
 }
 
 /* -----------------------------------------------------------------------------
+ * Barras de rolagem (DESIGN_SYSTEM.md §1.9)
+ *
+ * Usa as propriedades **padrão** (`scrollbar-width`/`scrollbar-color`) e não os
+ * pseudo-elementos `::-webkit-scrollbar`. Duas razões:
+ *
+ * 1. Uma definição só. Manter as duas em paralelo significa duas fontes de
+ *    verdade para a mesma cor, e navegadores que suportam ambas dão precedência
+ *    às padrão — a versão webkit viraria código morto que ninguém percebe
+ *    divergir.
+ * 2. Onde as padrão não são suportadas, o navegador desenha a barra do sistema
+ *    operacional — que é utilizável. Degradação, não defeito.
+ *
+ * Em celular e tablet a barra é transitória e desenhada pelo sistema; estas
+ * regras têm efeito prático no desktop, que é onde a barra é persistente e o
+ * cinza padrão do Chrome no Windows destoa do tema escuro.
+ * -------------------------------------------------------------------------- */
+@layer base {
+    /*
+     * `scrollbar-color` é herdada: definir na raiz alcança todo contêiner
+     * rolante do app — coluna de navegação, gaveta, corpo de dialog — sem
+     * precisar repetir em cada componente.
+     *
+     * Trilho transparente em vez de `--surface-muted`: a barra é cromo, não
+     * conteúdo. Deixar o fundo da própria superfície aparecer mantém o polegar
+     * como único elemento visível, coerente com "suave/amigável" (§1.4).
+     *
+     * Polegar em `--border-strong` — o mesmo token dos divisores com ênfase
+     * (§2). Já é definido nos três blocos de tema acima, então claro e escuro
+     * saem de graça, sem uma regra `:root.dark` própria.
+     */
+    :root {
+        scrollbar-color: var(--color-border-strong) transparent;
+    }
+
+    /*
+     * `scrollbar-width` **não** é herdada — precisa do seletor universal para
+     * alcançar os contêineres roláveis.
+     */
+    * {
+        scrollbar-width: thin;
+    }
+
+    /*
+     * Reserva o espaço da barra mesmo quando a página não rola
+     * (013-navegacao-lateral-responsiva).
+     *
+     * Sem isto, navegar de uma tela curta para uma longa faz o conteúdo saltar
+     * horizontalmente quando a barra aparece. Ficou mais perceptível depois que
+     * a rolagem passou a ser a do documento: agora é a página inteira que
+     * desloca, não uma caixa interna.
+     *
+     * Só no documento: em painéis o salto é local e reservar espaço sempre
+     * desperdiçaria largura numa gaveta que já é estreita.
+     */
+    html {
+        scrollbar-gutter: stable;
+    }
+}
+
+/* -----------------------------------------------------------------------------
  * Animação do Toast (DESIGN_SYSTEM.md §4.8)
  *
  * O `react-toastify` é consumido pelo entry point `unstyled`, que entrega o
