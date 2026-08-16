@@ -52,6 +52,32 @@ export function GavetaNavegacao({ itens, aberta, onAbertaChange }: GavetaNavegac
      */
     const empilhouRef = useRef(false)
 
+    /**
+     * `true` entre o toque num destino e o fechamento que ele provoca.
+     *
+     * **É o que impede a gaveta de cancelar a própria navegação.** Ao escolher
+     * um destino acontecem três coisas em sequência: o `onClick` fecha a
+     * gaveta, o `Link` empilha a rota nova, e o cleanup do efeito roda. Sem
+     * esta marca, o cleanup chamava `history.back()` e **desfazia o push do
+     * `Link`** — a gaveta fechava e o usuário permanecia na mesma tela.
+     *
+     * Aqui não há entrada órfã a limpar: nosso `pushState` usa a URL corrente,
+     * então a entrada que sobra abaixo da rota nova é a própria página de
+     * origem — voltar a partir do destino leva exatamente aonde deveria.
+     */
+    const fechandoPorNavegacaoRef = useRef(false)
+
+    /**
+     * `onAbertaChange` numa ref, e **não** nas dependências do efeito: como
+     * dependência, um consumidor que declare a função inline recriaria o efeito
+     * a cada render — e cada execução empilha uma entrada de histórico. O
+     * mesmo cuidado já documentado em `combobox.tsx` para `onBuscar`.
+     */
+    const aoMudarRef = useRef(onAbertaChange)
+    useEffect(() => {
+        aoMudarRef.current = onAbertaChange
+    })
+
     useEffect(() => {
         if (!aberta) return
 
@@ -63,21 +89,30 @@ export function GavetaNavegacao({ itens, aberta, onAbertaChange }: GavetaNavegac
             // marcar antes de fechar evita que a limpeza abaixo chame
             // `history.back()` de novo e engula a entrada anterior do usuário.
             empilhouRef.current = false
-            onAbertaChange(false)
+            aoMudarRef.current(false)
         }
 
         window.addEventListener('popstate', aoVoltar)
 
         return () => {
             window.removeEventListener('popstate', aoVoltar)
-            // Fechou por destino, fundo ou Esc: a entrada ainda está lá e
-            // precisa sair, senão o voltar seguinte só a consumiria sem navegar.
+
+            // Fechou por navegação: quem manda no histórico é o `Link`.
+            if (fechandoPorNavegacaoRef.current) {
+                fechandoPorNavegacaoRef.current = false
+                empilhouRef.current = false
+                return
+            }
+
+            // Fechou por fundo escurecido ou Esc: a entrada ainda está lá e
+            // precisa sair, senão o voltar seguinte só a consumiria sem sair
+            // da tela.
             if (empilhouRef.current) {
                 empilhouRef.current = false
                 window.history.back()
             }
         }
-    }, [aberta, onAbertaChange])
+    }, [aberta])
 
     // Sem destinos visíveis, a topbar não oferece o botão — a gaveta nunca abre.
     if (itens.length === 0) return null
@@ -113,7 +148,20 @@ export function GavetaNavegacao({ itens, aberta, onAbertaChange }: GavetaNavegac
                                     key={item.href}
                                     href={item.href}
                                     aria-current={ehAtivo ? 'page' : undefined}
-                                    onClick={() => onAbertaChange(false)}
+                                    onClick={() => {
+                                        // Antes de fechar: sinaliza ao cleanup
+                                        // do efeito que o histórico é do
+                                        // `Link` agora, e que ele não deve
+                                        // desfazer o push com `history.back()`.
+                                        //
+                                        // Exceto no destino em que já se está:
+                                        // ali o `Link` não empilha nada, então
+                                        // sem o `back()` nossa entrada ficaria
+                                        // órfã e o usuário precisaria voltar
+                                        // duas vezes para sair da tela.
+                                        fechandoPorNavegacaoRef.current = item.href !== pathname
+                                        onAbertaChange(false)
+                                    }}
                                     className={cn(
                                         'flex min-h-11 items-center gap-3 rounded-lg px-3 text-base',
                                         ANEL_FOCO,
