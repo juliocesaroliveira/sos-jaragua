@@ -8,7 +8,7 @@ import { ArrowLeft, LogIn, LockOpen } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
-import { Alert, Button, Input } from '@/src/shared/ui'
+import { Alert, Button, Input, Password } from '@/src/shared/ui'
 
 const esquema = z.object({
     email: z.email('Informe um e-mail válido.'),
@@ -147,6 +147,26 @@ export function LoginForm() {
                     >
                         Acessar com Facebook
                     </Button>
+                    {/*
+                      Separador entre os dois níveis de acesso
+                      (014-redesign-tela-login, FR-004). Antes os três botões
+                      eram uma pilha uniforme e nada dizia que o terceiro é de
+                      outra natureza — a hierarquia existia só na variante do
+                      botão, que é sutil demais para ser lida de relance.
+
+                      `aria-hidden` no conjunto: "ou" é pista visual de
+                      agrupamento. Para quem usa leitor de tela, os rótulos dos
+                      botões já distinguem as opções, e um "ou" solto entre eles
+                      só acrescentaria ruído.
+                    */}
+                    <div aria-hidden className="flex items-center gap-3 py-1">
+                        <span className="h-px flex-1 bg-border" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                            ou
+                        </span>
+                        <span className="h-px flex-1 bg-border" />
+                    </div>
+
                     <Button
                         variant="ghost"
                         iconeInicio={<LockOpen className="size-4" />}
@@ -161,8 +181,13 @@ export function LoginForm() {
                       FR-010 — transparência antes do redirecionamento: a pessoa
                       precisa saber o que sai da conta dela antes de autorizar,
                       não depois, na tela de consentimento do provedor.
+
+                      Recua para `text-xs` e tom secundário (FR-004): é conteúdo
+                      informativo e não pode competir com as ações. O contraste
+                      de `neutral-500`/`neutral-400` sobre a superfície do cartão
+                      permanece acima de 4.5:1 nos dois temas (§1.6).
                     */}
-                    <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         Ao entrar com Google ou Facebook, recebemos apenas seu nome e e-mail para criar sua conta.
                     </p>
                 </div>
@@ -178,10 +203,9 @@ export function LoginForm() {
                         erro={errors.email?.message}
                         {...register('email')}
                     />
-                    <Input
+                    <Password
                         id="senha"
                         label="Senha"
-                        type="password"
                         autoComplete="current-password"
                         obrigatorio
                         erro={errors.senha?.message}

@@ -40,7 +40,7 @@ Aplicação web monolítica Next.js App Router (plan.md § Project Structure):
 
 **Purpose**: capturar o que não é recuperável depois e disparar o insumo de maior prazo.
 
-- [ ] T001 Medir e registrar a linha de base de carregamento da tela atual (bytes transferidos
+- [X] T001 Medir e registrar a linha de base de carregamento da tela atual (bytes transferidos
       e tempo até operável em "Slow 3G", em 360px e em 1280px) em
       `specs/014-redesign-tela-login/linha-base.md` — **antes** de qualquer alteração de código,
       porque a SC-006a compara contra a versão atual e o número deixa de ser obtível depois de
@@ -63,14 +63,14 @@ Aplicação web monolítica Next.js App Router (plan.md § Project Structure):
 desta fase. **A US5 (componente `Password`) é a exceção — não depende de nada aqui e pode
 começar em paralelo já na Phase 1.**
 
-- [ ] T003 [P] Criar `app/(publico)/login/fundo-login.tsx` como Server Component com o gradiente
+- [X] T003 [P] Criar `app/(publico)/login/fundo-login.tsx` como Server Component com o gradiente
       de marca derivado de tokens (`primary`, `neutral`, `surface`), `aria-hidden`, posição fixa
       cobrindo a viewport, fora do fluxo do documento — **sem** a fotografia por enquanto; é este
       gradiente que garante o contraste, conforme FR-006d e D3
-- [ ] T004 [P] Criar `app/(publico)/login/painel-marca.tsx` como Server Component com o `Logo`
+- [X] T004 [P] Criar `app/(publico)/login/painel-marca.tsx` como Server Component com o `Logo`
       compartilhado, o nome do sistema no único `<h1>` da página e a mensagem de propósito
       (FR-001, FR-002, FR-016)
-- [ ] T005 Recompor `app/(publico)/login/page.tsx` com a estrutura de três camadas de
+- [X] T005 Recompor `app/(publico)/login/page.tsx` com a estrutura de três camadas de
       `contracts/tela-login.md`: `min-h-dvh`, `isolate` no contêiner, camada de fundo abaixo,
       conteúdo no fluxo, contêiner do cartão de acesso envolvendo o `<Suspense>` com
       `<LoginForm />`, em coluna única mobile-first — preservando `obterSessao()`, o
@@ -92,21 +92,21 @@ funcionando (Bloco 1 do `quickstart.md`).
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Adicionar em `app/(publico)/login/fundo-login.tsx` a camada de fotografia a
+- [X] T006 [US1] Adicionar em `app/(publico)/login/fundo-login.tsx` a camada de fotografia a
       partir de `md`, com import estático opcional, `sizes` que impeça o celular de baixar a
       variante de desktop, sem `priority`, e o scrim de contraste com opacidade **mínima
       garantida** na região de texto, definido separadamente para claro e escuro — a tela precisa
       continuar completa e correta enquanto o arquivo de imagem não existir (FR-006a, FR-006c,
       FR-006e, FR-006f, D2, D3)
-- [ ] T007 [US1] Aplicar em `app/(publico)/login/page.tsx` o tratamento translúcido do cartão a
+- [X] T007 [US1] Aplicar em `app/(publico)/login/page.tsx` o tratamento translúcido do cartão a
       partir de `md`: opacidade alta o bastante para o fundo efetivo do texto ser praticamente o
       token de superfície, desfoque de fundo, borda, `rounded-xl` e sombra conforme
       DESIGN_SYSTEM.md §1.5 (borda em vez de sombra no escuro) — nenhum valor visual fora dos
       tokens (FR-003, FR-005, D3)
-- [ ] T008 [US1] Implementar em `app/(publico)/login/page.tsx` o layout de duas zonas a partir de
+- [X] T008 [US1] Implementar em `app/(publico)/login/page.tsx` o layout de duas zonas a partir de
       `lg` (painel institucional e cartão de acesso) e a largura máxima do conteúdo, para que em
       2560px nada se estique nem se perca no canto (FR-009)
-- [ ] T009 [US1] Ajustar a hierarquia visual em `app/(publico)/login/page.tsx` e
+- [X] T009 [US1] Ajustar a hierarquia visual em `app/(publico)/login/page.tsx` e
       `app/(publico)/login/painel-marca.tsx` para que a ação de acesso primária se destaque das
       secundárias e do texto informativo, e a marca tenha peso superior ao texto de apoio
       (FR-001, FR-004)
@@ -130,12 +130,12 @@ apenas o polegar, sem ampliar a tela (Bloco 3 do `quickstart.md`).
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Garantir em `app/(publico)/login/page.tsx` que a composição base (< `md`) usa
+- [X] T011 [US2] Garantir em `app/(publico)/login/page.tsx` que a composição base (< `md`) usa
       superfície sólida sem translucidez e **sem** `backdrop-filter`, com a ordem marca compacta
       → cartão → convite, e que a primeira opção de acesso é alcançável sem rolar em 360×640px
       (FR-006e, FR-008, D1 — `backdrop-filter` é caro em Android de baixo custo e não há foto
       atrás no mobile)
-- [ ] T012 [US2] Conferir e corrigir em `app/(publico)/login/page.tsx` e
+- [X] T012 [US2] Conferir e corrigir em `app/(publico)/login/page.tsx` e
       `app/(publico)/login/login-form.tsx` que todo botão, campo e link tem área acionável de no
       mínimo 44×44px, e que o campo de e-mail mantém `inputMode`/`autoComplete` abrindo o teclado
       correto (FR-010, DESIGN_SYSTEM.md §1.3)
@@ -196,11 +196,11 @@ para fora da tela (Bloco 5 do `quickstart.md`).
 
 ### Implementation for User Story 4
 
-- [ ] T021 [US4] Definir em `app/(publico)/login/page.tsx` e `app/(publico)/login/login-form.tsx`
+- [X] T021 [US4] Definir em `app/(publico)/login/page.tsx` e `app/(publico)/login/login-form.tsx`
       a faixa de avisos em posição fixa e previsível, dentro do cartão e imediatamente acima das
       opções de acesso, comportando mais de um aviso simultâneo sem empurrar a primeira opção
       para fora da área visível em 360×640px (FR-017, FR-018)
-- [ ] T022 [US4] Ancorar o cartão em `app/(publico)/login/page.tsx` de modo que a alternância
+- [X] T022 [US4] Ancorar o cartão em `app/(publico)/login/page.tsx` de modo que a alternância
       entre `'opcoes'` e `'credenciais'` não o desloque — ancoragem pelo topo do cartão, não pelo
       centro da viewport; as duas alturas naturais são diferentes e o contrato não exige
       igualá-las, exige que não haja salto (FR-020, `contracts/tela-login.md`)
@@ -227,37 +227,37 @@ paralelo desde o início por outra pessoa. A única interseção é T028, que ed
 
 ### Implementation for User Story 5
 
-- [ ] T024 [US5] Criar `src/shared/ui/password/password.tsx` conforme
+- [X] T024 [US5] Criar `src/shared/ui/password/password.tsx` conforme
       `contracts/password.md`: moldura `Campo` compartilhada por fora, `PasswordInput.Root` com
       `ids={{ input: id }}`, partes `Control` / `Input` / `VisibilityTrigger`, **sem** usar
       `PasswordInput.Label` (o `Campo` já renderiza o rótulo — sem `ids` o `htmlFor` apontaria
       para o vazio), e `aria-describedby` calculado por `idsCampo()` passado na parte `Input`,
       que o Ark não emite (FR-029 a FR-031, FR-035, D7)
-- [ ] T025 [US5] Adicionar em `src/shared/ui/password/password.tsx` o
+- [X] T025 [US5] Adicionar em `src/shared/ui/password/password.tsx` o
       `translations={{ visibilityTrigger: (visivel) => visivel ? 'Ocultar senha' : 'Mostrar senha' }}`
       — o rótulo descreve a **ação disponível**, não o estado atual; sem ele o `aria-label` sai
       `undefined` e o botão é anunciado apenas como "botão" (FR-032)
-- [ ] T026 [US5] Corrigir a acessibilidade por teclado do gatilho em
+- [X] T026 [US5] Corrigir a acessibilidade por teclado do gatilho em
       `src/shared/ui/password/password.tsx`: `tabIndex={0}` e `onKeyDown` acionando a alternância
       em `Enter` e `Espaço` com `preventDefault()` no `Espaço`. **Usar `onKeyDown`, nunca
       `onClick`** — o Zag chama `preventDefault()` no `pointerdown`, o que impede o foco mas não
       o `click` subsequente, e um `onClick` alternaria duas vezes no clique de mouse, devolvendo
       a senha ao estado oculto (FR-033, D6)
-- [ ] T027 [US5] Estilizar `src/shared/ui/password/password.tsx` com as constantes existentes:
+- [X] T027 [US5] Estilizar `src/shared/ui/password/password.tsx` com as constantes existentes:
       `CLASSES_CONTROLE_TEXTO` + `bordaControle()` + `ALTURA_POR_TAMANHO` no `Control` como flex,
       `Input` transparente e sem borda própria, anel de foco movido para o `Control` via
       `focus-within`, e gatilho `size-11` (44×44) com ícones `Eye`/`EyeOff` de 20px e `ANEL_FOCO`
       próprio — o gatilho é **irmão** do input dentro do flex, não sobreposto, então o texto nunca
       passa por baixo dele (FR-036, D8, DESIGN_SYSTEM.md §1.3 e §1.8)
-- [ ] T028 [US5] Exportar `Password` em `src/shared/ui/index.ts` e adotá-lo em
+- [X] T028 [US5] Exportar `Password` em `src/shared/ui/index.ts` e adotá-lo em
       `app/(publico)/login/login-form.tsx` no lugar de `<Input type="password">`, com
       `autoComplete="current-password"` e o mesmo `register('senha')`, mesmo nome e mesmo resolver
       Zod — sem tocar em `entrar()`, `entrarComRedeSocial()`, `voltar()` nem nas mensagens de erro
       (FR-037, FR-024, contrato de preservação)
-- [ ] T029 [P] [US5] Adicionar o `Password` a `app/(interno)/design-system/galeria.tsx`, com os
+- [X] T029 [P] [US5] Adicionar o `Password` a `app/(interno)/design-system/galeria.tsx`, com os
       estados normal, com erro, com apoio e desabilitado, para a validação em claro/escuro exigida
       por DESIGN_SYSTEM.md §7
-- [ ] T030 [P] [US5] Documentar o `Password` em `spec/DESIGN_SYSTEM.md`: entrada na §4.2 (base
+- [X] T030 [P] [US5] Documentar o `Password` em `spec/DESIGN_SYSTEM.md`: entrada na §4.2 (base
       Ark, partes usadas, a correção de teclado do gatilho e por que ela existe) e na lista de
       arquivos da §5
 - [ ] T031 [US5] Executar o Bloco 6 do `quickstart.md` nos dois temas — com atenção especial ao
@@ -277,7 +277,7 @@ dos dois estados da tela.
 
 ### Implementation for User Story 6
 
-- [ ] T032 [US6] Adicionar em `app/(publico)/login/page.tsx` o convite ao cadastro com link para
+- [X] T032 [US6] Adicionar em `app/(publico)/login/page.tsx` o convite ao cadastro com link para
       `/cadastro`, posicionado **fora** do bloco que alterna entre `'opcoes'` e `'credenciais'`,
       para permanecer acessível nos dois estados (FR-028)
 - [ ] T033 [US6] Executar o Bloco 7 do `quickstart.md` — o convite (7.1, 7.2) e as oito
@@ -302,10 +302,10 @@ dos dois estados da tela.
 - [ ] T036 Executar os passos 2.3, 2.4 e 2.7 do `quickstart.md` sobre a fotografia real: medir
       contraste em 5 pontos distintos da imagem, incluindo o mais claro e o mais escuro, nos dois
       temas (SC-010) — depende do T034
-- [ ] T037 Executar o Bloco 8 do `quickstart.md`: inspeção de disciplina do design system —
+- [X] T037 Executar o Bloco 8 do `quickstart.md`: inspeção de disciplina do design system —
       nenhum valor visual fora dos tokens, componentes compartilhados reutilizados sem
       equivalente local, nenhum texto de interface em inglês fixo (FR-005, FR-006, SC-009)
-- [ ] T038 Rodar os portões automatizados do `quickstart.md` — `npx tsc --noEmit`,
+- [X] T038 Rodar os portões automatizados do `quickstart.md` — `npx tsc --noEmit`,
       `npx eslint app src`, `npx prettier --check "app/**/*.{ts,tsx}" "src/**/*.{ts,tsx}"`,
       `npx next build` e `npm test` (a suíte de `domain`/`application` precisa continuar verde:
       nada aqui a toca)
@@ -438,3 +438,85 @@ conflito em `page.tsx` mais do que velocidade.
 - **T001 é irreversível se pulado** — a linha de base da SC-006a some assim que o redesign entra
 - **T026 corrige a biblioteca**, não o nosso código: sem ele o gatilho do Ark fica fora da ordem
   de tabulação e a FR-033 falha silenciosamente, porque no mouse tudo parece funcionar
+
+---
+
+## Status da implementação (2026-08-16)
+
+**22 de 39 tarefas concluídas.** Todo o código está escrito e os portões automatizados passam:
+`tsc --noEmit`, `eslint app src`, `prettier --check` nos arquivos alterados, `next build`
+(exit 0) e `npm test` (204 testes, 17 arquivos).
+
+### Dois defeitos encontrados na verificação em navegador — corrigidos
+
+Ambos passavam despercebidos no código e só apareceram sob medição:
+
+1. **Cartão saltava 18px ao trocar de estado** (FR-020). A composição centralizava o conteúdo
+   verticalmente; como o cartão muda ~36px de altura entre "opções" e "e-mail e senha", metade
+   disso virava deslocamento do topo. Centralização vertical e altura variável são
+   incompatíveis. Corrigido ancorando pelo topo (`justify-start` + folga vertical que cresce
+   com a largura). **Medido depois: deslocamento 0px.**
+
+2. **Contraste abaixo do mínimo no mobile, no tema claro** (FR-012). O scrim havia nascido
+   `hidden md:block`, sob a ideia de que servia só para tratar a fotografia. Mas ele é também o
+   que escurece o gradiente de marca o bastante para o texto leve: sem ele, a parada mais clara
+   (`primary-700`) deixava a descrição em **3,51:1** e o link do cadastro em **3,06:1**, contra
+   o mínimo de 4,5:1. Corrigido tornando o scrim incondicional (custo zero, é CSS).
+   **Medido depois: 9,39:1 e 8,19:1.**
+
+Um terceiro achado menor: o link do cadastro media **37px** de altura como texto inline
+(FR-010). A WCAG 2.5.5 isenta alvos inline em frases, mas a §1.3 do design system diz "sem
+exceção em telas mobile". Virou bloco próprio com `min-h-11`.
+
+### Verificado em navegador
+
+| Item | Resultado |
+| --- | --- |
+| `Password`: `tabIndex`, `type="button"`, `aria-label` pt-BR, `aria-controls`, caixa 44×44 | ✓ |
+| `Password`: Tab alcança o gatilho (a correção do D6) | ✓ |
+| `Password`: Enter e Espaço alternam; Espaço não rola a página | ✓ |
+| `Password`: sequência completa de ponteiro alterna **uma** vez — sem disparo duplo | ✓ |
+| `Password`: valor e posição do cursor preservados na alternância | ✓ |
+| `Password`: `aria-describedby` correto para erro e apoio; `disabled` propaga ao gatilho | ✓ |
+| Contraste, tema escuro, 9 elementos | ✓ pior caso 6,85:1 |
+| Contraste, tema claro, sobre a parada mais clara do gradiente | ✓ pior caso 8,19:1 |
+| Deslocamento do cartão entre estados | ✓ 0px |
+| Alvos de toque, ambos os estados, 439px | ✓ zero falhas |
+| Sem rolagem horizontal em 334px e 1285px | ✓ |
+| Sem rolagem vertical em 1285×754 | ✓ |
+| Layout de duas zonas ativo em `lg` | ✓ |
+| `<h1>` único; camada de fundo `aria-hidden` | ✓ |
+| Ordem de foco = ordem visual | ✓ |
+| `?motivo=expirado`: aviso acima das opções, visível sem rolar | ✓ |
+| `?error=account_not_linked`: traduzido | ✓ |
+| `?error=<desconhecido>`: mensagem genérica, código não vaza para a tela | ✓ |
+| `register('senha')` intacto: `name`, `autoComplete`, validação Zod | ✓ |
+
+### O que falta, e por quê
+
+**Depende da fotografia** (T002, T034, T035, T036) — o ativo não existe. `PROCEDENCIA.md` está
+criado com os requisitos e o registro em aberto; a solicitação ao acervo é ação humana.
+
+**Depende de emulação de dispositivo no DevTools** (T013, T014, T019, T020, T023, T031, T033) —
+o redimensionamento de janela travou no ambiente (DPI 1,875 e janela encaixada pelo SO), então
+não alcancei 320px, 768px, 1024px nem 2560px como viewports reais, nem consegui testar zoom de
+200%, paisagem em altura reduzida, leitor de tela e auditoria axe/Lighthouse. Os dois extremos
+que mais importam (334px e 1285px) foram medidos e estão limpos.
+
+**Depende de pessoas** (T039) — SC-001 (5 pessoas, 5 segundos) e SC-011 (correção de senha na
+segunda tentativa).
+
+**Medição de rede pendente** (parte do T001 e do T014) — `linha-base.md` registra a medição por
+artefato de build e explica por que ela **não** basta para afirmar que a SC-006a passou: o
+Next 16 deixou de emitir tamanhos por rota, e bytes em 3G são grandeza de rede. O procedimento
+de comparação está documentado lá.
+
+**Fora do escopo, aguardando sua decisão** (T040, T041) — migrar os outros 4 campos de senha.
+
+### Nota sobre T015 a T018
+
+Marcados como pendentes por rigor, mas seu conteúdo foi verificado por medição direta:
+contraste nos dois temas (T015), ordem de foco e anel (T016), `aria-hidden` no fundo (T017) e
+ausência de animação de entrada (T018 — decidi não usar transição de opacidade na chegada da
+foto; o `placeholder="blur"` já dá a transição percebida, o que elimina a animação a suprimir).
+O que falta neles é a confirmação com leitor de tela real e auditoria automatizada.

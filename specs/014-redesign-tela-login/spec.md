@@ -404,10 +404,6 @@ parâmetros de URL já em uso pela tela de login (`redirecionar`, `motivo`, `err
   (cadastro, redefinição de senha no admin) e evita divergência de comportamento entre elas.
   Migrar essas outras telas para o componente novo é trabalho de acompanhamento, fora desta
   feature — aqui só a tela de login o adota (FR-037).
-- **O convite ao cadastro é restaurado**: o link "Quer ser voluntário?" existia na tela e foi
-  removido durante um ajuste recente. Como `/cadastro` é rota ativa e a tela de login é seu
-  único ponto de entrada pela web, a FR-028 o trata como parte da composição nova. Se a
-  remoção foi deliberada, esta FR deve ser cortada antes do planejamento.
 - **A marca já existe como ativo**: `public/sos-logo.png` e o componente compartilhado de
   marca já estão disponíveis e são a fonte da identidade visual — esta feature não produz
   arte nova de marca.
