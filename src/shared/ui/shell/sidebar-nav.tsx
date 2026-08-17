@@ -79,14 +79,36 @@ export function SidebarNav({ itens }: SidebarNavProps) {
               a versão reduzida abaixo, a coluna recolhida deixaria a aplicação
               sem identificação alguma.
             */}
-            <div className={cn('flex items-center', recolhida ? 'justify-center py-4' : 'justify-between px-3 py-4')}>
-                {recolhida ? (
-                    <span aria-hidden className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                        SOS
-                    </span>
-                ) : (
-                    <span className="text-lg font-semibold text-foreground">SOS Jaraguá</span>
-                )}
+            <div className={cn('flex items-center', recolhida ? 'justify-center py-2' : 'justify-between py-2')}>
+                {/*
+                  Identificação leva à home — convenção esperada de marca em
+                  cabeçalho. Sem `aria-current`: quem marca a página atual é o
+                  item "Página inicial" logo abaixo; dois elementos anunciados
+                  como atuais confundiriam o leitor de tela.
+                */}
+                <Link
+                    href="/"
+                    className={cn(
+                        'flex min-h-11 items-center rounded-lg',
+                        recolhida ? 'w-11 justify-center' : 'px-3',
+                        ANEL_FOCO
+                    )}
+                >
+                    {recolhida ? (
+                        <>
+                            <span aria-hidden className="text-lg font-bold text-primary-600 dark:text-primary-400">
+                                SOS
+                            </span>
+                            {/*
+                              A sigla visível não serve de nome acessível — um
+                              link anunciado como "SOS" não diz para onde vai.
+                            */}
+                            <span className="sr-only">SOS Jaraguá — página inicial</span>
+                        </>
+                    ) : (
+                        <span className="text-lg font-semibold text-foreground">SOS Jaraguá</span>
+                    )}
+                </Link>
             </div>
 
             <Tooltip conteudo={recolhida ? 'Expandir navegação' : 'Recolher navegação'} posicao="right">
