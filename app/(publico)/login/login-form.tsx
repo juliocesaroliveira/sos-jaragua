@@ -9,6 +9,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
 import { Alert, Button, cn, Input, Password } from '@/src/shared/ui'
+import { IconeFacebook, IconeGoogle } from './icones-provedor'
 
 const esquema = z.object({
     email: z.email('Informe um e-mail válido.'),
@@ -154,6 +155,7 @@ export function LoginForm() {
                 <div className={cn('flex flex-col gap-3', modo !== 'opcoes' && 'invisible')} inert={modo !== 'opcoes'}>
                     <Button
                         variant="secondary"
+                        iconeInicio={<IconeGoogle className="size-5" />}
                         size="lg"
                         fullWidth
                         loading={carregandoSocial === 'google'}
@@ -163,6 +165,7 @@ export function LoginForm() {
                     </Button>
                     <Button
                         variant="secondary"
+                        iconeInicio={<IconeFacebook className="size-5" />}
                         size="lg"
                         fullWidth
                         loading={carregandoSocial === 'facebook'}
