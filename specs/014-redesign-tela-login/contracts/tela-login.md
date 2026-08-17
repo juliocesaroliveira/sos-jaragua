@@ -1,7 +1,7 @@
 # Contrato: composição da tela de login
 
 **Feature**: `014-redesign-tela-login` | **Rota**: `/login`
-**Cobre**: FR-001 a FR-020, FR-028 | **Arquivos**: `app/(publico)/login/`
+**Cobre**: FR-001 a FR-020 | **Arquivos**: `app/(publico)/login/`
 
 ---
 
@@ -100,7 +100,7 @@ pelo topo do cartão, não pelo centro da viewport, resolve.
 
 | Faixa | Composição |
 | --- | --- |
-| 320–767px | Coluna única, fundo sólido, sem foto. Marca compacta no topo, cartão, convite ao cadastro |
+| 320–767px | Coluna única, fundo sólido, sem foto. Marca compacta no topo, cartão |
 | 768–1023px | Foto entra; conteúdo ainda em coluna, centralizado |
 | 1024px+ | Duas zonas: painel institucional e cartão de acesso |
 | 2560px | Conteúdo com largura máxima, sem esticar; a foto continua cobrindo (FR-009) |
@@ -111,10 +111,11 @@ Mobile-first (DESIGN_SYSTEM.md §6): a base é a versão de celular, `md:`/`lg:`
 cortar ou sobrepor. Sem `100vh` travando conteúdo fora de alcance — usar `min-h-dvh`, como o
 `page.tsx` atual já faz.
 
-## Convite ao cadastro
+## ~~Convite ao cadastro~~ — removido em 2026-08-16
 
-FR-028: link para `/cadastro` visível nos **dois** estados da tela — logo, fora do bloco que
-alterna entre `'opcoes'` e `'credenciais'`.
+A tela `/cadastro` foi removida da aplicação, e a FR-028 com ela. Quem não tem conta a cria
+entrando por Google ou Facebook — o auto-cadastro de `011-auto-cadastro-provedor` —, que já é
+uma das três opções do estado inicial. Não há link separado a manter.
 
 ## O que não muda
 

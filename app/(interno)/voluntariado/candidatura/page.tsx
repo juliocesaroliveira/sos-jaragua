@@ -50,20 +50,19 @@ async function ConteudoCandidatura() {
                     A candidatura fica vinculada à sua conta — é por ela que avisamos o resultado da triagem e as
                     atividades atribuídas.
                 </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                    <Link
-                        href="/login?redirecionar=%2Fvoluntariado%2Fcandidatura"
-                        className="inline-flex h-11 items-center justify-center rounded-lg bg-primary-600 px-4 font-medium text-primary-foreground dark:bg-primary-500"
-                    >
-                        Entrar
-                    </Link>
-                    <Link
-                        href="/cadastro?redirecionar=%2Fvoluntariado%2Fcandidatura"
-                        className="inline-flex h-11 items-center justify-center rounded-lg border border-border px-4 font-medium text-foreground"
-                    >
-                        Criar conta
-                    </Link>
-                </div>
+                {/*
+                  Só "Entrar". A tela `/cadastro` foi removida da aplicação, e
+                  com ela o botão "Criar conta" que ficava ao lado: quem não tem
+                  conta a cria entrando por Google ou Facebook, que é o
+                  auto-cadastro de `011-auto-cadastro-provedor` — e esse caminho
+                  parte da própria tela de login.
+                */}
+                <Link
+                    href="/login?redirecionar=%2Fvoluntariado%2Fcandidatura"
+                    className="inline-flex h-11 items-center justify-center rounded-lg bg-primary-600 px-4 font-medium text-primary-foreground dark:bg-primary-500"
+                >
+                    Entrar
+                </Link>
             </Alert>
         )
     }

@@ -168,23 +168,15 @@ que o texto aparece e volta a ser mascarado, sem que o valor ou a posição do c
 
 ---
 
-### User Story 6 - Descobrir como se tornar voluntário (Priority: P3)
+### ~~User Story 6 - Descobrir como se tornar voluntário (Priority: P3)~~ — CANCELADA
 
-Alguém que ouviu falar do sistema chega à tela de login sem ter conta. A tela precisa oferecer
-um caminho visível para o cadastro, em vez de deixar a pessoa presa em um formulário para o
-qual ela não tem credenciais.
+**Cancelada em 2026-08-16**: a tela `/cadastro` foi removida da aplicação por decisão do
+responsável, e com ela o destino deste convite. Quem não tem conta passa a criá-la entrando por
+Google ou Facebook — o auto-cadastro de `011-auto-cadastro-provedor` —, que já é uma das três
+opções do estado inicial da tela de login. Não há caminho separado a divulgar.
 
-**Why this priority**: é o único caminho de entrada de novos voluntários pela web, mas atende
-um público menor que os quatro cenários acima e não bloqueia nenhum deles.
-
-**Independent Test**: abrir `/login` sem sessão e alcançar a página de cadastro em um clique.
-
-**Acceptance Scenarios**:
-
-1. **Given** um visitante sem conta, **When** abre a página de login, **Then** encontra um
-   convite explícito para se candidatar a voluntário, com link para a página de cadastro.
-2. **Given** o visitante no estado de e-mail e senha, **When** olha a tela, **Then** o convite
-   ao cadastro continua acessível sem precisar voltar ao estado inicial.
+A FR-028 foi removida junto. Ver `PENDENCIAS.md` §2, resolvido pela opção (b), para a decisão e
+o risco aceito.
 
 ---
 
@@ -316,10 +308,11 @@ um público menor que os quatro cenários acima e não bloqueia nenhum deles.
 - **FR-027**: A tela MUST manter a tradução em pt-BR das recusas do provedor social, incluindo
   o texto genérico para códigos não mapeados.
 
-#### Caminho para o cadastro
+#### ~~Caminho para o cadastro~~ — REMOVIDO
 
-- **FR-028**: A tela MUST oferecer um convite visível ao cadastro de voluntário, com link para
-  a página de cadastro, acessível a partir de ambos os estados da tela.
+- ~~**FR-028**: A tela MUST oferecer um convite visível ao cadastro de voluntário, com link
+  para a página de cadastro, acessível a partir de ambos os estados da tela.~~
+  **Removida em 2026-08-16** junto com a tela `/cadastro` — ver a US6 cancelada.
 
 #### Campo de senha com alternância de visibilidade
 
@@ -419,9 +412,9 @@ parâmetros de URL já em uso pela tela de login (`redirecionar`, `motivo`, `err
   cidade; a seleção e o registro do direito de uso são tarefa do `/speckit-plan`.
 - **Sem mudança em rota ou metadados**: a tela permanece em `/login`, com o mesmo título e o
   mesmo comportamento de renderização por requisição.
-- **A tela de cadastro não é redesenhada nesta feature**: ela compartilha o contexto público,
-  mas está fora do pedido. Uma inconsistência temporária entre as duas é aceita e deve ser
-  registrada como trabalho de acompanhamento.
+- ~~**A tela de cadastro não é redesenhada nesta feature**~~ — **superado em 2026-08-16**: a
+  tela `/cadastro` foi removida da aplicação. Não há mais inconsistência a acompanhar, e
+  `/login` passa a ser a única rota do grupo `(publico)`.
 - **Ambiente de verificação**: os critérios de contraste, alvo de toque e acessibilidade são
   verificados nos navegadores atuais de desktop e nos navegadores móveis padrão de Android e
   iOS.

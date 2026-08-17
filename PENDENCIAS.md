@@ -44,18 +44,37 @@ mas o alerta de auditoria vai reaparecer em todo CI.
 **conta autenticada** — sem uma forma de criar conta, ninguém chega ao formulário
 de candidatura, e o fluxo BR-VOL-01 fica inalcançável na prática.
 
-**Estado atual.** `/cadastro` implementado (e-mail + senha, `role = 'usuario'`
-forçado no servidor). A candidatura pública mostra "Entrar / Criar conta" para
-quem chega deslogado.
-
 **Opções.**
 
 - a) Manter `/cadastro` como está e registrar a tela na spec.
 - b) Só login social (Google/Facebook) para o público, sem senha própria.
 - c) Cadastro por convite/pré-aprovação da Defesa Civil.
 
-**Recomendação.** (a). (b) cria dependência dura de provedor externo em cenário
-de crise; (c) contradiz o fluxo de candidatura pública do BRD §3.1.
+**Recomendação original.** (a). (b) cria dependência dura de provedor externo em
+cenário de crise; (c) contradiz o fluxo de candidatura pública do BRD §3.1.
+
+## ✅ RESOLVIDO — opção (b), em 2026-08-16
+
+`/cadastro` foi **removida da aplicação** por decisão do responsável, contra a
+recomendação acima. O auto-cadastro público passa a ser exclusivamente o login
+social de `specs/011-auto-cadastro-provedor`, que cria a conta na primeira
+autenticação por Google ou Facebook. Contas com senha nascem apenas em `/admin`.
+
+Removidos: `app/(publico)/cadastro/`, o botão "Criar conta" da candidatura
+(`app/(interno)/voluntariado/candidatura/page.tsx`) e o convite ao cadastro na
+tela de login.
+
+**A ressalva da recomendação original continua valendo e vira risco aceito**: com
+Google e Facebook fora do ar, ou com um voluntário que não tenha conta em nenhum
+dos dois, não existe caminho de auto-cadastro — a entrada depende de um
+administrador criar a conta manualmente. Em cenário de crise, com mobilização
+súbita de voluntários novos, esse gargalo é uma pessoa.
+
+**Também não fechado por esta remoção**: o endpoint `POST /api/auth/sign-up/email`
+do better-auth continua ativo, porque `auth.api.signUpEmail` é o que `/admin` usa
+para criar contas. Ou seja, a capacidade de auto-cadastro por senha ainda existe
+via API, só não tem mais interface. Fechá-la exige separar o caminho do admin do
+caminho público — decisão à parte, ainda não tomada.
 
 ---
 

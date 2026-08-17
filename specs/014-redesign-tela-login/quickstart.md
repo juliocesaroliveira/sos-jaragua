@@ -135,8 +135,7 @@ a alternância, sem uma terceira tentativa. Agendar junto com o SC-001.
 
 | # | Verificar | Fecha |
 | --- | --- | --- |
-| 7.1 | Convite ao cadastro visível no estado inicial, com link para `/cadastro` | FR-028 |
-| 7.2 | Continua acessível no estado de e-mail e senha | FR-028, US6 cenário 2 |
+| ~~7.1~~ | ~~Convite ao cadastro~~ — **cancelado**: `/cadastro` foi removida da aplicação (US6 cancelada, FR-028 removida) | — |
 | 7.3 | Login com Google e com Facebook completos | FR-005 de `001`, FR-021 |
 | 7.4 | Aviso de transparência sobre os dados do provedor visível antes do redirecionamento | FR-023 |
 | 7.5 | `/login?redirecionar=/estoque` → autenticar | Cai em `/estoque` | FR-026 |

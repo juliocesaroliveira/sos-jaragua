@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { obterSessao } from '@/src/shared/auth/sessao'
@@ -97,15 +96,6 @@ export default async function LoginPage() {
                             <LoginForm />
                         </Suspense>
                     </div>
-
-                    {/*
-                      Convite ao cadastro **fora** do cartão e fora do bloco que
-                      alterna entre opções e credenciais (FR-028): precisa
-                      continuar acessível nos dois estados da tela.
-
-                      Texto claro fixo pelo mesmo motivo do `PainelMarca`: está
-                      sobre o fundo escuro, que não muda entre os temas.
-                    */}
                 </div>
             </main>
         </>

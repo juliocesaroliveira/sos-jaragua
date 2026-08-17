@@ -288,7 +288,7 @@ Levantamento no repositório — cinco campos de senha em três arquivos:
 | Arquivo | Campos | Nesta feature? |
 | --- | --- | --- |
 | `app/(publico)/login/login-form.tsx` | 1 | **Sim** (FR-037) |
-| `app/(publico)/cadastro/cadastro-form.tsx` | 2 | Não |
+| ~~`app/(publico)/cadastro/cadastro-form.tsx`~~ | ~~2~~ | **Arquivo removido em 2026-08-16** junto com a rota `/cadastro` |
 | `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` | 2 | Não |
 
 **Motivo**: escopo definido na spec (FR-037 e Assumptions). Registro a ressalva de forma

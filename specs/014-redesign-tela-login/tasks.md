@@ -277,9 +277,10 @@ dos dois estados da tela.
 
 ### Implementation for User Story 6
 
-- [X] T032 [US6] Adicionar em `app/(publico)/login/page.tsx` o convite ao cadastro com link para
-      `/cadastro`, posicionado **fora** do bloco que alterna entre `'opcoes'` e `'credenciais'`,
-      para permanecer acessível nos dois estados (FR-028)
+- [X] ~~T032~~ [US6] **CANCELADA em 2026-08-16** — o convite ao cadastro foi removido de
+      `app/(publico)/login/page.tsx` junto com a própria tela `/cadastro`, retirada da
+      aplicação por decisão do responsável. A US6 e a FR-028 foram canceladas na spec; ver
+      `PENDENCIAS.md` §2, resolvido pela opção (b)
 - [ ] T033 [US6] Executar o Bloco 7 do `quickstart.md` — o convite (7.1, 7.2) e as oito
       verificações de preservação do comportamento existente (7.3 a 7.8), que junto com 5.2, 5.3
       e 5.5 fecham a SC-008
@@ -322,9 +323,8 @@ migração pela metade, e migrações pela metade apodrecem. Cada item abaixo é
 linha. Incluir é decisão sua — se ficarem de fora, precisam virar item de acompanhamento com
 dono, não uma nota solta.
 
-- [ ] T040 [OPCIONAL] [P] Migrar os dois campos de senha de
-      `app/(publico)/cadastro/cadastro-form.tsx` para o `Password` com
-      `autoComplete="new-password"`
+- [X] ~~T040~~ [OPCIONAL] **DISPENSADA em 2026-08-16** — `app/(publico)/cadastro/cadastro-form.tsx`
+      foi removido junto com a rota; não há mais campos de senha a migrar ali
 - [ ] T041 [OPCIONAL] [P] Migrar os dois campos de senha de
       `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` para o `Password` com
       `autoComplete="new-password"`
@@ -511,7 +511,9 @@ artefato de build e explica por que ela **não** basta para afirmar que a SC-006
 Next 16 deixou de emitir tamanhos por rota, e bytes em 3G são grandeza de rede. O procedimento
 de comparação está documentado lá.
 
-**Fora do escopo, aguardando sua decisão** (T040, T041) — migrar os outros 4 campos de senha.
+**Fora do escopo, aguardando sua decisão** (T041) — migrar os 2 campos de senha restantes, em
+`app/(interno)/(staff)/admin/usuario-form-dialog.tsx`. A T040 foi dispensada: o arquivo
+`cadastro-form.tsx` deixou de existir com a remoção de `/cadastro`.
 
 ### Nota sobre T015 a T018
 

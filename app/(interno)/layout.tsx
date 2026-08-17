@@ -21,7 +21,7 @@ import { ShellAutenticado } from '../_shell/shell-autenticado'
  *
  * 3. **Cache de dados no cliente** — `QueryProvider` (TanStack Query) serve as
  *    listagens paginadas server-side (007-datatable-server-pagination). Fica
- *    aqui e não no layout raiz porque `/login` e `/cadastro` não paginam nada.
+ *    aqui e não no layout raiz porque `/login` não pagina nada.
  *
  * A área é inteiramente por-usuário: o gate lê a sessão (cookies + banco) e
  * pode redirecionar antes de qualquer render. Não há shell estático a

@@ -169,7 +169,7 @@ com auto-ocultamento. São features próprias.
 | Arquivo | Campos | Nesta feature? |
 | --- | --- | --- |
 | `app/(publico)/login/login-form.tsx` | 1 (`current-password`) | **Sim** — FR-037 |
-| `app/(publico)/cadastro/cadastro-form.tsx` | 2 (`new-password`) | Não — ver D12 |
+| ~~`app/(publico)/cadastro/cadastro-form.tsx`~~ | ~~2~~ | **Arquivo removido em 2026-08-16** com a rota `/cadastro` |
 | `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` | 2 (`new-password`) | Não — ver D12 |
 
 O componente entra também em `app/(interno)/design-system/galeria.tsx`, a galeria de validação
