@@ -6,7 +6,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { Check, Key, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { camposComErro } from '@/src/shared/kernel'
-import { Button, Dialog, Input, Select, avisar } from '@/src/shared/ui'
+import { Button, Dialog, Input, Password, Select, avisar } from '@/src/shared/ui'
 import { ROLES, ROTULO_ROLE, type Role } from '@/src/shared/auth/roles'
 import { criarUsuario, editarUsuario } from '@/src/modules/identidade/presentation/actions/usuarios'
 import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries/usuarios'
@@ -200,10 +200,10 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                             erro={errors.email?.message}
                             {...register('email')}
                         />
-                        <Input
+                        <Password
+                            autoComplete="new-password"
                             id="senha"
                             label="Senha"
-                            type="password"
                             obrigatorio
                             apoio="Mínimo de 8 caracteres."
                             erro={errors.senha?.message}
@@ -213,10 +213,10 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                 )}
 
                 {trocandoSenha && (
-                    <Input
+                    <Password
+                        autoComplete="new-password"
                         id="novaSenha"
                         label="Nova senha"
-                        type="password"
                         obrigatorio
                         apoio="Mínimo de 8 caracteres."
                         erro={errors.novaSenha?.message}

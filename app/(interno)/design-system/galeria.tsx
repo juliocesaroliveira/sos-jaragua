@@ -20,6 +20,7 @@ import {
     Menu,
     NumberInput,
     Pagination,
+    Password,
     Popover,
     Progress,
     ProgressCircle,
@@ -92,6 +93,27 @@ export function Galeria() {
                 <div className="grid gap-4 md:grid-cols-2">
                     <Input id="g-nome" label="Nome completo" obrigatorio placeholder="Maria da Silva" />
                     <Input id="g-erro" label="CPF" erro="CPF inválido." defaultValue="123.456.789-00" />
+                    {/*
+                      Os quatro estados do Password (§4.2). O gatilho de
+                      visibilidade precisa ser conferido **por teclado** aqui:
+                      o Ark o entrega com `tabIndex: -1`, e o componente corrige
+                      isso — se a correção se perder, o mouse continua
+                      funcionando e a falha passa despercebida.
+                    */}
+                    <Password id="g-senha" label="Senha" autoComplete="new-password" obrigatorio />
+                    <Password
+                        id="g-senha-erro"
+                        label="Senha"
+                        autoComplete="new-password"
+                        erro="A senha precisa ter ao menos 8 caracteres."
+                    />
+                    <Password
+                        id="g-senha-apoio"
+                        label="Nova senha"
+                        autoComplete="new-password"
+                        apoio="Mínimo de 8 caracteres."
+                    />
+                    <Password id="g-senha-off" label="Senha" autoComplete="current-password" disabled />
                     <Textarea id="g-obs" label="Restrições de saúde" apoio="Alergias, limitações físicas." />
                     <NumberInput id="g-qtd" label="Quantidade" defaultValue="10" min={0} />
                     <Select

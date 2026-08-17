@@ -264,10 +264,12 @@ focus-visible:ring-offset-2`.
   `lucide-react` `Loader2` com `animate-spin`, texto mantido para não colapsar largura).
 - **IconButton**: mesma API, `w-11 h-11` (quadrado), exige `aria-label` obrigatório.
 
-### 4.2. Input / Textarea / NumberInput
+### 4.2. Input / Password / Textarea / NumberInput
 
 - **Input/Textarea**: elemento nativo estilizado (Ark UI não tem primitivo de texto
   simples). `h-11`, `rounded-lg`, borda `border`, foco com anel `primary`.
+- **Password**: Ark UI `PasswordInput` (partes `Root`, `Control`, `Input`,
+  `VisibilityTrigger`, `Indicator`) — ver §4.2.2.
 - **NumberInput**: Ark UI `NumberInput` (partes `Root`, `Input`, `IncrementTrigger`,
   `DecrementTrigger`) — usado em quantidade de estoque (decimal, `min=0`).
 - **Estado de erro**: borda `danger-500` + `text-danger-600` abaixo do campo (mensagem
@@ -304,6 +306,39 @@ lógica.
 
 **Exceção**: o `Switch` (§4.5) não usa a moldura `Campo` e não tem estado de erro — seu
 apoio fica junto ao rótulo, ao lado do controle, que é o correto para esse padrão.
+
+#### 4.2.2. Password: campo de senha com alternância de visibilidade
+
+Base: Ark UI `PasswordInput`, partes `Root`, `Control`, `Input`, `VisibilityTrigger` e
+`Indicator`. **`PasswordInput.Label` não é usada** — quem renderiza rótulo, marcação de
+obrigatório e faixa de apoio/erro é a moldura `Campo`, como em todos os outros campos.
+
+| Detalhe | Regra |
+| ------- | ----- |
+| Caixa visual | É o `Control`, não o `<input>` — o gatilho vive dentro da mesma borda. Anel de foco por `focus-within` |
+| Gatilho | `size-11` (44×44, §1.3) com ícone de 20px (§1.8): `Eye` quando oculto, `EyeOff` quando visível |
+| Posição do gatilho | **Irmão** do input no flex, nunca sobreposto — o texto digitado não tem como passar por baixo |
+| `autoComplete` | Obrigatório e sem padrão: `current-password` para autenticar, `new-password` para criar ou redefinir |
+| Estado inicial | Sempre oculto, em qualquer montagem |
+
+**Duas correções sobre o que a biblioteca entrega** — as duas são obrigatórias, e nenhuma
+falha de forma visível se for removida:
+
+1. **`ids={{ input: id }}` no `Root`.** Sem isso o Ark gera um id próprio e o `htmlFor` do
+   `Campo` aponta para um elemento inexistente: o rótulo para de funcionar para clique e
+   para leitor de tela.
+2. **`tabIndex={0}` e `onKeyDown` no gatilho.** O `@zag-js/password-input` emite
+   `tabIndex: -1` e trata apenas `onPointerDown` — sem nenhum manipulador de teclado. Como
+   vem, o botão é inalcançável por Tab e inoperável por Enter ou Espaço, contra a §6.
+   **Usar `onKeyDown`, nunca `onClick`**: o Zag chama `preventDefault()` no `pointerdown`,
+   o que impede o foco mas não o `click` seguinte, e um `onClick` alternaria duas vezes no
+   clique de mouse.
+
+O Ark também **não** emite `aria-describedby` — o componente o calcula com `idsCampo()` e o
+passa na parte `Input`, igual ao `Input` comum.
+
+**Ao conferir na galeria (§7), testar por teclado.** No mouse tudo parece funcionar mesmo se
+a correção nº 2 se perder; a falha só aparece com Tab.
 
 ### 4.3. Select
 
@@ -472,6 +507,7 @@ src/shared/ui/
   button/button.tsx
   icon-button/icon-button.tsx
   input/input.tsx
+  password/password.tsx
   textarea/textarea.tsx
   number-input/number-input.tsx
   select/select.tsx

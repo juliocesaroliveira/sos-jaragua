@@ -6,6 +6,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { gruposVisiveis, itemAtivo, type ItemNavegacao } from '../../auth/navegacao'
 import { ANEL_FOCO, cn } from '../cn'
+import { Logo } from '../logo/logo'
 import { Tooltip } from '../tooltip/tooltip'
 import { ICONES } from './icones'
 import { aplicarPreferenciaColuna, lerPreferenciaAplicada, PREFERENCIA_PADRAO } from './preferencia-coluna'
@@ -70,7 +71,7 @@ export function SidebarNav({ itens }: SidebarNavProps) {
                 // excedem a altura da janela.
                 'hidden flex-col gap-1 border-r border-border bg-surface p-3',
                 'lg:sticky lg:top-0 lg:flex lg:h-dvh lg:shrink-0 lg:self-start lg:overflow-y-auto',
-                recolhida ? 'lg:w-16 lg:items-center' : 'lg:w-72'
+                recolhida ? 'lg:w-16 lg:items-center overflow-hidden' : 'lg:w-72'
             )}
         >
             {/*
@@ -79,14 +80,37 @@ export function SidebarNav({ itens }: SidebarNavProps) {
               a versão reduzida abaixo, a coluna recolhida deixaria a aplicação
               sem identificação alguma.
             */}
-            <div className={cn('flex items-center', recolhida ? 'justify-center py-4' : 'justify-between px-3 py-4')}>
-                {recolhida ? (
-                    <span aria-hidden className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                        SOS
-                    </span>
-                ) : (
-                    <span className="text-lg font-semibold text-foreground">SOS Jaraguá</span>
-                )}
+            <div className={cn('flex items-center', recolhida ? 'justify-center py-2' : 'justify-between py-2')}>
+                {/*
+                  Identificação leva à home — convenção esperada de marca em
+                  cabeçalho. Sem `aria-current`: quem marca a página atual é o
+                  item "Página inicial" logo abaixo; dois elementos anunciados
+                  como atuais confundiriam o leitor de tela.
+                */}
+                <Link
+                    href="/"
+                    className={cn(
+                        'flex min-h-11 items-center rounded-lg',
+                        recolhida ? 'w-11 justify-center' : 'px-3',
+                        ANEL_FOCO
+                    )}
+                >
+                    {recolhida ? (
+                        <>
+                            <Logo tamanho="sm" />
+                            {/*
+                              A marca visível não serve de nome acessível — um
+                              link anunciado como "SOS" não diz para onde vai.
+                            */}
+                            <span className="sr-only">SOS Jaraguá — página inicial</span>
+                        </>
+                    ) : (
+                        <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                            <Logo tamanho="sm" />
+                            SOS Jaraguá
+                        </span>
+                    )}
+                </Link>
             </div>
 
             <Tooltip conteudo={recolhida ? 'Expandir navegação' : 'Recolher navegação'} posicao="right">

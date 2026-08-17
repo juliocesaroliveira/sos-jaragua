@@ -211,11 +211,16 @@ entrada explícita em nenhum mapa. Responsabilidades:
     | `/(staff)/admin/*` (gestão de usuários/permissões)                          | `administrador`                                       |
     | `/voluntariado/minhas-atividades`                                           | `voluntario` e acima                                  |
 
-    Rotas como `/`, `/cadastro`, `/voluntariado/candidatura`, `/design-system` e
-    `/sem-permissao` não têm entrada no mapa — exigem apenas sessão válida, sem role
-    específica. A candidatura pública de voluntário deixou de ser acessível sem conta (ver
+    Rotas como `/`, `/voluntariado/candidatura`, `/design-system` e `/sem-permissao` não têm
+    entrada no mapa — exigem apenas sessão válida, sem role específica. A candidatura pública
+    de voluntário deixou de ser acessível sem conta (ver
     `specs/001-unified-login-flow/spec.md`, decisão de escopo): o pré-requisito passou a ser
-    criar conta (`/cadastro`) ou entrar antes de candidatar-se.
+    entrar antes de candidatar-se.
+
+    **A tela `/cadastro` foi removida da aplicação.** Criar conta com e-mail e senha pelo
+    público deixou de existir — o único auto-cadastro é o login por Google ou Facebook
+    (`specs/011-auto-cadastro-provedor`), que cria a conta na primeira autenticação. Contas com
+    senha passam a nascer apenas em `/admin`. Ver `PENDENCIAS.md` §2, resolvido pela opção (b).
 
 4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).

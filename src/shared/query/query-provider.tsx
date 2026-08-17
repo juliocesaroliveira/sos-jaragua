@@ -15,8 +15,8 @@ import { useState, type ReactNode } from 'react'
  * escopo de módulo seria compartilhado entre requisições no servidor, vazando
  * dados de um usuário para outro.
  *
- * Montado em `app/(interno)/layout.tsx`, não no layout raiz — `/login` e
- * `/cadastro` não paginam nada e não devem pagar o bundle.
+ * Montado em `app/(interno)/layout.tsx`, não no layout raiz — `/login` não
+ * pagina nada e não deve pagar o bundle.
  */
 export function QueryProvider({ children }: { children: ReactNode }) {
     const [queryClient] = useState(

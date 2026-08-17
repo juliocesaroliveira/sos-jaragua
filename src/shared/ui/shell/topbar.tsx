@@ -1,8 +1,11 @@
 'use client'
 
+import Link from 'next/link'
 import { LogOut, Menu as MenuIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { ANEL_FOCO, cn } from '../cn'
 import { Avatar } from '../avatar/avatar'
+import { Logo } from '../logo/logo'
 import { IconButton } from '../icon-button/icon-button'
 import { ThemeToggle } from '../theme/theme-toggle'
 
@@ -55,7 +58,27 @@ export function Topbar({
                         />
                     </span>
                 )}
-                <span className="text-lg font-semibold text-foreground lg:hidden">SOS Jaraguá</span>
+                {/*
+                  Identificação leva à home — convenção esperada de marca em
+                  cabeçalho. `min-h-11` porque vira alvo de toque (§1.3), e a
+                  home (`/`) é o destino comum a todos os perfis, sem regra de
+                  role.
+
+                  Sem `aria-current`: quem marca a página atual é o item
+                  "Página inicial" da navegação. Dois elementos anunciados como
+                  atuais confundiriam o leitor de tela.
+                */}
+                <Link
+                    href="/"
+                    className={cn(
+                        'flex min-h-11 items-center gap-2 rounded-lg px-2 text-lg font-semibold text-foreground lg:hidden',
+                        ANEL_FOCO
+                    )}
+                >
+                    {/* `alt` vazio: o nome ao lado já é o texto do link. */}
+                    <Logo tamanho="sm" />
+                    SOS Jaraguá
+                </Link>
             </div>
 
             <div className="flex items-center gap-2">

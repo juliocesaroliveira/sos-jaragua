@@ -9,6 +9,7 @@ export { IconButton, type IconButtonProps } from './icon-button/icon-button'
 
 export { Campo, type CampoProps } from './campo/campo'
 export { Input, type InputProps } from './input/input'
+export { Password, type PasswordProps } from './password/password'
 export { Textarea, type TextareaProps } from './textarea/textarea'
 export { NumberInput, type NumberInputProps } from './number-input/number-input'
 export { Select, type SelectProps, type OpcaoSelect } from './select/select'
@@ -29,6 +30,7 @@ export { Tabs, type TabsProps, type AbaTabs } from './tabs/tabs'
 export { Accordion, type AccordionProps, type ItemAccordion } from './accordion/accordion'
 
 export { Avatar, iniciaisDe, type AvatarProps } from './avatar/avatar'
+export { Logo, type LogoProps, type TamanhoLogo } from './logo/logo'
 export {
     Badge,
     type BadgeProps,
