@@ -71,7 +71,7 @@ export function SidebarNav({ itens }: SidebarNavProps) {
                 // excedem a altura da janela.
                 'hidden flex-col gap-1 border-r border-border bg-surface p-3',
                 'lg:sticky lg:top-0 lg:flex lg:h-dvh lg:shrink-0 lg:self-start lg:overflow-y-auto',
-                recolhida ? 'lg:w-16 lg:items-center' : 'lg:w-72'
+                recolhida ? 'lg:w-16 lg:items-center overflow-hidden' : 'lg:w-72'
             )}
         >
             {/*
