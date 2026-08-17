@@ -54,6 +54,11 @@ export function TableFooter({ page, pageSize, totalCount, onPageChange, onPageSi
                         id={idSelect}
                         label="Registros por página"
                         rotuloOculto
+                        // A tabela sempre pagina por algum tamanho: "nenhum"
+                        // não é um estado que o rodapé saiba renderizar. Limpar
+                        // aqui só produziria um select vazio com a listagem
+                        // ainda mostrando o tamanho anterior.
+                        limpavel={false}
                         opcoes={OPCOES_TAMANHO}
                         value={[String(pageSize)]}
                         onValueChange={([valor]) => {

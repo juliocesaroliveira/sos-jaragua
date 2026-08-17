@@ -30,6 +30,16 @@ export interface SelectProps {
     placeholder?: string
     /** Rótulo só para leitores de tela — ver `CampoProps.rotuloOculto`. */
     rotuloOculto?: boolean
+    /**
+     * Sobrepõe a regra padrão do botão de limpar (ver `limpavel` abaixo).
+     *
+     * Existe para o caso do controle que **sempre tem valor** sem ser um campo
+     * de formulário obrigatório — o seletor de registros por página do rodapé
+     * da tabela. Marcá-lo como `obrigatorio` esconderia o limpar, mas ao custo
+     * de um asterisco e de um " (obrigatório)" anunciado pelo leitor de tela,
+     * que ali não significa nada: não há submissão nem validação.
+     */
+    limpavel?: boolean
 }
 
 export function Select({
@@ -46,7 +56,8 @@ export function Select({
     multiple = false,
     disabled,
     placeholder = 'Selecione…',
-    rotuloOculto
+    rotuloOculto,
+    limpavel: limpavelProp
 }: SelectProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
 
@@ -63,7 +74,7 @@ export function Select({
      * (`hidden: !hasSelectedItems`), então não é preciso condicionar por valor
      * aqui — só por obrigatoriedade.
      */
-    const limpavel = !obrigatorio && !disabled
+    const limpavel = (limpavelProp ?? !obrigatorio) && !disabled
 
     const collection = useMemo(
         () =>

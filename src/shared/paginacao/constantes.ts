@@ -13,7 +13,7 @@ export const TAMANHOS_PAGINA = [5, 10, 20, 50] as const
 export type TamanhoPagina = (typeof TAMANHOS_PAGINA)[number]
 
 /** Aplicado quando a URL não traz `pageSize` ou traz um valor fora da lista. */
-export const TAMANHO_PAGINA_PADRAO: TamanhoPagina = 10
+export const TAMANHO_PAGINA_PADRAO: TamanhoPagina = 5
 
 export function ehTamanhoPagina(valor: unknown): valor is TamanhoPagina {
     return TAMANHOS_PAGINA.includes(valor as TamanhoPagina)
