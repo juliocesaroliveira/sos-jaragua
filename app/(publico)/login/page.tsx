@@ -51,23 +51,24 @@ export default async function LoginPage() {
               fundo contido nesta tela, em vez de o jogar atrás do `<body>`.
             */}
             {/*
-              **Ancorado pelo topo, não centralizado verticalmente** (FR-020).
+              **Centralizado nos dois eixos**, em todas as larguras.
 
-              A versão centralizada parecia melhor e estava errada: a alternância
-              entre "opções" e "e-mail e senha" muda a altura do cartão em ~36px,
-              e com `justify-center` metade disso vira deslocamento do topo — o
-              cartão saltava 18px sob os olhos de quem só clicou em um botão.
-              Medido, não suposto.
+              Centralização vertical e altura variável brigam entre si: a
+              alternância entre "opções" e "e-mail e senha" muda a altura do
+              cartão, e centralizado metade dessa variação vira deslocamento do
+              topo — na primeira versão desta tela o cartão saltava 18px sob os
+              olhos de quem só havia clicado em um botão (FR-020).
 
-              Centralização vertical e altura variável são incompatíveis: ou se
-              trava a altura com um número mágico, ou não se centraliza. O
-              contrato escolheu não centralizar, então o cartão cresce **só para
-              baixo** e o que já estava sob os olhos do usuário fica onde estava.
+              A saída **não** foi abrir mão da centralização, e sim tirar a
+              variação: `login-form.tsx` reserva a altura do estado mais alto,
+              então o cartão tem altura constante e centralizá-lo é seguro. Ver
+              o comentário do `min-h` lá.
 
-              A folga vertical cresce com a largura para que em telas altas o
-              conteúdo não fique colado no topo.
+              `min-h-dvh` e não `h-dvh`: em tela baixa (celular em paisagem) o
+              conteúdo não cabe e precisa rolar, não ser cortado — e aí
+              `justify-center` degrada sozinho para o topo, sem cortar nada.
             */}
-            <main className="isolate flex min-h-dvh w-full flex-col items-center justify-start gap-8 p-4 py-10 sm:p-6 sm:py-14 lg:flex-row lg:items-start lg:justify-center lg:gap-16 lg:p-12 lg:py-24">
+            <main className="isolate flex min-h-dvh w-full flex-col items-center justify-center gap-8 p-4 py-10 sm:p-6 sm:py-14 lg:flex-row lg:items-center lg:justify-center lg:gap-16 lg:p-12">
                 <PainelMarca />
 
                 {/*

@@ -8,7 +8,7 @@ import { ArrowLeft, LogIn, LockOpen } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
-import { Alert, Button, Input, Password } from '@/src/shared/ui'
+import { Alert, Button, cn, Input, Password } from '@/src/shared/ui'
 
 const esquema = z.object({
     email: z.email('Informe um e-mail válido.'),
@@ -127,8 +127,31 @@ export function LoginForm() {
 
             {erroServidor && <Alert tom="danger" titulo={erroServidor} />}
 
-            {modo === 'opcoes' ? (
-                <div className="flex flex-col gap-3">
+            {/*
+              Os dois estados ocupam a **mesma célula de grid**, empilhados: a
+              altura do bloco passa a ser a do mais alto, sempre, e trocar de
+              estado não muda a altura do cartão. É isso que permite a
+              `page.tsx` centralizar verticalmente sem o cartão saltar (FR-020).
+
+              Por que não um `min-h` fixo: os dois estados diferem 36px no
+              desktop, mas no celular o parágrafo de transparência quebra em
+              mais linhas e a diferença cresce. Qualquer número escolhido estaria
+              certo em uma largura e errado nas outras; o `grid` mede sozinho, em
+              todas.
+
+              O estado inativo continua no DOM para reservar a altura, mas sai de
+              cena por completo: `invisible` o tira da ordem de tabulação,
+              `inert` o remove de interação e da árvore de acessibilidade. Não é
+              conteúdo escondido que ainda responde — é espaço reservado.
+
+              `key={modo}` no formulário é o que preserva a FR-031: como o
+              formulário deixou de ser montado e desmontado pela troca de estado,
+              sem a `key` o campo de senha manteria a visibilidade revelada ao
+              voltar para as opções e retornar. Com ela, React remonta a cada
+              troca e a senha volta mascarada.
+            */}
+            <div className="grid grid-cols-1 [&>*]:col-start-1 [&>*]:row-start-1">
+                <div className={cn('flex flex-col gap-3', modo !== 'opcoes' && 'invisible')} inert={modo !== 'opcoes'}>
                     <Button
                         variant="secondary"
                         size="lg"
@@ -168,7 +191,7 @@ export function LoginForm() {
                     </div>
 
                     <Button
-                        variant="ghost"
+                        variant="primary"
                         iconeInicio={<LockOpen className="size-4" />}
                         size="lg"
                         fullWidth
@@ -191,8 +214,14 @@ export function LoginForm() {
                         Ao entrar com Google ou Facebook, recebemos apenas seu nome e e-mail para criar sua conta.
                     </p>
                 </div>
-            ) : (
-                <form onSubmit={handleSubmit(entrar)} className="flex flex-col gap-4" noValidate>
+
+                <form
+                    key={modo}
+                    onSubmit={handleSubmit(entrar)}
+                    className={cn('flex flex-col gap-4', modo !== 'credenciais' && 'invisible')}
+                    inert={modo !== 'credenciais'}
+                    noValidate
+                >
                     <Input
                         id="email"
                         label="E-mail"
@@ -233,7 +262,7 @@ export function LoginForm() {
                         </Button>
                     </div>
                 </form>
-            )}
+            </div>
         </div>
     )
 }

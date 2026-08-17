@@ -30,8 +30,8 @@
  * `blurDataURL`, e é o `blurDataURL` que impede o deslocamento de layout na
  * chegada da imagem (SC-006).
  */
-// import Image from 'next/image'
-// import fotografia from '@/public/login/fundo-login.jpg'
+import Image from 'next/image'
+import fotografia from '@/public/login/fundo-login.jpg'
 
 export function FundoLogin() {
     return (
@@ -80,7 +80,7 @@ export function FundoLogin() {
               JavaScript. Menos uma animação a suprimir sob movimento reduzido
               (FR-015) e menos um byte no cliente.
             */}
-            {/*
+
             <div className="absolute inset-0 hidden md:block">
                 <Image
                     src={fotografia}
@@ -91,7 +91,6 @@ export function FundoLogin() {
                     className="object-cover object-center"
                 />
             </div>
-            */}
 
             {/*
               Scrim sobre a fotografia (FR-006c).
