@@ -5,6 +5,7 @@ import { LogOut, Menu as MenuIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ANEL_FOCO, cn } from '../cn'
 import { Avatar } from '../avatar/avatar'
+import { Logo } from '../logo/logo'
 import { IconButton } from '../icon-button/icon-button'
 import { ThemeToggle } from '../theme/theme-toggle'
 
@@ -70,10 +71,12 @@ export function Topbar({
                 <Link
                     href="/"
                     className={cn(
-                        'flex min-h-11 items-center rounded-lg px-2 text-lg font-semibold text-foreground lg:hidden',
+                        'flex min-h-11 items-center gap-2 rounded-lg px-2 text-lg font-semibold text-foreground lg:hidden',
                         ANEL_FOCO
                     )}
                 >
+                    {/* `alt` vazio: o nome ao lado já é o texto do link. */}
+                    <Logo tamanho="sm" />
                     SOS Jaraguá
                 </Link>
             </div>

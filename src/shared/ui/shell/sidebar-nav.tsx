@@ -6,6 +6,7 @@ import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { gruposVisiveis, itemAtivo, type ItemNavegacao } from '../../auth/navegacao'
 import { ANEL_FOCO, cn } from '../cn'
+import { Logo } from '../logo/logo'
 import { Tooltip } from '../tooltip/tooltip'
 import { ICONES } from './icones'
 import { aplicarPreferenciaColuna, lerPreferenciaAplicada, PREFERENCIA_PADRAO } from './preferencia-coluna'
@@ -96,17 +97,18 @@ export function SidebarNav({ itens }: SidebarNavProps) {
                 >
                     {recolhida ? (
                         <>
-                            <span aria-hidden className="text-lg font-bold text-primary-600 dark:text-primary-400">
-                                SOS
-                            </span>
+                            <Logo tamanho="sm" />
                             {/*
-                              A sigla visível não serve de nome acessível — um
+                              A marca visível não serve de nome acessível — um
                               link anunciado como "SOS" não diz para onde vai.
                             */}
                             <span className="sr-only">SOS Jaraguá — página inicial</span>
                         </>
                     ) : (
-                        <span className="text-lg font-semibold text-foreground">SOS Jaraguá</span>
+                        <span className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                            <Logo tamanho="sm" />
+                            SOS Jaraguá
+                        </span>
                     )}
                 </Link>
             </div>

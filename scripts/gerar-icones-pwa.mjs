@@ -1,187 +1,114 @@
 /**
- * Gera os ícones PNG do PWA em `public/`.
+ * Gera os ícones do PWA (e o favicon) a partir da marca em `public/sos-logo.png`.
  *
  * Executar com: `node scripts/gerar-icones-pwa.mjs`
  *
- * Existe para que os ícones sejam **reproduzíveis**: mudar a cor da marca ou a
- * forma é editar este arquivo e rodar de novo, em vez de recriar binários à mão
+ * Existe para que os ícones sejam **reproduzíveis**: trocar a arte da marca é
+ * substituir `sos-logo.png` e rodar de novo, em vez de recriar binários à mão
  * em um editor externo e commitá-los sem origem conhecida.
  *
- * Sem dependências: escreve o PNG na unha (IHDR/IDAT/IEND + CRC32) sobre o
- * `zlib` do Node. Um encoder completo seria exagero — as formas aqui são um
- * retângulo arredondado e um triângulo de alerta, ambos resolvidos por teste de
- * pertencimento por pixel.
+ * A arte original é um brasão circular (anel laranja, disco azul) sobre fundo
+ * transparente — por isso cada destino recebe um tratamento diferente de fundo
+ * e de zona segura, descrito em `ICONES`.
  */
-import { deflateSync } from 'node:zlib'
-import { writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import sharp from 'sharp'
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DESTINO = join(RAIZ, 'public')
+const ORIGEM = join(DESTINO, 'sos-logo.png')
 
-/** Laranja da marca (`--color-primary-600`, Tailwind orange-600). */
-const MARCA = [234, 88, 12]
-const BRANCO = [255, 255, 255]
+/**
+ * Fundo dos ícones que não podem ser transparentes. Branco, e não o azul da
+ * marca: o disco central do brasão é azul e sumiria contra ele — o anel laranja
+ * é o que dá a silhueta reconhecível, e ele só se destaca sobre claro.
+ */
+const FUNDO_OPACO = { r: 255, g: 255, b: 255, alpha: 1 }
+const TRANSPARENTE = { r: 0, g: 0, b: 0, alpha: 0 }
 
-/** Supersampling: 3x em cada eixo, média — suficiente para bordas suaves. */
-const AMOSTRAS = 3
+const ICONES = [
+    // `purpose: any` é desenhado como veio, sem máscara do sistema: o brasão
+    // ocupa a área inteira e a transparência das quinas é preservada.
+    { arquivo: 'icone-192.png', lado: 192, ocupacao: 1, fundo: TRANSPARENTE },
+    { arquivo: 'icone-512.png', lado: 512, ocupacao: 1, fundo: TRANSPARENTE },
+    // `maskable` é full-bleed: o sistema recorta na forma dele (círculo no
+    // Android, squircle no iOS). O conteúdo fica na zona segura central de 80%
+    // e o fundo precisa ser opaco, senão o recorte expõe o vazio.
+    { arquivo: 'icone-maskable-512.png', lado: 512, ocupacao: 0.8, fundo: FUNDO_OPACO },
+    // O iOS compõe o apple-touch-icon sobre preto quando há alfa, e arredonda
+    // os cantos por conta própria — daí fundo opaco e margem menor.
+    { arquivo: 'apple-touch-icon.png', lado: 180, ocupacao: 0.88, fundo: FUNDO_OPACO }
+]
 
-// -- Geometria ---------------------------------------------------------------
+/** Tamanhos embutidos no `favicon.ico` — 16px para a aba, 32px para atalhos. */
+const LADOS_FAVICON = [16, 32, 48]
 
-function dentroDoRetanguloArredondado(x, y, lado, raio) {
-    const dx = Math.min(x, lado - x)
-    const dy = Math.min(y, lado - y)
-    if (dx >= raio || dy >= raio) return x >= 0 && x <= lado && y >= 0 && y <= lado
-    return (raio - dx) ** 2 + (raio - dy) ** 2 <= raio ** 2
-}
+const origem = readFileSync(ORIGEM)
 
-/** Triângulo isósceles apontando para cima, com cantos levemente recuados. */
-function dentroDoTriangulo(x, y, cx, cy, tamanho) {
-    const meia = tamanho / 2
-    const topo = cy - tamanho * 0.46
-    const base = cy + tamanho * 0.4
-    if (y < topo || y > base) return false
-    const progresso = (y - topo) / (base - topo)
-    const meiaLargura = meia * progresso
-    return Math.abs(x - cx) <= meiaLargura
-}
+/** Redimensiona a marca e a centraliza num quadrado de `lado`. */
+async function renderizar({ lado, ocupacao, fundo }) {
+    const interno = Math.round(lado * ocupacao)
+    const margem = Math.round((lado - interno) / 2)
 
-/** Barra + ponto da exclamação, recortados do triângulo. */
-function dentroDaExclamacao(x, y, cx, cy, tamanho) {
-    const largura = tamanho * 0.075
-    const barraTopo = cy - tamanho * 0.12
-    const barraBase = cy + tamanho * 0.12
-    naBarra: {
-        if (y < barraTopo || y > barraBase) break naBarra
-        if (Math.abs(x - cx) <= largura) return true
-    }
-    const pontoY = cy + tamanho * 0.245
-    return (x - cx) ** 2 + (y - pontoY) ** 2 <= (largura * 1.15) ** 2
+    const marca = await sharp(origem)
+        .resize(interno, interno, { fit: 'contain', background: TRANSPARENTE })
+        .png()
+        .toBuffer()
+
+    return sharp({
+        create: { width: lado, height: lado, channels: 4, background: fundo }
+    })
+        .composite([{ input: marca, top: margem, left: margem }])
+        .png({ compressionLevel: 9 })
+        .toBuffer()
 }
 
 /**
- * `maskable` preenche a tela inteira: a máscara do sistema recorta as bordas,
- * então o conteúdo fica na zona segura central (80%) e não pode ter cantos
- * arredondados próprios — seriam cortados duas vezes.
+ * Monta um `.ico` com PNGs embutidos (formato aceito por todos os navegadores
+ * atuais). Escrito à mão porque um `.ico` é só um cabeçalho de 6 bytes, uma
+ * entrada de diretório de 16 bytes por imagem e os PNGs concatenados — trazer
+ * uma dependência só para isso não se paga.
  */
-function pintar(lado, { maskable }) {
-    const pixels = Buffer.alloc(lado * lado * 4)
-    const raio = lado * 0.22
-    const cx = lado / 2
-    const cy = lado / 2
-    const tamanhoTriangulo = maskable ? lado * 0.5 : lado * 0.62
+function montarIco(imagens) {
+    const cabecalho = Buffer.alloc(6)
+    cabecalho.writeUInt16LE(0, 0) // reservado
+    cabecalho.writeUInt16LE(1, 2) // tipo: ícone
+    cabecalho.writeUInt16LE(imagens.length, 4)
 
-    for (let y = 0; y < lado; y++) {
-        for (let x = 0; x < lado; x++) {
-            let r = 0
-            let g = 0
-            let b = 0
-            let a = 0
+    let deslocamento = 6 + imagens.length * 16
+    const entradas = imagens.map(({ lado, png }) => {
+        const entrada = Buffer.alloc(16)
+        // 0 no campo de dimensão significa 256 — nenhum lado aqui chega lá, mas
+        // o `% 256` deixa a regra explícita em vez de implícita no truncamento.
+        entrada[0] = lado % 256
+        entrada[1] = lado % 256
+        entrada[2] = 0 // cores da paleta (0 = sem paleta)
+        entrada[3] = 0 // reservado
+        entrada.writeUInt16LE(1, 4) // planos de cor
+        entrada.writeUInt16LE(32, 6) // bits por pixel
+        entrada.writeUInt32LE(png.length, 8)
+        entrada.writeUInt32LE(deslocamento, 12)
+        deslocamento += png.length
+        return entrada
+    })
 
-            for (let sy = 0; sy < AMOSTRAS; sy++) {
-                for (let sx = 0; sx < AMOSTRAS; sx++) {
-                    const px = x + (sx + 0.5) / AMOSTRAS
-                    const py = y + (sy + 0.5) / AMOSTRAS
-
-                    const noFundo = maskable ? true : dentroDoRetanguloArredondado(px, py, lado, raio)
-                    if (!noFundo) continue
-
-                    const noSimbolo =
-                        dentroDoTriangulo(px, py, cx, cy, tamanhoTriangulo) &&
-                        !dentroDaExclamacao(px, py, cx, cy, tamanhoTriangulo)
-
-                    const cor = noSimbolo ? BRANCO : MARCA
-                    r += cor[0]
-                    g += cor[1]
-                    b += cor[2]
-                    a += 255
-                }
-            }
-
-            const total = AMOSTRAS * AMOSTRAS
-            const i = (y * lado + x) * 4
-            // Pré-divisão pelo total de amostras opacas mantém a cor correta na
-            // borda; a transparência vem da razão entre amostras dentro e fora.
-            const opacas = a / 255
-            pixels[i] = opacas ? Math.round(r / opacas) : 0
-            pixels[i + 1] = opacas ? Math.round(g / opacas) : 0
-            pixels[i + 2] = opacas ? Math.round(b / opacas) : 0
-            pixels[i + 3] = Math.round(a / total)
-        }
-    }
-
-    return pixels
+    return Buffer.concat([cabecalho, ...entradas, ...imagens.map(({ png }) => png)])
 }
 
-// -- Codificação PNG ---------------------------------------------------------
-
-const TABELA_CRC = (() => {
-    const t = new Int32Array(256)
-    for (let n = 0; n < 256; n++) {
-        let c = n
-        for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
-        t[n] = c
-    }
-    return t
-})()
-
-function crc32(buf) {
-    let c = -1
-    for (const byte of buf) c = TABELA_CRC[(c ^ byte) & 0xff] ^ (c >>> 8)
-    return (c ^ -1) >>> 0
-}
-
-function chunk(tipo, dados) {
-    const tamanho = Buffer.alloc(4)
-    tamanho.writeUInt32BE(dados.length)
-    const corpo = Buffer.concat([Buffer.from(tipo, 'ascii'), dados])
-    const crc = Buffer.alloc(4)
-    crc.writeUInt32BE(crc32(corpo))
-    return Buffer.concat([tamanho, corpo, crc])
-}
-
-function codificarPng(lado, pixels) {
-    const assinatura = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-    const ihdr = Buffer.alloc(13)
-    ihdr.writeUInt32BE(lado, 0)
-    ihdr.writeUInt32BE(lado, 4)
-    ihdr[8] = 8 // profundidade
-    ihdr[9] = 6 // RGBA
-    ihdr[10] = 0
-    ihdr[11] = 0
-    ihdr[12] = 0
-
-    // Cada scanline é prefixada pelo byte de filtro (0 = nenhum).
-    const bruto = Buffer.alloc(lado * (lado * 4 + 1))
-    for (let y = 0; y < lado; y++) {
-        const destino = y * (lado * 4 + 1)
-        bruto[destino] = 0
-        pixels.copy(bruto, destino + 1, y * lado * 4, (y + 1) * lado * 4)
-    }
-
-    return Buffer.concat([
-        assinatura,
-        chunk('IHDR', ihdr),
-        chunk('IDAT', deflateSync(bruto, { level: 9 })),
-        chunk('IEND', Buffer.alloc(0))
-    ])
-}
-
-// -- Geração -----------------------------------------------------------------
-
-const ICONES = [
-    { arquivo: 'icone-192.png', lado: 192, maskable: false },
-    { arquivo: 'icone-512.png', lado: 512, maskable: false },
-    { arquivo: 'icone-maskable-512.png', lado: 512, maskable: true },
-    { arquivo: 'apple-touch-icon.png', lado: 180, maskable: true }
-]
-
-mkdirSync(DESTINO, { recursive: true })
-
-for (const { arquivo, lado, maskable } of ICONES) {
-    const png = codificarPng(lado, pintar(lado, { maskable }))
+for (const { arquivo, ...opcoes } of ICONES) {
+    const png = await renderizar(opcoes)
     writeFileSync(join(DESTINO, arquivo), png)
-    console.log(`✓ ${arquivo} (${lado}x${lado}${maskable ? ', maskable' : ''}) — ${png.length} bytes`)
+    console.log(`✓ ${arquivo} (${opcoes.lado}x${opcoes.lado}) — ${png.length} bytes`)
 }
+
+const imagensFavicon = await Promise.all(
+    LADOS_FAVICON.map(async (lado) => ({
+        lado,
+        png: await renderizar({ lado, ocupacao: 1, fundo: TRANSPARENTE })
+    }))
+)
+const ico = montarIco(imagensFavicon)
+writeFileSync(join(RAIZ, 'app', 'favicon.ico'), ico)
+console.log(`✓ app/favicon.ico (${LADOS_FAVICON.join(', ')}) — ${ico.length} bytes`)

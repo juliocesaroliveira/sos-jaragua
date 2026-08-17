@@ -29,6 +29,7 @@ export { Tabs, type TabsProps, type AbaTabs } from './tabs/tabs'
 export { Accordion, type AccordionProps, type ItemAccordion } from './accordion/accordion'
 
 export { Avatar, iniciaisDe, type AvatarProps } from './avatar/avatar'
+export { Logo, type LogoProps, type TamanhoLogo } from './logo/logo'
 export {
     Badge,
     type BadgeProps,
