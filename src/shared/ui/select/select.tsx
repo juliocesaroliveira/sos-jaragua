@@ -6,6 +6,15 @@ import { Check, ChevronsUpDown, X } from 'lucide-react'
 import { useMemo } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
+import { Tooltip } from '../tooltip/tooltip'
+
+/**
+ * Alimenta o nome acessível (via `translations` do primitivo) **e** a dica
+ * visual do botão de limpar — uma expressão só para os dois consumidores
+ * (015-tooltip-acoes-icone, C-04.3). O rótulo padrão do Ark é "Clear value"; a
+ * interface é 100% pt-BR (DESIGN_SYSTEM.md §6).
+ */
+const ROTULO_LIMPAR = 'Limpar seleção'
 
 /**
  * Select sobre o primitivo Ark (DESIGN_SYSTEM.md §4.3). O trigger tem a mesma
@@ -90,7 +99,11 @@ export function Select({
     return (
         <Campo id={id} label={label} apoio={apoio} erro={erro} obrigatorio={obrigatorio} rotuloOculto={rotuloOculto}>
             <Ark.Root
-                ids={{ trigger: id }}
+                // `clearTrigger` fixado e repetido no `id` do botão: o `asChild`
+                // do tooltip venceria a fusão do `id`, e o `select` usa esse id
+                // para excluir o botão de limpar da detecção de clique-fora —
+                // sem ele, limpar com a lista aberta fecharia a lista junto.
+                ids={{ trigger: id, clearTrigger: `${id}-limpar` }}
                 collection={collection}
                 name={name}
                 value={value}
@@ -99,9 +112,7 @@ export function Select({
                 multiple={multiple}
                 disabled={disabled}
                 required={obrigatorio}
-                // O rótulo padrão do primitivo é "Clear value"; a interface é
-                // 100% pt-BR (DESIGN_SYSTEM.md §6).
-                translations={{ clearTriggerLabel: 'Limpar seleção' }}
+                translations={{ clearTriggerLabel: ROTULO_LIMPAR }}
             >
                 {/*
                   `Trigger` e `ClearTrigger` são ambos `<button>` e precisam ser
@@ -132,18 +143,21 @@ export function Select({
                     </Ark.Trigger>
 
                     {limpavel && (
-                        <Ark.ClearTrigger
-                            className={cn(
-                                // 44px de alvo de toque (§1.3), sem exceção —
-                                // em filtro de listagem, limpar é o único
-                                // caminho de volta para "sem filtro".
-                                'absolute inset-y-0 right-8 flex w-11 items-center justify-center rounded-lg',
-                                'text-neutral-500 hover:text-foreground',
-                                ANEL_FOCO
-                            )}
-                        >
-                            <X aria-hidden className="size-4" />
-                        </Ark.ClearTrigger>
+                        <Tooltip conteudo={ROTULO_LIMPAR} posicao="left">
+                            <Ark.ClearTrigger
+                                id={`${id}-limpar`}
+                                className={cn(
+                                    // 44px de alvo de toque (§1.3), sem exceção
+                                    // — em filtro de listagem, limpar é o único
+                                    // caminho de volta para "sem filtro".
+                                    'absolute inset-y-0 right-8 flex w-11 items-center justify-center rounded-lg',
+                                    'text-neutral-500 hover:text-foreground',
+                                    ANEL_FOCO
+                                )}
+                            >
+                                <X aria-hidden className="size-4" />
+                            </Ark.ClearTrigger>
+                        </Tooltip>
                     )}
                 </Ark.Control>
                 <Portal>

@@ -5,6 +5,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ANEL_FOCO, cn } from '../cn'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Drawer (DESIGN_SYSTEM.md §4.7): o **mesmo primitivo `Dialog`** do Ark, com
@@ -76,15 +77,17 @@ export function Drawer({
                                     </Ark.Description>
                                 )}
                             </div>
-                            <Ark.CloseTrigger
-                                aria-label="Fechar"
-                                className={cn(
-                                    'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
-                                    ANEL_FOCO
-                                )}
-                            >
-                                <X aria-hidden className="size-5" />
-                            </Ark.CloseTrigger>
+                            <Tooltip conteudo="Fechar" posicao="left">
+                                <Ark.CloseTrigger
+                                    aria-label="Fechar"
+                                    className={cn(
+                                        'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
+                                        ANEL_FOCO
+                                    )}
+                                >
+                                    <X aria-hidden className="size-5" />
+                                </Ark.CloseTrigger>
+                            </Tooltip>
                         </header>
                         {/*
                           `overscroll-contain`: chegar ao fim desta lista não

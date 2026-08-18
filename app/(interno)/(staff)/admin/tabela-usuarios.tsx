@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Alert, Button, IconButton, Table, type ColunaTabela } from '@/src/shared/ui'
+import { Alert, Button, IconButton, Table, Tooltip, type ColunaTabela } from '@/src/shared/ui'
 import { RAIZ_USUARIOS, chaveUsuarios, useListagemPaginada } from '@/src/shared/query'
 import { ROTULO_ROLE } from '@/src/shared/auth/roles'
 import { listarUsuariosAction } from '@/src/modules/identidade/presentation/actions/usuarios'
@@ -52,13 +52,21 @@ export function TabelaUsuarios() {
             {
                 id: 'acoes',
                 header: 'Ações',
-                cell: ({ row }) => (
-                    <IconButton
-                        aria-label={`Editar ${row.original.nome}`}
-                        icone={<Pencil aria-hidden className="size-5" />}
-                        onClick={() => abrirEdicao(row.original)}
-                    />
-                )
+                cell: ({ row }) => {
+                    // Nomear o registro (FR-015): numa tabela de dezenas de
+                    // linhas, "Editar" sozinho não diz **qual** conta será
+                    // editada. Mesmo rótulo para o nome acessível e a dica.
+                    const rotulo = `Editar ${row.original.nome}`
+                    return (
+                        <Tooltip conteudo={rotulo}>
+                            <IconButton
+                                aria-label={rotulo}
+                                icone={<Pencil aria-hidden className="size-5" />}
+                                onClick={() => abrirEdicao(row.original)}
+                            />
+                        </Tooltip>
+                    )
+                }
             }
         ],
         []

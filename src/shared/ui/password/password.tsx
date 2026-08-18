@@ -5,6 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import type { ChangeEventHandler, FocusEventHandler, KeyboardEvent, Ref } from 'react'
 import { ALTURA_POR_TAMANHO, ANEL_FOCO, cn, type TamanhoControle } from '../cn'
 import { Campo, CLASSES_CONTROLE_TEXTO, bordaControle, idsCampo } from '../campo/campo'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Campo de senha com alternância de visibilidade (DESIGN_SYSTEM.md §4.2,
@@ -158,18 +159,22 @@ function GatilhoVisibilidade() {
     }
 
     return (
-        <PasswordInput.VisibilityTrigger
-            tabIndex={0}
-            onKeyDown={aoTeclar}
-            className={cn(
-                // 44×44 (§1.3) — o ícone tem 20px, a área de toque não.
-                'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted hover:text-foreground disabled:cursor-not-allowed dark:text-neutral-400',
-                ANEL_FOCO
-            )}
-        >
-            <PasswordInput.Indicator fallback={<Eye className="size-5" />}>
-                <EyeOff className="size-5" />
-            </PasswordInput.Indicator>
-        </PasswordInput.VisibilityTrigger>
+        // Mesma expressão que alimenta o nome acessível via `TRADUCOES` (C-04.3),
+        // e que descreve a ação do **próximo** estado, não do atual.
+        <Tooltip conteudo={TRADUCOES.visibilityTrigger(api.visible)} posicao="left">
+            <PasswordInput.VisibilityTrigger
+                tabIndex={0}
+                onKeyDown={aoTeclar}
+                className={cn(
+                    // 44×44 (§1.3) — o ícone tem 20px, a área de toque não.
+                    'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted hover:text-foreground disabled:cursor-not-allowed dark:text-neutral-400',
+                    ANEL_FOCO
+                )}
+            >
+                <PasswordInput.Indicator fallback={<Eye className="size-5" />}>
+                    <EyeOff className="size-5" />
+                </PasswordInput.Indicator>
+            </PasswordInput.VisibilityTrigger>
+        </Tooltip>
     )
 }

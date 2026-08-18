@@ -197,9 +197,6 @@ export function Galeria() {
                     >
                         Toast de informação
                     </Button>
-                    <Tooltip conteudo="Editar atividade">
-                        <IconButton aria-label="Editar atividade" icone={<Pencil aria-hidden className="size-5" />} />
-                    </Tooltip>
                     <Popover gatilho={<Button variant="secondary">Popover</Button>} titulo="Saldo do item">
                         <p className="text-sm text-neutral-600 dark:text-neutral-300">340 unidades disponíveis.</p>
                     </Popover>
@@ -241,6 +238,107 @@ export function Galeria() {
                         ]}
                     />
                 </Drawer>
+            </Secao>
+
+            <Secao titulo="Tooltip">
+                {/*
+                  Vitrine do tooltip (015-tooltip-acoes-icone, US5). Aponte e
+                  navegue por Tab: os dois meios de entrada abrem a dica, e Esc
+                  a dispensa. Em toque, nenhuma delas aparece — por isso todo
+                  gatilho aqui tem nome acessível próprio.
+                */}
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    Apoio visual para controles sem texto à vista. Nunca é o único meio de transmitir informação: não
+                    existe apontar sem tocar em tela sensível ao toque.
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    A cobertura inclui os controles internos dos próprios primitivos — fechar diálogo, gaveta, popover e
+                    aviso; setas de paginação; aumentar e diminuir do campo numérico; abrir calendário e navegar meses;
+                    revelar senha; limpar seleção. Confira apontando os exemplos das outras seções desta página.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <Tooltip conteudo="Dica acima" posicao="top">
+                        <IconButton aria-label="Dica acima" icone={<Pencil aria-hidden className="size-5" />} />
+                    </Tooltip>
+                    <Tooltip conteudo="Dica abaixo" posicao="bottom">
+                        <IconButton aria-label="Dica abaixo" icone={<Pencil aria-hidden className="size-5" />} />
+                    </Tooltip>
+                    <Tooltip conteudo="Dica à esquerda" posicao="left">
+                        <IconButton aria-label="Dica à esquerda" icone={<Pencil aria-hidden className="size-5" />} />
+                    </Tooltip>
+                    <Tooltip conteudo="Dica à direita" posicao="right">
+                        <IconButton aria-label="Dica à direita" icone={<Pencil aria-hidden className="size-5" />} />
+                    </Tooltip>
+                </div>
+
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    <strong className="font-semibold text-foreground">Repetição visual</strong> (padrão): a dica repete
+                    na tela o nome que o controle já tem, e por isso não é anunciada de novo pelo leitor de tela.
+                    <br />
+                    <strong className="font-semibold text-foreground">Descrição</strong> (<code>descricao</code>): a
+                    dica diz algo que o nome não diz — o motivo de a ação estar indisponível — e aí ser anunciada é o
+                    objetivo.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <Tooltip conteudo="Remover componente">
+                        <IconButton aria-label="Remover componente" icone={<Trash2 aria-hidden className="size-5" />} />
+                    </Tooltip>
+                    {/*
+                      `inativo`, não `disabled`: um `<button disabled>` não
+                      dispara evento de ponteiro nem recebe foco, então não teria
+                      como explicar por que está indisponível. Aponte e alcance
+                      por Tab — a dica aparece, e o clique não faz nada.
+                    */}
+                    <Tooltip conteudo="O kit precisa de ao menos um componente" descricao>
+                        <IconButton
+                            aria-label="Remover componente"
+                            icone={<Trash2 aria-hidden className="size-5" />}
+                            inativo
+                            onClick={() =>
+                                avisar.erro('Isto não deveria acontecer', 'O clique em `inativo` é ignorado.')
+                            }
+                        />
+                    </Tooltip>
+                </div>
+
+                <p className="text-sm text-neutral-600 dark:text-neutral-300">
+                    Texto longo quebra em várias linhas dentro de uma largura máxima, e dentro de linha de tabela a dica
+                    vira de lado sozinha quando não cabe.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3">
+                    <Tooltip conteudo="Remover João Pedro de Souza Albuquerque do turno da tarde">
+                        <IconButton
+                            aria-label="Remover João Pedro de Souza Albuquerque do turno da tarde"
+                            icone={<Trash2 aria-hidden className="size-5" />}
+                        />
+                    </Tooltip>
+                </div>
+
+                <Table
+                    titulo="Dica em linha de tabela"
+                    colunas={[
+                        ...COLUNAS,
+                        {
+                            id: 'acoes',
+                            header: 'Ações',
+                            cell: ({ row }: { row: { original: LinhaExemplo } }) => {
+                                const rotulo = `Editar ${row.original.nome}`
+                                return (
+                                    <Tooltip conteudo={rotulo}>
+                                        <IconButton
+                                            aria-label={rotulo}
+                                            icone={<Pencil aria-hidden className="size-5" />}
+                                        />
+                                    </Tooltip>
+                                )
+                            }
+                        }
+                    ]}
+                    dados={LINHAS}
+                />
             </Secao>
 
             <Secao titulo="Navegação">

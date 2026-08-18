@@ -27,22 +27,62 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
     size?: TamanhoControle
     loading?: boolean
     icone: ReactNode
+    /**
+     * Indisponível **e explicável** (015-tooltip-acoes-icone, C-03).
+     *
+     * Mesma aparência esmaecida de `disabled`, mas o botão **permanece focável
+     * e sensível ao ponteiro**: um `<button disabled>` não dispara evento de
+     * ponteiro nem entra na ordem de foco — regra do navegador —, e por isso
+     * não tem como exibir um tooltip que explique por que está indisponível.
+     * Quem navega por teclado simplesmente não o encontraria.
+     *
+     * Use **somente** acompanhado de um `Tooltip descricao` com o motivo. Sem
+     * ele, `inativo` produz apenas um controle focável que não faz nada — pior
+     * que `disabled`. Para indisponibilidade sem explicação, e para estados
+     * transitórios, continue usando `disabled`/`loading`.
+     */
+    inativo?: boolean
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
-    { variant = 'ghost', size = 'md', loading = false, icone, disabled, type = 'button', ...props },
+    {
+        variant = 'ghost',
+        size = 'md',
+        loading = false,
+        inativo = false,
+        icone,
+        disabled,
+        type = 'button',
+        onClick,
+        ...props
+    },
     ref
 ) {
+    // `disabled` vence se ambos forem informados: é a garantia mais forte, e a
+    // combinação indica erro de uso.
+    const desabilitado = Boolean(disabled) || loading
+    const somenteInativo = inativo && !desabilitado
+
     return (
         <button
             {...props}
             ref={ref}
             type={type}
-            disabled={disabled || loading}
+            disabled={desabilitado}
+            aria-disabled={somenteInativo || undefined}
             aria-busy={loading || undefined}
+            // `aria-disabled` é informação para tecnologia assistiva: não
+            // impede clique nenhum. Sem este curto-circuito, o botão inativo
+            // continuaria executando a ação normalmente.
+            onClick={somenteInativo ? undefined : onClick}
             className={cn(
                 'inline-flex shrink-0 items-center justify-center rounded-lg transition-colors',
                 'hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50',
+                // Espelha o par acima para o estado inativo, que não tem o
+                // atributo `disabled` de onde as variantes `disabled:`
+                // dependem. As duas aparências têm de ser indistinguíveis
+                // (C-03.3): dois esmaecidos diferentes confundiriam sem motivo.
+                'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
                 ANEL_FOCO,
                 VARIANTES[variant],
                 DIMENSAO[size]

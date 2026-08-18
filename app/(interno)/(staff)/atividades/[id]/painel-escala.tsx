@@ -14,6 +14,7 @@ import {
     KanbanColumn,
     ROTULO_STATUS_ATIVIDADE,
     Select,
+    Tooltip,
     avisar
 } from '@/src/shared/ui'
 import type { AtividadeDetalhada, TurnoDetalhado } from '@/src/modules/voluntariado/presentation/queries/atividades'
@@ -27,6 +28,10 @@ import { alocarVoluntario, cancelarAlocacao } from '@/src/modules/voluntariado/p
  * Em `md+` os turnos ficam lado a lado com rolagem horizontal; abaixo disso a
  * coluna colapsa para lista vertical — o Kanban não é usável em 375px.
  */
+
+/** Rótulo único para o nome acessível e a dica do botão de alocar (C-04.3). */
+const ROTULO_ALOCAR = 'Alocar voluntário neste turno'
+
 export function PainelEscala({
     atividade,
     voluntarios,
@@ -143,37 +148,56 @@ export function PainelEscala({
                                 vagas={t.vagas}
                                 acoes={
                                     podeAlocar && (
-                                        <IconButton
-                                            aria-label="Alocar voluntário neste turno"
-                                            icone={<UserPlus aria-hidden className="size-5" />}
-                                            size="sm"
-                                            onClick={() => {
-                                                setTurnoAlvo(t)
-                                                setSelecionado([])
-                                                setErro(null)
-                                            }}
-                                        />
+                                        <Tooltip conteudo={ROTULO_ALOCAR}>
+                                            <IconButton
+                                                aria-label={ROTULO_ALOCAR}
+                                                icone={<UserPlus aria-hidden className="size-5" />}
+                                                size="sm"
+                                                onClick={() => {
+                                                    setTurnoAlvo(t)
+                                                    setSelecionado([])
+                                                    setErro(null)
+                                                }}
+                                            />
+                                        </Tooltip>
                                     )
                                 }
                                 detalhe={
                                     t.alocados.length > 0 && (
                                         <ul className="flex flex-col gap-1">
-                                            {t.alocados.map((a) => (
-                                                <li
-                                                    key={a.alocacaoId}
-                                                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-surface-muted px-2 text-sm text-foreground"
-                                                >
-                                                    <span className="truncate">{a.nomeCompleto}</span>
-                                                    <IconButton
-                                                        aria-label={`Remover ${a.nomeCompleto} do turno`}
-                                                        icone={<UserMinus aria-hidden className="size-4" />}
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        loading={emAndamento}
-                                                        onClick={() => remover(a.alocacaoId, a.nomeCompleto)}
-                                                    />
-                                                </li>
-                                            ))}
+                                            {t.alocados.map((a) => {
+                                                // Um rótulo só para os dois
+                                                // consumidores (C-04.3). O nome
+                                                // aparece ao lado, mas chega
+                                                // truncado quando é longo — a dica
+                                                // é onde ele cabe inteiro.
+                                                const rotulo = `Remover ${a.nomeCompleto} do turno`
+                                                return (
+                                                    <li
+                                                        key={a.alocacaoId}
+                                                        className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-surface-muted px-2 text-sm text-foreground"
+                                                    >
+                                                        <span className="truncate">{a.nomeCompleto}</span>
+                                                        {/*
+                                                          Durante `emAndamento` o
+                                                          botão fica desabilitado e a
+                                                          dica não abre: é estado
+                                                          transitório de segundos, sem
+                                                          nada a explicar (D4).
+                                                        */}
+                                                        <Tooltip conteudo={rotulo} posicao="left">
+                                                            <IconButton
+                                                                aria-label={rotulo}
+                                                                icone={<UserMinus aria-hidden className="size-4" />}
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                loading={emAndamento}
+                                                                onClick={() => remover(a.alocacaoId, a.nomeCompleto)}
+                                                            />
+                                                        </Tooltip>
+                                                    </li>
+                                                )
+                                            })}
                                         </ul>
                                     )
                                 }

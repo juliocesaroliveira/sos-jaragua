@@ -57,6 +57,9 @@ export function SidebarNav({ itens }: SidebarNavProps) {
         aplicarPreferenciaColuna(proxima)
     }
 
+    /** Descreve a ação do **próximo** estado, não do atual. */
+    const rotuloAlternar = recolhida ? 'Expandir navegação' : 'Recolher navegação'
+
     return (
         <nav
             aria-label="Navegação principal"
@@ -113,11 +116,17 @@ export function SidebarNav({ itens }: SidebarNavProps) {
                 </Link>
             </div>
 
-            <Tooltip conteudo={recolhida ? 'Expandir navegação' : 'Recolher navegação'} posicao="right">
+            {/*
+              Um rótulo só para os dois consumidores — nome acessível e dica
+              (015-tooltip-acoes-icone, C-04.3). Antes eram duas expressões
+              ternárias idênticas escritas em separado, que divergiriam na
+              primeira vez que alguém ajustasse só uma delas.
+            */}
+            <Tooltip conteudo={rotuloAlternar} posicao="right">
                 <button
                     type="button"
                     onClick={alternar}
-                    aria-label={recolhida ? 'Expandir navegação' : 'Recolher navegação'}
+                    aria-label={rotuloAlternar}
                     aria-expanded={!recolhida}
                     className={cn(
                         'flex min-h-11 items-center gap-3 rounded-lg px-3 text-neutral-500 hover:bg-surface-muted dark:text-neutral-400',

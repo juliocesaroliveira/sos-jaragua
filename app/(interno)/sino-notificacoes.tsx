@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Bell, CheckSquare } from 'lucide-react'
-import { Badge, Button, Drawer, IconButton, cn } from '@/src/shared/ui'
+import { Badge, Button, Drawer, IconButton, Tooltip, cn } from '@/src/shared/ui'
 import type { NotificacaoInApp } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
 import { useNotificacoes } from '@/src/modules/notificacoes/presentation/client/use-notificacoes'
 
@@ -55,14 +55,20 @@ export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: Not
         marcarUma(id)
     }
 
+    // Um rótulo só para o nome acessível e para a dica (C-04.3). A contagem
+    // entra nos dois: quem aponta o sino vê quantas há sem precisar abri-lo.
+    const rotuloSino = totalNaoLidas > 0 ? `Notificações (${totalNaoLidas} não lidas)` : 'Notificações'
+
     return (
         <>
             <div className="relative">
-                <IconButton
-                    aria-label={totalNaoLidas > 0 ? `Notificações (${totalNaoLidas} não lidas)` : 'Notificações'}
-                    icone={<Bell aria-hidden className="size-5" />}
-                    onClick={() => setAberto(true)}
-                />
+                <Tooltip conteudo={rotuloSino} posicao="bottom">
+                    <IconButton
+                        aria-label={rotuloSino}
+                        icone={<Bell aria-hidden className="size-5" />}
+                        onClick={() => setAberto(true)}
+                    />
+                </Tooltip>
                 {totalNaoLidas > 0 && (
                     <span
                         aria-hidden

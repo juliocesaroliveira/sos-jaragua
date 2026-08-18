@@ -5,6 +5,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ANEL_FOCO, cn } from '../cn'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Dialog sobre o primitivo Ark (DESIGN_SYSTEM.md §4.7).
@@ -67,15 +68,17 @@ export function Dialog({
                                     </Ark.Description>
                                 )}
                             </div>
-                            <Ark.CloseTrigger
-                                aria-label="Fechar"
-                                className={cn(
-                                    'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
-                                    ANEL_FOCO
-                                )}
-                            >
-                                <X aria-hidden className="size-5" />
-                            </Ark.CloseTrigger>
+                            <Tooltip conteudo="Fechar" posicao="left">
+                                <Ark.CloseTrigger
+                                    aria-label="Fechar"
+                                    className={cn(
+                                        'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
+                                        ANEL_FOCO
+                                    )}
+                                >
+                                    <X aria-hidden className="size-5" />
+                                </Ark.CloseTrigger>
+                            </Tooltip>
                         </header>
                         <div className="flex-1 overflow-y-auto p-4">{children}</div>
                         {acoes && (

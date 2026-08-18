@@ -32,7 +32,21 @@ export const CAMADA = {
     backdrop: 40,
     dialogo: 50,
     flutuante: 60,
-    toast: 100
+    toast: 100,
+    /**
+     * A dica fica **acima de tudo**, inclusive dos avisos.
+     *
+     * Não é preferência estética: o botão de fechar de um aviso também tem
+     * dica, e com a camada flutuante (60) ela apareceria atrás da coluna de
+     * avisos (100) — invisível justamente onde foi pedida. O mesmo valia, de
+     * forma mais sutil, para a dica dos controles de mês do calendário, que
+     * dividia a camada 60 com o próprio calendário e dependia da ordem de
+     * montagem no DOM para ficar por cima.
+     *
+     * É seguro estar no topo porque o conteúdo da dica tem `pointer-events:
+     * none` — ele não intercepta clique de nada que esteja abaixo.
+     */
+    dica: 110
 } as const
 
 /**
@@ -44,6 +58,9 @@ export const CAMADA = {
  * vence.
  */
 export const CLASSE_FLUTUANTE = 'z-[60]!'
+
+/** Idem, para o `Positioner` do tooltip — camada `dica`, acima de tudo. */
+export const CLASSE_DICA = 'z-[110]!'
 
 /** Altura por tamanho — o mínimo `md` respeita o touch target de 44px (§1.3). */
 export const ALTURA_POR_TAMANHO = {

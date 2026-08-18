@@ -5,6 +5,7 @@ import { Portal } from '@ark-ui/react/portal'
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Popover sobre o primitivo Ark (DESIGN_SYSTEM.md §4.10).
@@ -35,15 +36,17 @@ export function Popover({ gatilho, titulo, descricao, children, posicao = 'botto
                                         </Ark.Description>
                                     )}
                                 </div>
-                                <Ark.CloseTrigger
-                                    aria-label="Fechar"
-                                    className={cn(
-                                        'flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
-                                        ANEL_FOCO
-                                    )}
-                                >
-                                    <X aria-hidden className="size-4" />
-                                </Ark.CloseTrigger>
+                                <Tooltip conteudo="Fechar" posicao="left">
+                                    <Ark.CloseTrigger
+                                        aria-label="Fechar"
+                                        className={cn(
+                                            'flex size-9 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:bg-surface-muted',
+                                            ANEL_FOCO
+                                        )}
+                                    >
+                                        <X aria-hidden className="size-4" />
+                                    </Ark.CloseTrigger>
+                                </Tooltip>
                             </div>
                         )}
                         {children}

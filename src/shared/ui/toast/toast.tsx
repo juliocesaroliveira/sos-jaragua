@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ToastContainer, cssTransition, toast, type ToastContentProps } from 'react-toastify/unstyled'
 import { ANEL_FOCO, cn } from '../cn'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Toast (DESIGN_SYSTEM.md §4.8) sobre o `react-toastify`.
@@ -92,17 +93,24 @@ function Aviso({
                 <p className="text-base font-semibold text-foreground">{titulo}</p>
                 {descricao && <p className="text-sm text-neutral-600 dark:text-neutral-300">{descricao}</p>}
             </div>
-            <button
-                type="button"
-                onClick={closeToast}
-                aria-label="Fechar aviso"
-                className={cn(
-                    'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:cursor-pointer hover:bg-surface-muted',
-                    ANEL_FOCO
-                )}
-            >
-                <X aria-hidden className="size-5" />
-            </button>
+            {/*
+              A dica precisa da camada `dica` para ser vista aqui: a coluna de
+              avisos está na camada `toast`, acima da flutuante, e uma dica na
+              camada antiga apareceria **atrás** do próprio aviso (`cn.ts`).
+            */}
+            <Tooltip conteudo="Fechar aviso" posicao="left">
+                <button
+                    type="button"
+                    onClick={closeToast}
+                    aria-label="Fechar aviso"
+                    className={cn(
+                        'flex size-11 shrink-0 items-center justify-center rounded-lg text-neutral-500 hover:cursor-pointer hover:bg-surface-muted',
+                        ANEL_FOCO
+                    )}
+                >
+                    <X aria-hidden className="size-5" />
+                </button>
+            </Tooltip>
         </div>
     )
 }

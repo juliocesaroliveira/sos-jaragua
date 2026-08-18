@@ -451,6 +451,64 @@ apagado pelo teclado.
 - Ark UI `Menu` — ações contextuais em linha de tabela/card (Aprovar, Rejeitar, Editar,
   Cancelar).
 
+#### Tooltip: os dois papéis (015-tooltip-acoes-icone)
+
+Todo controle de ação representado **apenas por ícone** recebe tooltip; controle com texto
+visível **não** recebe (seria repetir a mesma informação duas vezes).
+
+O primitivo escreve `aria-describedby` no gatilho. Como o `IconButton` exige `aria-label`,
+passar o mesmo texto aos dois faz o leitor de tela anunciar duas vezes. Daí a distinção:
+
+- **Repetição visual** (padrão): a dica só repete na tela o nome que o controle já tem.
+  Não é exposta a leitores de tela. É o caso da esmagadora maioria.
+- **Descrição** (`descricao`): a dica acrescenta informação que o nome não carrega — na
+  prática, o motivo de a ação estar indisponível. Aí ser anunciada é o objetivo.
+
+Com o papel padrão, o texto da dica e o nome acessível saem da **mesma expressão** no
+código — nunca de duas strings literais iguais escritas em separado, que divergem com o
+tempo.
+
+**A dica nunca é o único canal**: não existe hover em toque, e em celular ela jamais
+aparece. Nenhuma informação necessária para concluir uma tarefa pode existir só nela.
+
+#### `inativo` vs. `disabled` no `IconButton`
+
+Um `<button disabled>` não dispara evento de ponteiro nem entra na ordem de foco — regra do
+navegador. Logo, **um botão `disabled` não tem como explicar por que está indisponível**.
+
+Para esse caso existe `inativo`: mesma aparência esmaecida, mas focável e sensível ao
+ponteiro, com o clique bloqueado dentro do componente (`aria-disabled` é informação para
+tecnologia assistiva e não impede nada por si).
+
+Use `inativo` **somente** acompanhado de um `Tooltip descricao` com o motivo — sem ele,
+produz apenas um controle focável que não faz nada, pior que `disabled`. Para
+indisponibilidade sem explicação e para estados transitórios (`loading`), continue usando
+`disabled`.
+
+#### Cobertura
+
+**Todo** controle só-ícone tem dica, inclusive os internos dos primitivos: fechar
+diálogo/gaveta/popover/aviso, setas de paginação, aumentar/diminuir do campo numérico,
+abrir calendário e navegação de meses, revelar senha, limpar seleção. Quem cria um controle
+só-ícone novo acrescenta a dica junto.
+
+#### Cuidado ao envolver o gatilho de um primitivo Ark
+
+O `Tooltip` usa `asChild`, e a fusão de props do Ark faz **o último vencer** para o `id`.
+Ao envolver um gatilho que o próprio primitivo localiza por `id`, o id do tooltip
+sobrescreve o do primitivo e quebra comportamento silenciosamente — clique-fora, restauração
+de foco, auto-repetir.
+
+Onde isso vale, o id é **fixado dos dois lados**: `ids={{ ... }}` na `Root` e o mesmo `id`
+no elemento. Já está feito em `date-picker` (trigger), `select` e `combobox` (clearTrigger)
+e `number-input` (increment/decrementTrigger). O tooltip não se prejudica: ele encontra o
+próprio gatilho por atributo (`data-part="trigger"`) quando o id não bate.
+
+#### Camada
+
+A dica fica na camada `dica` (110), acima de tudo — inclusive dos avisos (100), que também
+têm botão de fechar com dica. É seguro porque o conteúdo da dica não recebe ponteiro.
+
 ### 4.11. Avatar / Badge
 
 - Ark UI `Avatar` — foto/iniciais do usuário (header, listagem de voluntários).

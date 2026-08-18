@@ -6,6 +6,10 @@ import { Loader2, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
+import { Tooltip } from '../tooltip/tooltip'
+
+/** Nome acessível e dica do botão de limpar, de uma expressão só (C-04.3). */
+const ROTULO_LIMPAR = 'Limpar seleção'
 
 /**
  * Combobox sobre o primitivo Ark (DESIGN_SYSTEM.md §4.4).
@@ -102,7 +106,10 @@ export function Combobox({
     return (
         <Campo id={id} label={label} apoio={apoio} erro={erro} obrigatorio={obrigatorio}>
             <Ark.Root
-                ids={{ input: id }}
+                // Ver a nota do `select`: o `id` fixado sobrevive à fusão do
+                // `asChild` do tooltip, e é ele que exclui o botão de limpar da
+                // detecção de clique-fora.
+                ids={{ input: id, clearTrigger: `${id}-limpar` }}
                 collection={collection}
                 name={name}
                 value={value}
@@ -117,9 +124,7 @@ export function Combobox({
                 // A filtragem acontece no servidor (índice trigram); o
                 // componente só exibe o que recebeu.
                 openOnClick
-                // O rótulo padrão do primitivo é "Clear value"; a interface é
-                // 100% pt-BR (DESIGN_SYSTEM.md §6).
-                translations={{ clearTriggerLabel: 'Limpar seleção' }}
+                translations={{ clearTriggerLabel: ROTULO_LIMPAR }}
             >
                 <Ark.Control
                     className={cn(
@@ -148,15 +153,18 @@ export function Combobox({
                       apagado pelo teclado.
                     */}
                     {!obrigatorio && !disabled && (
-                        <Ark.ClearTrigger
-                            className={cn(
-                                'flex w-11 shrink-0 items-center justify-center self-stretch rounded-lg',
-                                'text-neutral-500 hover:text-foreground',
-                                ANEL_FOCO
-                            )}
-                        >
-                            <X aria-hidden className="size-4" />
-                        </Ark.ClearTrigger>
+                        <Tooltip conteudo={ROTULO_LIMPAR} posicao="left">
+                            <Ark.ClearTrigger
+                                id={`${id}-limpar`}
+                                className={cn(
+                                    'flex w-11 shrink-0 items-center justify-center self-stretch rounded-lg',
+                                    'text-neutral-500 hover:text-foreground',
+                                    ANEL_FOCO
+                                )}
+                            >
+                                <X aria-hidden className="size-4" />
+                            </Ark.ClearTrigger>
+                        </Tooltip>
                     )}
                 </Ark.Control>
                 <Portal>

@@ -14,6 +14,7 @@ import {
     Select,
     Switch,
     Textarea,
+    Tooltip,
     avisar
 } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
@@ -243,43 +244,59 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
                     <div className="flex flex-col gap-3">
                         <h3 className="text-lg font-semibold text-foreground">Receita</h3>
 
-                        {receita.map((linha) => (
-                            <div key={linha.id} className="flex items-end gap-2">
-                                <div className="min-w-0 flex-1">
-                                    <Select
-                                        id={`item-${linha.id}`}
-                                        label="Item"
-                                        opcoes={itens.map((i) => ({ value: i.id, label: i.nome }))}
-                                        value={linha.itemId}
-                                        onValueChange={(v) =>
-                                            setReceita((atuais) =>
-                                                atuais.map((l) => (l.id === linha.id ? { ...l, itemId: v } : l))
-                                            )
+                        {receita.map((linha) => {
+                            // Um kit sem componente algum não consumiria nada.
+                            const ultimoComponente = receita.length === 1
+                            return (
+                                <div key={linha.id} className="flex items-end gap-2">
+                                    <div className="min-w-0 flex-1">
+                                        <Select
+                                            id={`item-${linha.id}`}
+                                            label="Item"
+                                            opcoes={itens.map((i) => ({ value: i.id, label: i.nome }))}
+                                            value={linha.itemId}
+                                            onValueChange={(v) =>
+                                                setReceita((atuais) =>
+                                                    atuais.map((l) => (l.id === linha.id ? { ...l, itemId: v } : l))
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    <div className="w-32 shrink-0">
+                                        <NumberInput
+                                            id={`qtdKit-${linha.id}`}
+                                            label="Por kit"
+                                            min={0}
+                                            value={linha.quantidade}
+                                            onValueChange={(v) =>
+                                                setReceita((atuais) =>
+                                                    atuais.map((l) => (l.id === linha.id ? { ...l, quantidade: v } : l))
+                                                )
+                                            }
+                                        />
+                                    </div>
+                                    {/* Mesma condição de antes; agora ela se explica (A-05). */}
+                                    <Tooltip
+                                        conteudo={
+                                            ultimoComponente
+                                                ? 'O kit precisa de ao menos um componente'
+                                                : 'Remover componente'
                                         }
-                                    />
+                                        descricao={ultimoComponente}
+                                    >
+                                        <IconButton
+                                            aria-label="Remover componente"
+                                            icone={<Trash2 aria-hidden className="size-5" />}
+                                            variant="ghost"
+                                            inativo={ultimoComponente}
+                                            onClick={() =>
+                                                setReceita((atuais) => atuais.filter((l) => l.id !== linha.id))
+                                            }
+                                        />
+                                    </Tooltip>
                                 </div>
-                                <div className="w-32 shrink-0">
-                                    <NumberInput
-                                        id={`qtdKit-${linha.id}`}
-                                        label="Por kit"
-                                        min={0}
-                                        value={linha.quantidade}
-                                        onValueChange={(v) =>
-                                            setReceita((atuais) =>
-                                                atuais.map((l) => (l.id === linha.id ? { ...l, quantidade: v } : l))
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <IconButton
-                                    aria-label="Remover componente"
-                                    icone={<Trash2 aria-hidden className="size-5" />}
-                                    variant="ghost"
-                                    disabled={receita.length === 1}
-                                    onClick={() => setReceita((atuais) => atuais.filter((l) => l.id !== linha.id))}
-                                />
-                            </div>
-                        ))}
+                            )
+                        })}
 
                         <div>
                             <Button

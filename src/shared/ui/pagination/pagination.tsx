@@ -3,6 +3,7 @@
 import { Pagination as Ark } from '@ark-ui/react/pagination'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ANEL_FOCO, cn } from '../cn'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * Pagination sobre o primitivo Ark (DESIGN_SYSTEM.md §4.13).
@@ -39,9 +40,11 @@ export function Pagination({ totalCount, pageSize, page, onPageChange, ...rest }
             aria-label={rest['aria-label'] ?? 'Paginação'}
             className="flex items-center justify-center gap-1"
         >
-            <Ark.PrevTrigger aria-label="Página anterior" className={cn(BOTAO, ANEL_FOCO)}>
-                <ChevronLeft aria-hidden className="size-5" />
-            </Ark.PrevTrigger>
+            <Tooltip conteudo="Página anterior">
+                <Ark.PrevTrigger aria-label="Página anterior" className={cn(BOTAO, ANEL_FOCO)}>
+                    <ChevronLeft aria-hidden className="size-5" />
+                </Ark.PrevTrigger>
+            </Tooltip>
             <Ark.Context>
                 {(api) =>
                     api.pages.map((pagina, indice) =>
@@ -65,9 +68,11 @@ export function Pagination({ totalCount, pageSize, page, onPageChange, ...rest }
                     )
                 }
             </Ark.Context>
-            <Ark.NextTrigger aria-label="Próxima página" className={cn(BOTAO, ANEL_FOCO)}>
-                <ChevronRight aria-hidden className="size-5" />
-            </Ark.NextTrigger>
+            <Tooltip conteudo="Próxima página">
+                <Ark.NextTrigger aria-label="Próxima página" className={cn(BOTAO, ANEL_FOCO)}>
+                    <ChevronRight aria-hidden className="size-5" />
+                </Ark.NextTrigger>
+            </Tooltip>
         </Ark.Root>
     )
 }

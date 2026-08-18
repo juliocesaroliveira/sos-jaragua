@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useCallback, useId, useRef, useState, useTransition } from 'react'
 import { Check, Plus, Trash2 } from 'lucide-react'
-import { Alert, Button, IconButton, Input, NumberInput, RadioGroup, Select, avisar } from '@/src/shared/ui'
+import { Alert, Button, IconButton, Input, NumberInput, RadioGroup, Select, Tooltip, avisar } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE, type TipoSaida } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
 import type { ItemComSaldo, KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
@@ -137,35 +137,51 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
 
                 {erros.itens && <Alert tom="danger" titulo={erros.itens} />}
 
-                {linhas.map((linha) => (
-                    <div key={linha.id} className="flex items-end gap-2">
-                        <div className="min-w-0 flex-1">
-                            <Select
-                                id={`ref-${linha.id}`}
-                                label={tipo === 'avulso' ? 'Item' : 'Kit'}
-                                opcoes={opcoes}
-                                value={linha.refId}
-                                onValueChange={(v) => atualizar(linha.id, { refId: v })}
-                            />
+                {linhas.map((linha) => {
+                    // Uma saída sem nenhuma linha não teria o que registrar.
+                    const ultimaLinha = linhas.length === 1
+                    return (
+                        <div key={linha.id} className="flex items-end gap-2">
+                            <div className="min-w-0 flex-1">
+                                <Select
+                                    id={`ref-${linha.id}`}
+                                    label={tipo === 'avulso' ? 'Item' : 'Kit'}
+                                    opcoes={opcoes}
+                                    value={linha.refId}
+                                    onValueChange={(v) => atualizar(linha.id, { refId: v })}
+                                />
+                            </div>
+                            <div className="w-32 shrink-0">
+                                <NumberInput
+                                    id={`qtd-${linha.id}`}
+                                    label="Quantidade"
+                                    min={0}
+                                    value={linha.quantidade}
+                                    onValueChange={(v) => atualizar(linha.id, { quantidade: v })}
+                                />
+                            </div>
+                            {/*
+                              Antes o botão apenas esmaecia e ficava mudo quando
+                              sobrava uma linha só. A condição é a mesma; o que
+                              muda é que agora ela se explica — `inativo` mantém
+                              o botão focável e sensível ao ponteiro para que a
+                              dica possa aparecer (015-tooltip-acoes-icone, A-05).
+                            */}
+                            <Tooltip
+                                conteudo={ultimaLinha ? 'A saída precisa de ao menos uma linha' : 'Remover linha'}
+                                descricao={ultimaLinha}
+                            >
+                                <IconButton
+                                    aria-label="Remover linha"
+                                    icone={<Trash2 aria-hidden className="size-5" />}
+                                    variant="ghost"
+                                    inativo={ultimaLinha}
+                                    onClick={() => setLinhas((atuais) => atuais.filter((l) => l.id !== linha.id))}
+                                />
+                            </Tooltip>
                         </div>
-                        <div className="w-32 shrink-0">
-                            <NumberInput
-                                id={`qtd-${linha.id}`}
-                                label="Quantidade"
-                                min={0}
-                                value={linha.quantidade}
-                                onValueChange={(v) => atualizar(linha.id, { quantidade: v })}
-                            />
-                        </div>
-                        <IconButton
-                            aria-label="Remover linha"
-                            icone={<Trash2 aria-hidden className="size-5" />}
-                            variant="ghost"
-                            disabled={linhas.length === 1}
-                            onClick={() => setLinhas((atuais) => atuais.filter((l) => l.id !== linha.id))}
-                        />
-                    </div>
-                ))}
+                    )
+                })}
 
                 <div>
                     <Button

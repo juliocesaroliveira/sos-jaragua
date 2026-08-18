@@ -7,6 +7,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ALTURA_POR_TAMANHO, ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
+import { Tooltip } from '../tooltip/tooltip'
 
 /**
  * DatePicker sobre o primitivo Ark (DESIGN_SYSTEM.md §4.6).
@@ -91,7 +92,16 @@ export function DatePicker({
     return (
         <Campo id={id} label={label} apoio={apoio} erro={erro} obrigatorio={obrigatorio}>
             <Ark.Root
-                ids={{ input: () => id }}
+                /*
+                  `trigger` fixado e repetido no `id` do botão abaixo — mesma
+                  razão do `number-input`: a fusão de props do `asChild` faria
+                  o id do tooltip vencer, e aqui o custo é alto. O
+                  `date-picker` usa esse id para excluir o gatilho da detecção
+                  de clique-fora e para devolver o foco a ele ao fechar o
+                  calendário; sem o id certo, clicar no gatilho para fechar
+                  contaria como clique fora, e o foco se perderia.
+                */
+                ids={{ input: () => id, trigger: `${id}-calendario` }}
                 locale="pt-BR"
                 name={name}
                 value={value ? [parseDate(value)] : undefined}
@@ -118,15 +128,18 @@ export function DatePicker({
                         aria-describedby={ids.describedBy}
                         className="w-full bg-transparent px-3 text-base text-foreground outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed disabled:opacity-50"
                     />
-                    <Ark.Trigger
-                        aria-label="Abrir calendário"
-                        className={cn(
-                            'flex size-11 shrink-0 items-center justify-center text-neutral-500 hover:text-foreground',
-                            ANEL_FOCO
-                        )}
-                    >
-                        <CalendarDays aria-hidden className="size-5" />
-                    </Ark.Trigger>
+                    <Tooltip conteudo="Abrir calendário">
+                        <Ark.Trigger
+                            id={`${id}-calendario`}
+                            aria-label="Abrir calendário"
+                            className={cn(
+                                'flex size-11 shrink-0 items-center justify-center text-neutral-500 hover:text-foreground',
+                                ANEL_FOCO
+                            )}
+                        >
+                            <CalendarDays aria-hidden className="size-5" />
+                        </Ark.Trigger>
+                    </Tooltip>
                 </Ark.Control>
 
                 <Portal>
@@ -137,15 +150,17 @@ export function DatePicker({
                                     {(api) => (
                                         <>
                                             <Ark.ViewControl className="mb-2 flex items-center justify-between gap-2">
-                                                <Ark.PrevTrigger
-                                                    aria-label="Mês anterior"
-                                                    className={cn(
-                                                        'flex size-9 items-center justify-center rounded-lg hover:bg-surface-muted',
-                                                        ANEL_FOCO
-                                                    )}
-                                                >
-                                                    <ChevronLeft aria-hidden className="size-5" />
-                                                </Ark.PrevTrigger>
+                                                <Tooltip conteudo="Mês anterior">
+                                                    <Ark.PrevTrigger
+                                                        aria-label="Mês anterior"
+                                                        className={cn(
+                                                            'flex size-9 items-center justify-center rounded-lg hover:bg-surface-muted',
+                                                            ANEL_FOCO
+                                                        )}
+                                                    >
+                                                        <ChevronLeft aria-hidden className="size-5" />
+                                                    </Ark.PrevTrigger>
+                                                </Tooltip>
                                                 <Ark.ViewTrigger
                                                     className={cn(
                                                         'rounded-lg px-3 py-2 text-sm font-semibold text-foreground hover:bg-surface-muted',
@@ -154,15 +169,17 @@ export function DatePicker({
                                                 >
                                                     <Ark.RangeText />
                                                 </Ark.ViewTrigger>
-                                                <Ark.NextTrigger
-                                                    aria-label="Próximo mês"
-                                                    className={cn(
-                                                        'flex size-9 items-center justify-center rounded-lg hover:bg-surface-muted',
-                                                        ANEL_FOCO
-                                                    )}
-                                                >
-                                                    <ChevronRight aria-hidden className="size-5" />
-                                                </Ark.NextTrigger>
+                                                <Tooltip conteudo="Próximo mês">
+                                                    <Ark.NextTrigger
+                                                        aria-label="Próximo mês"
+                                                        className={cn(
+                                                            'flex size-9 items-center justify-center rounded-lg hover:bg-surface-muted',
+                                                            ANEL_FOCO
+                                                        )}
+                                                    >
+                                                        <ChevronRight aria-hidden className="size-5" />
+                                                    </Ark.NextTrigger>
+                                                </Tooltip>
                                             </Ark.ViewControl>
                                             <Ark.Table className="w-full border-collapse">
                                                 <Ark.TableHead>

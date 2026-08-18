@@ -8,6 +8,17 @@ import { Avatar } from '../avatar/avatar'
 import { Logo } from '../logo/logo'
 import { IconButton } from '../icon-button/icon-button'
 import { ThemeToggle } from '../theme/theme-toggle'
+import { Tooltip } from '../tooltip/tooltip'
+
+/**
+ * Rótulos dos controles só-ícone (015-tooltip-acoes-icone, C-04.3).
+ *
+ * Ficam em constantes porque cada um alimenta **dois** consumidores — o nome
+ * acessível e a dica visual. Duas strings literais iguais escritas em separado
+ * divergiriam na primeira vez que alguém ajustasse só uma delas.
+ */
+const ROTULO_NAVEGACAO = 'Abrir navegação'
+const ROTULO_SAIR = 'Sair'
 
 export interface TopbarProps {
     nome: string
@@ -51,11 +62,13 @@ export function Topbar({
                 {/* Só abaixo de `lg`: em telas largas a navegação é a coluna. */}
                 {mostrarBotaoMenu && (
                     <span className="lg:hidden">
-                        <IconButton
-                            aria-label="Abrir navegação"
-                            icone={<MenuIcon aria-hidden className="size-5" />}
-                            onClick={onAbrirNavegacao}
-                        />
+                        <Tooltip conteudo={ROTULO_NAVEGACAO} posicao="bottom">
+                            <IconButton
+                                aria-label={ROTULO_NAVEGACAO}
+                                icone={<MenuIcon aria-hidden className="size-5" />}
+                                onClick={onAbrirNavegacao}
+                            />
+                        </Tooltip>
                     </span>
                 )}
                 {/*
@@ -91,7 +104,16 @@ export function Topbar({
                         <span className="text-xs text-neutral-500 dark:text-neutral-400">{rotuloRole}</span>
                     </div>
                 </div>
-                <IconButton aria-label="Sair" icone={<LogOut aria-hidden className="size-5" />} onClick={onSair} />
+                {/* `bottom`: a topbar é aderente ao topo — uma dica acima dela
+                    sairia da janela e o primitivo teria de virá-la de qualquer
+                    forma. Pedir o lado certo evita o salto. */}
+                <Tooltip conteudo={ROTULO_SAIR} posicao="bottom">
+                    <IconButton
+                        aria-label={ROTULO_SAIR}
+                        icone={<LogOut aria-hidden className="size-5" />}
+                        onClick={onSair}
+                    />
+                </Tooltip>
             </div>
         </header>
     )
