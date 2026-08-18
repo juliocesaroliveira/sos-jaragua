@@ -29,7 +29,7 @@ export default async function HomePage() {
     const primeiroNome = ator.nome.trim().split(/\s+/)[0]
 
     return (
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 py-4">
+        <div className="flex flex-col gap-8">
             <header className="flex flex-col gap-1">
                 <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">Olá, {primeiroNome}</h1>
                 <p className="text-base text-neutral-500 dark:text-neutral-400">
