@@ -35,9 +35,9 @@ detalhada em [plan.md](plan.md) § Project Structure.
 
 **Purpose**: criar o esqueleto do módulo compartilhado antes de qualquer código de formulário
 
-- [ ] T001 Criar o barril do módulo em `src/shared/formulario/index.ts`, reexportando
+- [X] T001 Criar o barril do módulo em `src/shared/formulario/index.ts`, reexportando
       `use-formulario`, `campos` e `erros-servidor` (arquivos criados na Phase 2)
-- [ ] T002 [P] Confirmar que `vitest.config.ts` já coleta `src/shared/formulario/*.test.ts`
+- [X] T002 [P] Confirmar que `vitest.config.ts` já coleta `src/shared/formulario/*.test.ts`
       pelo glob `src/**/*.test.ts` e que nenhum ajuste de config é necessário
 
 ---
@@ -50,31 +50,31 @@ story pode começar antes.
 
 **⚠️ CRITICAL**: US1, US2 e US3 consomem estas peças diretamente.
 
-- [ ] T003 [P] Implementar os construtores Zod compartilhados em
+- [X] T003 [P] Implementar os construtores Zod compartilhados em
       `src/shared/formulario/campos.ts`: `textoObrigatorio`, `email`, `senha`,
       `selecaoObrigatoria`, `listaNaoVazia` — cada um declarando a mensagem também no **tipo**
       (`z.string({ error })`), para cobrir o caso `undefined` que não chega ao `.min()`
       (data-model.md §1)
-- [ ] T004 [P] Implementar `aplicarErrosDoServidor` em
+- [X] T004 [P] Implementar `aplicarErrosDoServidor` em
       `src/shared/formulario/erros-servidor.ts` como função **pura**, recebendo `definirErro`
       por parâmetro e reaproveitando `camposComErro` de `src/shared/kernel/action.ts` — sem
       alterar o contrato das Server Actions (contracts §3)
-- [ ] T005 [P] Implementar `useFormulario` em `src/shared/formulario/use-formulario.ts`,
+- [X] T005 [P] Implementar `useFormulario` em `src/shared/formulario/use-formulario.ts`,
       fixando `mode: 'onSubmit'`, `reValidateMode: 'onChange'`, `shouldFocusError: true` e
       `zodResolver(esquema)`, sem expor essas opções ao chamador (contracts §1, research D2)
-- [ ] T006 [P] Criar `src/shared/ui/formulario/formulario.tsx` com o componente `Formulario`,
+- [X] T006 [P] Criar `src/shared/ui/formulario/formulario.tsx` com o componente `Formulario`,
       que sempre renderiza `<form noValidate>` e **omite** `noValidate` e `action` da interface
       de props (contracts §2, research D1/D3)
-- [ ] T007 Escrever `src/shared/formulario/erros-servidor.test.ts` cobrindo os três ramos do
+- [X] T007 Escrever `src/shared/formulario/erros-servidor.test.ts` cobrindo os três ramos do
       contrato: campos conhecidos aplicados; campo desconhecido agregado à mensagem geral em
       vez de descartado; erro sem `detalhes.campos` retornando só a mensagem geral (depende de
       T004)
-- [ ] T008 Escrever `src/shared/formulario/campos.test.ts` verificando que cada construtor
+- [X] T008 Escrever `src/shared/formulario/campos.test.ts` verificando que cada construtor
       rejeita `undefined`, string vazia e formato inválido **com mensagem em pt-BR** (depende
       de T003)
-- [ ] T009 Exportar `Formulario` e `FormularioProps` em `src/shared/ui/index.ts` (depende de
+- [X] T009 Exportar `Formulario` e `FormularioProps` em `src/shared/ui/index.ts` (depende de
       T006)
-- [ ] T010 Fechar o barril `src/shared/formulario/index.ts` com os símbolos reais e rodar
+- [X] T010 Fechar o barril `src/shared/formulario/index.ts` com os símbolos reais e rodar
       `npm test` para confirmar a suíte verde (depende de T003–T008)
 
 **Checkpoint**: API do padrão disponível e testada — as user stories podem começar.
@@ -92,30 +92,30 @@ e o foco vai ao primeiro deles ([quickstart.md](quickstart.md) §3.1–§3.3).
 
 ### Componentes de campo — lacunas do design system
 
-- [ ] T011 [P] [US1] Adicionar `erro?: string` ao `Switch` em
+- [X] T011 [P] [US1] Adicionar `erro?: string` ao `Switch` em
       `src/shared/ui/switch/switch.tsx`: parágrafo `role="alert"` abaixo da linha do controle,
       `text-sm text-danger-*`, `aria-invalid` e `aria-describedby` no input oculto (research
       D6)
-- [ ] T012 [P] [US1] Migrar a faixa de mensagem do `RadioGroup` em
+- [X] T012 [P] [US1] Migrar a faixa de mensagem do `RadioGroup` em
       `src/shared/ui/radio-group/radio-group.tsx` para `idsCampo`, acrescentando `apoio`, a
       regra de exclusão apoio↔erro e `aria-invalid` no grupo — mantendo `Ark.Label` como
       rótulo do grupo (research D7)
-- [ ] T013 [P] [US1] Migrar a faixa de mensagem do `CheckboxGroup` em
+- [X] T013 [P] [US1] Migrar a faixa de mensagem do `CheckboxGroup` em
       `src/shared/ui/checkbox-group/checkbox-group.tsx` da mesma forma que T012, mantendo
       `<legend>` como rótulo do grupo
-- [ ] T014 [P] [US1] Encaminhar `ref` ao gatilho focável em
+- [X] T014 [P] [US1] Encaminhar `ref` ao gatilho focável em
       `src/shared/ui/select/select.tsx` (research D4)
-- [ ] T015 [P] [US1] Encaminhar `ref` ao input focável em
+- [X] T015 [P] [US1] Encaminhar `ref` ao input focável em
       `src/shared/ui/combobox/combobox.tsx`
-- [ ] T016 [P] [US1] Encaminhar `ref` ao input focável em
+- [X] T016 [P] [US1] Encaminhar `ref` ao input focável em
       `src/shared/ui/date-picker/date-picker.tsx`, cobrindo também o ramo de fallback estático
       do componente
-- [ ] T017 [P] [US1] Encaminhar `ref` ao input focável em
+- [X] T017 [P] [US1] Encaminhar `ref` ao input focável em
       `src/shared/ui/number-input/number-input.tsx`
-- [ ] T018 [P] [US1] Verificar em `src/shared/ui/password/password.tsx` que o `ref` vindo de
+- [X] T018 [P] [US1] Verificar em `src/shared/ui/password/password.tsx` que o `ref` vindo de
       `register()` chega ao `<input>` (hoje as props são espalhadas por uma interface
       explícita) e corrigir se não chegar
-- [ ] T019 [US1] Adicionar `ref` em `src/shared/ui/switch/switch.tsx`,
+- [X] T019 [US1] Adicionar `ref` em `src/shared/ui/switch/switch.tsx`,
       `src/shared/ui/radio-group/radio-group.tsx` e
       `src/shared/ui/checkbox-group/checkbox-group.tsx` para que `field.ref` do `Controller`
       tenha alvo focável — **sem [P]**: são os mesmos três arquivos de T011–T013, então
@@ -123,15 +123,15 @@ e o foco vai ao primeiro deles ([quickstart.md](quickstart.md) §3.1–§3.3).
 
 ### Aplicação nos formulários
 
-- [ ] T020 [US1] Em `app/(interno)/voluntariado/candidatura/candidatura-form.tsx`, mover a
+- [X] T020 [US1] Em `app/(interno)/voluntariado/candidatura/candidatura-form.tsx`, mover a
       obrigatoriedade condicional de `tipoVeiculo` para o esquema com `.superRefine()`/`.check()`
       e `path: ['tipoVeiculo']`, e limpar o erro com `clearErrors('tipoVeiculo')` ao desligar
       `veiculoProprio` (research D8, FR-014)
-- [ ] T021 [US1] No mesmo arquivo, passar `ref={field.ref}` em todos os `Controller`
+- [X] T021 [US1] No mesmo arquivo, passar `ref={field.ref}` em todos os `Controller`
       (`DatePicker`, `CheckboxGroup` ×2, `Switch`, `RadioGroup`) (depende de T011–T019)
-- [ ] T022 [US1] Em `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`, passar
+- [X] T022 [US1] Em `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`, passar
       `ref={field.ref}` no `Controller` do `Select` de papel (depende de T014)
-- [ ] T023 [US1] Substituir os esquemas locais pelos construtores de
+- [X] T023 [US1] Substituir os esquemas locais pelos construtores de
       `src/shared/formulario/campos.ts` nos três formulários, unificando as mensagens que hoje
       divergem — "A senha deve ter ao menos 8 caracteres." em `login-form.tsx` e
       `usuario-form-dialog.tsx` — e removendo o helper `obrigatorio()` duplicado dentro de
@@ -153,18 +153,18 @@ confirmar que nenhum balão nativo aparece e que as mensagens são idênticas en
 
 > Toca os mesmos três arquivos da Phase 3 — executar depois dela, não em paralelo.
 
-- [ ] T024 [US2] Migrar `app/(publico)/login/login-form.tsx` para `Formulario` +
+- [X] T024 [US2] Migrar `app/(publico)/login/login-form.tsx` para `Formulario` +
       `useFormulario`, removendo o `<form noValidate>` e o `useForm` diretos (depende de T005,
       T006, T009)
-- [ ] T025 [US2] Migrar `app/(interno)/voluntariado/candidatura/candidatura-form.tsx` da mesma
+- [X] T025 [US2] Migrar `app/(interno)/voluntariado/candidatura/candidatura-form.tsx` da mesma
       forma (depende de T005, T006, T009, T020)
-- [ ] T026 [US2] Migrar `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` da mesma forma —
+- [X] T026 [US2] Migrar `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` da mesma forma —
       **é aqui que a lacuna real se fecha**, o `<form id="usuario-form">` deste arquivo hoje
       não tem `noValidate` (depende de T005, T006, T009)
-- [ ] T027 [US2] Adicionar a `eslint.config.mjs` uma regra `no-restricted-syntax` que proíbe
+- [X] T027 [US2] Adicionar a `eslint.config.mjs` uma regra `no-restricted-syntax` que proíbe
       `JSXOpeningElement[name.name='form']` fora de `src/shared/ui/formulario/`, com mensagem
       apontando o componente `Formulario` (research D3)
-- [ ] T028 [US2] Verificar a conformidade rodando
+- [X] T028 [US2] Verificar a conformidade rodando
       `grep -rn "<form" app src --include=*.tsx | grep -v "shared/ui/formulario"` — deve não
       retornar nada — e `npm run lint` sem erros (depende de T024–T027)
 
@@ -182,14 +182,14 @@ arbitrariamente em um campo.
 cadastrado, CPF com dígito verificador inválido) e verificar a posição da mensagem
 ([quickstart.md](quickstart.md) §3.2 e §3.3, linhas FR-012).
 
-- [ ] T029 [US3] Substituir o laço manual de `setError` em
+- [X] T029 [US3] Substituir o laço manual de `setError` em
       `app/(interno)/voluntariado/candidatura/candidatura-form.tsx` por
       `aplicarErrosDoServidor`, eliminando o ternário atual de `setErroGeral` que devolve o
       mesmo valor nos dois ramos (depende de T004)
-- [ ] T030 [US3] Substituir o laço manual de `setError` em
+- [X] T030 [US3] Substituir o laço manual de `setError` em
       `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` por `aplicarErrosDoServidor`
       (depende de T004)
-- [ ] T031 [US3] Em `app/(publico)/login/login-form.tsx`, manter a mensagem de credencial
+- [X] T031 [US3] Em `app/(publico)/login/login-form.tsx`, manter a mensagem de credencial
       inválida como erro **geral** e registrar em comentário o motivo — fixá-la no campo de
       e-mail revelaria se a conta existe (data-model.md §4)
 
@@ -205,10 +205,10 @@ desvio é identificável por critério objetivo.
 **Independent Test**: implementar (ou revisar) um formulário seguindo apenas a documentação e
 verificar que ele passa no §3 do quickstart sem ajustes (SC-006).
 
-- [ ] T032 [P] [US4] Atualizar a "Exceção" do `spec/DESIGN_SYSTEM.md` §4.2.1, que hoje afirma
+- [X] T032 [P] [US4] Atualizar a "Exceção" do `spec/DESIGN_SYSTEM.md` §4.2.1, que hoje afirma
       que o `Switch` não tem estado de erro, e a §4.5 (`CheckboxGroup`/`RadioGroup`/`Switch`)
       para refletir a faixa de mensagem unificada (depende de T011–T013)
-- [ ] T033 [US4] Acrescentar ao `spec/DESIGN_SYSTEM.md` uma seção do padrão de formulário:
+- [X] T033 [US4] Acrescentar ao `spec/DESIGN_SYSTEM.md` uma seção do padrão de formulário:
       `Formulario` + `useFormulario` + esquema Zod + `aplicarErrosDoServidor`, a regra de
       "nenhum `<form>` cru", a tabela de props comuns de campo e o exemplo mínimo de uso
       (FR-018, contracts §1–§4)
@@ -217,14 +217,21 @@ verificar que ele passa no §3 do quickstart sem ajustes (SC-006).
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T034 Remover código morto deixado pelas migrações — imports não usados de `useForm`,
+- [X] T034 Remover código morto deixado pelas migrações — imports não usados de `useForm`,
       `zodResolver` e helpers locais em `app/(publico)/login/login-form.tsx`,
       `app/(interno)/voluntariado/candidatura/candidatura-form.tsx` e
       `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`
-- [ ] T035 Rodar a verificação automatizada de [quickstart.md](quickstart.md) §2:
+- [X] T035 Rodar a verificação automatizada de [quickstart.md](quickstart.md) §2:
       `npm test`, `npm run lint`, `npx tsc --noEmit`
 - [ ] T036 Executar o roteiro manual de [quickstart.md](quickstart.md) §3.1–§3.3 em **dois
       navegadores diferentes** e registrar o resultado (SC-001)
+      - **Parcialmente feito** (Chrome, dev server local): §3.3 verificado no diálogo de conta
+        — `noValidate: true` no `<form id="usuario-form">`, três mensagens exibidas de uma vez
+        em pt-BR abaixo dos respectivos campos, `aria-invalid` nos três, foco em `nome`, e a
+        mensagem some ao corrigir o campo sem novo envio.
+      - **Falta**: §3.1 (login — a sessão ativa redireciona `/login` para a home), §3.2
+        (candidatura — a conta de teste já é voluntária aprovada, então o formulário não
+        renderiza) e a segunda passagem em outro navegador.
 - [ ] T037 Executar a verificação de acessibilidade de [quickstart.md](quickstart.md) §3.4 com
       leitor de tela nos três formulários (SC-007)
 

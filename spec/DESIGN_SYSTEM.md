@@ -304,8 +304,17 @@ por causa de uma referência quebrada antes dela. A regra está centralizada em 
 que só inclui o id do apoio quando não há erro — nenhum componente de campo repete essa
 lógica.
 
-**Exceção**: o `Switch` (§4.5) não usa a moldura `Campo` e não tem estado de erro — seu
-apoio fica junto ao rótulo, ao lado do controle, que é o correto para esse padrão.
+**Onde a faixa é compartilhada sem o `Campo` inteiro**: `CheckboxGroup`, `RadioGroup` e
+`Switch` (§4.5) **não** usam a moldura `Campo`, porque ela emite `<label htmlFor>` — e um
+grupo de opções não tem um controle único para o rótulo apontar (o correto ali é
+`<legend>`/`Ark.Label`). Os três usam o componente `FaixaMensagem`, extraído do `Campo`:
+mesma posição, mesmas classes, mesmo `role="alert"`, mesma regra de exclusão. Antes de
+016-formularios-rhf-zod cada um reimplementava a faixa por conta própria, sem `apoio` e sem
+`aria-invalid`, e a mensagem saía diferente da dos campos de texto na mesma tela.
+
+**Switch**: seu `apoio` continua junto ao rótulo, ao lado do controle — é o correto para
+esse padrão. Só o **erro** vai para a faixa abaixo da linha inteira, que é onde ele está em
+todos os outros campos; consistência de posição é o que permite encontrá-lo sem procurar.
 
 #### 4.2.2. Password: campo de senha com alternância de visibilidade
 
@@ -394,6 +403,8 @@ apagado pelo teclado.
 - **CheckboxGroup**: habilidades específicas no formulário de candidatura (múltipla
   escolha).
 - **RadioGroup**: tipo de veículo, condição do item (quando exibido como opções curtas).
+- Os três aceitam `apoio`, `erro` e `obrigatorio`, com a faixa de mensagem de §4.2.1, e
+  encaminham `ref` para o foco no primeiro erro (§4.17).
 - **Switch**: booleanos (veículo próprio, perecível). O `ThemeToggle` atual
   (`src/shared/ui/theme/theme-toggle.tsx`) usa um `<button role="switch">` custom com
   emoji — ao construir o `Switch` do design system, avaliar migrar o toggle de tema para
@@ -555,6 +566,91 @@ rounded-lg`. Usado em listagens/dashboard durante carregamento (Suspense boundar
   destaque de déficit definido em §3 quando `preenchidas < vagas`.
 - Em `md-`: colunas empilhadas verticalmente (lista); em `md+`: colunas lado a lado com
   scroll horizontal ou grid fixo, conforme espaço.
+
+---
+
+### 4.17. Formulário: o padrão único (016-formularios-rhf-zod)
+
+Vale para **todo** formulário da aplicação, existente ou novo. Seguindo estas quatro peças,
+os requisitos de validação estão atendidos sem nenhuma decisão adicional.
+
+#### As peças
+
+| Peça                      | Onde                              | Papel                                                        |
+| ------------------------- | --------------------------------- | ------------------------------------------------------------ |
+| `Formulario`              | `src/shared/ui/formulario`        | O `<form>`, sempre com `noValidate`                          |
+| `useFormulario(esquema)`  | `src/shared/formulario`           | `useForm` com a configuração fixa do padrão                  |
+| Construtores de campo     | `src/shared/formulario/campos.ts` | `textoObrigatorio`, `email`, `senha`, `selecaoObrigatoria`, `listaNaoVazia` |
+| `aplicarErrosDoServidor`  | `src/shared/formulario`           | Recusa do servidor → campo certo, ou aviso geral             |
+
+#### Regras
+
+1. **Nenhum `<form>` cru.** Use `Formulario`. Há regra de ESLint (`no-restricted-syntax`)
+   que transforma o desvio em erro de lint — a conformidade é estrutural, não disciplinar.
+2. **Validação nativa do navegador desligada**, sempre. É o que o `noValidate` do
+   `Formulario` garante. O react-hook-form é a única autoridade no cliente.
+3. **As regras moram no esquema Zod**, uma vez por formulário — inclusive as condicionais
+   (`.superRefine()` com `path` no campo dependente), nunca espalhadas por manipulador de
+   evento. Ao desligar a condição, limpe o erro do campo dependente com `clearErrors`: o
+   campo sai da tela, e uma mensagem órfã bloquearia o envio sem nada visível para corrigir.
+4. **Toda mensagem em pt-BR, no esquema, nunca no JSX.** Declare o texto também no *tipo*
+   (`z.string({ error })`, o que os construtores já fazem): com o campo `undefined` — o
+   formulário enviado vazio, o caso mais comum — o `.min()` sequer roda e a mensagem cairia
+   no locale.
+5. **Erro abaixo do controle**, via prop `erro` do componente de campo. Nenhum componente
+   reimplementa a faixa (§4.2.1).
+6. **`ref={field.ref}` em todo `Controller`.** Sem isso o `shouldFocusError` não tem o que
+   focar, e um erro abaixo da dobra fica invisível para quem acabou de enviar.
+7. **Erro do servidor por `aplicarErrosDoServidor`**, nunca por laço manual de `setError`.
+   Mensagem de campo que o formulário não conhece sobe para o aviso geral — descartá-la
+   produziria envio recusado sem explicação alguma na tela.
+
+#### Comportamento fixado por `useFormulario`
+
+| Opção              | Valor        | Por quê                                                              |
+| ------------------ | ------------ | -------------------------------------------------------------------- |
+| `mode`             | `'onSubmit'` | Não marca erro antes da primeira tentativa — não pune quem preenche  |
+| `reValidateMode`   | `'onChange'` | Depois do envio, a mensagem some sozinha ao corrigir                 |
+| `shouldFocusError` | `true`       | Foco no primeiro campo com erro                                      |
+
+Não são parametrizáveis: é o que torna o comportamento igual entre formulários. Divergir
+exige decisão documentada, não um parâmetro a mais.
+
+#### Exemplo mínimo
+
+```tsx
+const esquema = z.object({
+    nome: textoObrigatorio('Informe o nome.'),
+    papel: selecaoObrigatoria(ROLES, 'Selecione o papel.')
+})
+
+const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+} = useFormulario(esquema)
+
+;<Formulario onSubmit={handleSubmit(enviar)} className="flex flex-col gap-4">
+    <Input id="nome" label="Nome" obrigatorio erro={errors.nome?.message} {...register('nome')} />
+    <Controller
+        control={control}
+        name="papel"
+        render={({ field }) => (
+            <Select ref={field.ref} id="papel" label="Papel" obrigatorio opcoes={OPCOES} erro={errors.papel?.message} />
+        )}
+    />
+    <Button type="submit" loading={isSubmitting}>
+        Salvar
+    </Button>
+</Formulario>
+```
+
+#### O que **não** muda
+
+A validação do cliente é experiência de uso, não segurança. As Server Actions continuam
+validando toda entrada de forma independente, e regra de negócio (dígito verificador de CPF,
+maioridade) permanece no `domain/` — o cliente valida forma, o servidor decide.
 
 ---
 

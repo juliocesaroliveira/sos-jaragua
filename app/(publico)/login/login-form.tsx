@@ -1,22 +1,21 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { ArrowLeft, LogIn, LockOpen } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
+import { email, senha, useFormulario } from '@/src/shared/formulario'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
-import { Alert, Button, cn, Input, Password } from '@/src/shared/ui'
+import { Alert, Button, cn, Formulario, Input, Password } from '@/src/shared/ui'
 import { IconeFacebook, IconeGoogle } from './icones-provedor'
 
 const esquema = z.object({
-    email: z.email('Informe um e-mail válido.'),
-    senha: z.string().min(8, 'A senha precisa ter ao menos 8 caracteres.')
+    email: email(),
+    senha: senha()
 })
 
-type Formulario = z.infer<typeof esquema>
+type DadosFormulario = z.infer<typeof esquema>
 
 /**
  * Dois estados de exibição, sem navegação entre eles (FR-011): `'opcoes'` é o
@@ -73,13 +72,20 @@ export function LoginForm() {
         handleSubmit,
         reset,
         formState: { errors, isSubmitting }
-    } = useForm<Formulario>({ resolver: zodResolver(esquema) })
+    } = useFormulario(esquema)
 
-    async function entrar(dados: Formulario) {
+    async function entrar(dados: DadosFormulario) {
         setErroServidor(null)
         const { error } = await signIn.email({ email: dados.email, password: dados.senha })
         if (error) {
-            // Mensagem genérica de propósito: não revela se o e-mail existe.
+            /*
+              Erro **geral**, nunca fixado no campo de e-mail — e é uma decisão
+              de segurança, não uma limitação (016-formularios-rhf-zod, FR-012).
+              Uma mensagem sob o campo de e-mail diria "esta conta existe, a
+              senha é que está errada", entregando de graça a metade difícil de
+              um ataque de enumeração de contas. Genérica, ela não distingue os
+              dois casos.
+            */
             setErroServidor('E-mail ou senha incorretos.')
             return
         }
@@ -151,7 +157,7 @@ export function LoginForm() {
               voltar para as opções e retornar. Com ela, React remonta a cada
               troca e a senha volta mascarada.
             */}
-            <div className="grid grid-cols-1 [&>*]:col-start-1 [&>*]:row-start-1">
+            <div className="grid grid-cols-1 *:col-start-1 *:row-start-1">
                 <div className={cn('flex flex-col gap-3', modo !== 'opcoes' && 'invisible')} inert={modo !== 'opcoes'}>
                     <Button
                         variant="secondary"
@@ -218,12 +224,11 @@ export function LoginForm() {
                     </p>
                 </div>
 
-                <form
+                <Formulario
                     key={modo}
                     onSubmit={handleSubmit(entrar)}
                     className={cn('flex flex-col gap-4', modo !== 'credenciais' && 'invisible')}
                     inert={modo !== 'credenciais'}
-                    noValidate
                 >
                     <Input
                         id="email"
@@ -264,7 +269,7 @@ export function LoginForm() {
                             Acessar
                         </Button>
                     </div>
-                </form>
+                </Formulario>
             </div>
         </div>
     )

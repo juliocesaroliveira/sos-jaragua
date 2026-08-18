@@ -4,7 +4,7 @@ import { DatePicker as Ark } from '@ark-ui/react/date-picker'
 import { Portal } from '@ark-ui/react/portal'
 import { parseDate } from '@internationalized/date'
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Ref } from 'react'
 import { ALTURA_POR_TAMANHO, ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 import { Tooltip } from '../tooltip/tooltip'
@@ -36,6 +36,8 @@ export interface DatePickerProps {
     max?: string
     disabled?: boolean
     placeholder?: string
+    /** Alvo do foco quando o envio é bloqueado (FR-011) — recebe `field.ref` do `Controller`. */
+    ref?: Ref<HTMLInputElement>
 }
 
 const DIAS_SEMANA_ABREV: Record<string, string> = {
@@ -61,7 +63,8 @@ export function DatePicker({
     min,
     max,
     disabled,
-    placeholder = 'dd/mm/aaaa'
+    placeholder = 'dd/mm/aaaa',
+    ref
 }: DatePickerProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
 
@@ -123,6 +126,7 @@ export function DatePicker({
                     )}
                 >
                     <Ark.Input
+                        ref={ref}
                         placeholder={placeholder}
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}

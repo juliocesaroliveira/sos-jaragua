@@ -3,7 +3,7 @@
 import { Combobox as Ark, createListCollection } from '@ark-ui/react/combobox'
 import { Portal } from '@ark-ui/react/portal'
 import { Loader2, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 import { Tooltip } from '../tooltip/tooltip'
@@ -48,6 +48,8 @@ export interface ComboboxProps {
      * cadastrar um registro novo a partir do que foi digitado.
      */
     permitirValorLivre?: boolean
+    /** Alvo do foco quando o envio é bloqueado (FR-011) — recebe `field.ref` do `Controller`. */
+    ref?: Ref<HTMLInputElement>
 }
 
 export function Combobox({
@@ -68,7 +70,8 @@ export function Combobox({
     placeholder = 'Digite para buscar…',
     mensagemVazia = 'Nenhum resultado encontrado.',
     debounceMs = 250,
-    permitirValorLivre = false
+    permitirValorLivre = false,
+    ref
 }: ComboboxProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     const [termo, setTermo] = useState(defaultInputValue ?? '')
@@ -134,6 +137,7 @@ export function Combobox({
                     )}
                 >
                     <Ark.Input
+                        ref={ref}
                         placeholder={placeholder}
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}

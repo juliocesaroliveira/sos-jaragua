@@ -2,6 +2,7 @@
 
 import { NumberInput as Ark } from '@ark-ui/react/number-input'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import type { Ref } from 'react'
 import { ANEL_FOCO, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 import { Tooltip } from '../tooltip/tooltip'
@@ -26,6 +27,8 @@ export interface NumberInputProps {
     /** Casas decimais exibidas; `3` acompanha a precisão de `saldo_estoque`. */
     casasDecimais?: number
     disabled?: boolean
+    /** Alvo do foco quando o envio é bloqueado (FR-011) — recebe `field.ref` do `Controller`. */
+    ref?: Ref<HTMLInputElement>
 }
 
 export function NumberInput({
@@ -42,7 +45,8 @@ export function NumberInput({
     max,
     step = 1,
     casasDecimais = 3,
-    disabled
+    disabled,
+    ref
 }: NumberInputProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     return (
@@ -84,6 +88,7 @@ export function NumberInput({
                     )}
                 >
                     <Ark.Input
+                        ref={ref}
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}
                         className="w-full bg-transparent px-3 text-base text-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50"

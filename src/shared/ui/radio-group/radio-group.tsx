@@ -1,6 +1,8 @@
 'use client'
 
 import { RadioGroup as Ark } from '@ark-ui/react/radio-group'
+import type { Ref } from 'react'
+import { FaixaMensagem, idsCampo } from '../campo/campo'
 import { ANEL_FOCO, cn } from '../cn'
 
 /**
@@ -17,9 +19,14 @@ export interface RadioGroupProps {
     value?: string
     defaultValue?: string
     onValueChange?: (valor: string) => void
+    /** Texto de apoio na mesma faixa do erro, como nos demais campos (FR-008). */
+    apoio?: string
     erro?: string
+    obrigatorio?: boolean
     disabled?: boolean
     orientacao?: 'vertical' | 'horizontal'
+    /** Alvo do foco quando o envio é bloqueado (FR-011) — recebe `field.ref` do `Controller`. */
+    ref?: Ref<HTMLDivElement>
 }
 
 export function RadioGroup({
@@ -30,23 +37,43 @@ export function RadioGroup({
     value,
     defaultValue,
     onValueChange,
+    apoio,
     erro,
+    obrigatorio,
     disabled,
-    orientacao = 'vertical'
+    orientacao = 'vertical',
+    ref
 }: RadioGroupProps) {
-    const idErro = erro ? `${id}-erro` : undefined
+    /*
+      Mesma faixa de mensagem dos campos de texto (016-formularios-rhf-zod,
+      research.md D7). O que **não** é compartilhado é a moldura `Campo`
+      inteira: ela emite `<label htmlFor>`, e um grupo de rádios não tem um
+      controle único para o rótulo apontar — aqui o rótulo é o `Ark.Label` do
+      próprio grupo.
+    */
+    const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
     return (
         <Ark.Root
+            ref={ref}
             name={name}
             value={value}
             defaultValue={defaultValue}
             onValueChange={(detalhe) => detalhe.value && onValueChange?.(detalhe.value)}
             disabled={disabled}
             orientation={orientacao}
-            aria-describedby={idErro}
+            aria-describedby={ids.describedBy}
+            aria-invalid={erro ? true : undefined}
             className="flex flex-col gap-2"
         >
-            <Ark.Label className="text-sm font-medium text-foreground">{label}</Ark.Label>
+            <Ark.Label className="text-sm font-medium text-foreground">
+                {label}
+                {obrigatorio && (
+                    <span aria-hidden className="ml-1 text-danger-600 dark:text-danger-400">
+                        *
+                    </span>
+                )}
+                {obrigatorio && <span className="sr-only"> (obrigatório)</span>}
+            </Ark.Label>
             <div className={cn('flex gap-1', orientacao === 'vertical' ? 'flex-col' : 'flex-wrap')}>
                 {opcoes.map((opcao) => (
                     <Ark.Item
@@ -59,17 +86,18 @@ export function RadioGroup({
                             ANEL_FOCO
                         )}
                     >
-                        <Ark.ItemControl className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border-strong bg-surface data-[state=checked]:border-primary-600 dark:data-[state=checked]:border-primary-500 data-[state=checked]:after:size-2.5 data-[state=checked]:after:rounded-full data-[state=checked]:after:bg-primary-600 dark:data-[state=checked]:after:bg-primary-500 data-[state=checked]:after:content-['']" />
+                        <Ark.ItemControl
+                            className={cn(
+                                "flex size-5 shrink-0 items-center justify-center rounded-full border bg-surface data-[state=checked]:border-primary-600 dark:data-[state=checked]:border-primary-500 data-[state=checked]:after:size-2.5 data-[state=checked]:after:rounded-full data-[state=checked]:after:bg-primary-600 dark:data-[state=checked]:after:bg-primary-500 data-[state=checked]:after:content-['']",
+                                erro ? 'border-danger-500' : 'border-border-strong'
+                            )}
+                        />
                         <Ark.ItemText className="text-base text-foreground">{opcao.label}</Ark.ItemText>
                         <Ark.ItemHiddenInput />
                     </Ark.Item>
                 ))}
             </div>
-            {erro && (
-                <p id={idErro} role="alert" className="text-sm text-danger-600 dark:text-danger-400">
-                    {erro}
-                </p>
-            )}
+            <FaixaMensagem ids={ids} apoio={apoio} erro={erro} />
         </Ark.Root>
     )
 }

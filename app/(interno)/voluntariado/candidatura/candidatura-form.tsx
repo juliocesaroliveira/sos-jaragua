@@ -1,13 +1,29 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
 import { UserPlus } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
-import { camposComErro } from '@/src/shared/kernel'
-import { Alert, Button, CheckboxGroup, DatePicker, Input, RadioGroup, Switch, Textarea, avisar } from '@/src/shared/ui'
+import {
+    aplicarErrosDoServidor,
+    listaNaoVazia,
+    selecaoObrigatoria,
+    textoObrigatorio,
+    useFormulario
+} from '@/src/shared/formulario'
+import {
+    Alert,
+    Button,
+    CheckboxGroup,
+    DatePicker,
+    Formulario,
+    Input,
+    RadioGroup,
+    Switch,
+    Textarea,
+    avisar
+} from '@/src/shared/ui'
 import {
     DISPONIBILIDADES,
     ROTULO_DISPONIBILIDADE,
@@ -25,35 +41,47 @@ import { submeterCandidatura } from '@/src/modules/voluntariado/presentation/act
  * reavaliadas no `domain` do servidor, que é a autoridade; os erros que ele
  * devolver por campo são reinjetados no formulário.
  */
-/**
- * `error` é declarado no **tipo**, não só no `.min()`: quando o campo chega
- * `undefined` (controle ainda não tocado), o `.min` nem roda e o Zod usaria a
- * mensagem padrão em inglês — o que quebraria o requisito de interface toda em
- * pt-BR (NFR §2.2).
- */
-const obrigatorio = (mensagem: string) => z.string({ error: mensagem }).min(1, mensagem)
+const MENSAGEM_TIPO_VEICULO = 'Selecione o tipo de veículo.'
 
-const esquema = z.object({
-    nomeCompleto: obrigatorio('Informe o nome completo.'),
+const esquemaBase = z.object({
+    nomeCompleto: textoObrigatorio('Informe o nome completo.'),
     /**
      * Continua obrigatório na validação de forma: quando a conta já tem a data,
      * o campo entra pré-preenchido com ela e a regra passa de graça; quando não
      * tem, o candidato precisa informá-la (011-auto-cadastro-provedor, FR-014).
      */
-    dataNascimento: obrigatorio('Informe a data de nascimento.'),
-    cpf: obrigatorio('Informe o CPF.'),
-    telefone: obrigatorio('Informe o telefone.'),
-    cep: obrigatorio('Informe o CEP.'),
-    bairro: obrigatorio('Informe o bairro.'),
-    profissao: obrigatorio('Informe a profissão ou formação.'),
+    dataNascimento: textoObrigatorio('Informe a data de nascimento.'),
+    cpf: textoObrigatorio('Informe o CPF.'),
+    telefone: textoObrigatorio('Informe o telefone.'),
+    cep: textoObrigatorio('Informe o CEP.'),
+    bairro: textoObrigatorio('Informe o bairro.'),
+    profissao: textoObrigatorio('Informe a profissão ou formação.'),
     restricoesSaude: z.string().optional(),
     veiculoProprio: z.boolean(),
-    tipoVeiculo: z.enum(TIPOS_VEICULO, { error: 'Selecione o tipo de veículo.' }).optional(),
-    disponibilidade: z.array(z.enum(DISPONIBILIDADES)).min(1, 'Selecione ao menos uma disponibilidade.'),
+    tipoVeiculo: selecaoObrigatoria(TIPOS_VEICULO, MENSAGEM_TIPO_VEICULO).optional(),
+    disponibilidade: listaNaoVazia(z.enum(DISPONIBILIDADES), 'Selecione ao menos uma disponibilidade.'),
     habilidadeIds: z.array(z.string())
 })
 
-type Formulario = z.infer<typeof esquema>
+/**
+ * Obrigatoriedade condicional no **esquema**, não só na renderização
+ * (016-formularios-rhf-zod, FR-014).
+ *
+ * Antes, o campo apenas aparecia quando o switch era ligado, mas continuava
+ * `optional()` na validação — então a mensagem só existia depois de o servidor
+ * recusar o envio. Quem esquecia de escolher o tipo dava a volta inteira pela
+ * rede para descobrir isso.
+ */
+const esquema = esquemaBase.superRefine((dados, ctx) => {
+    if (dados.veiculoProprio && !dados.tipoVeiculo) {
+        ctx.addIssue({ code: 'custom', path: ['tipoVeiculo'], message: MENSAGEM_TIPO_VEICULO })
+    }
+})
+
+/** Campos que este formulário conhece — usado ao distribuir a recusa do servidor (FR-012). */
+const CAMPOS = Object.keys(esquemaBase.shape)
+
+type DadosFormulario = z.infer<typeof esquema>
 
 export type CandidaturaFormProps = {
     habilidades: { id: string; nome: string }[]
@@ -97,9 +125,9 @@ export function CandidaturaForm({
         control,
         watch,
         setError,
+        clearErrors,
         formState: { errors, isSubmitting }
-    } = useForm<Formulario>({
-        resolver: zodResolver(esquema),
+    } = useFormulario(esquema, {
         defaultValues: {
             nomeCompleto: nomeInicial,
             dataNascimento: dataNascimentoDaConta ?? '',
@@ -111,7 +139,7 @@ export function CandidaturaForm({
 
     const veiculoProprio = watch('veiculoProprio')
 
-    async function enviar(dados: Formulario) {
+    async function enviar(dados: DadosFormulario) {
         setErroGeral(null)
 
         const resultado = await submeterCandidatura({
@@ -123,11 +151,12 @@ export function CandidaturaForm({
         })
 
         if (!resultado.ok) {
-            const campos = camposComErro(resultado.erro)
-            for (const [campo, mensagem] of Object.entries(campos)) {
-                setError(campo as keyof Formulario, { message: mensagem })
-            }
-            setErroGeral(Object.keys(campos).length > 0 ? resultado.erro.mensagem : resultado.erro.mensagem)
+            const { mensagemGeral } = aplicarErrosDoServidor({
+                erro: resultado.erro,
+                camposConhecidos: CAMPOS,
+                definirErro: (campo, mensagem) => setError(campo as keyof DadosFormulario, { message: mensagem })
+            })
+            setErroGeral(mensagemGeral)
             avisar.erro('Não foi possível enviar', resultado.erro.mensagem)
             return
         }
@@ -155,7 +184,7 @@ export function CandidaturaForm({
     }
 
     return (
-        <form onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6" noValidate>
+        <Formulario onSubmit={handleSubmit(enviar)} className="flex flex-col gap-6">
             {statusAtual === 'rejeitado' && (
                 <Alert tom="warning" titulo="Candidatura anterior não aprovada">
                     {motivoRejeicao ?? 'Revise seus dados e envie novamente.'}
@@ -218,6 +247,7 @@ export function CandidaturaForm({
                         name="dataNascimento"
                         render={({ field }) => (
                             <DatePicker
+                                ref={field.ref}
                                 id="dataNascimento"
                                 label="Data de nascimento"
                                 obrigatorio
@@ -283,7 +313,9 @@ export function CandidaturaForm({
                 name="disponibilidade"
                 render={({ field }) => (
                     <CheckboxGroup
+                        ref={field.ref}
                         id="disponibilidade"
+                        obrigatorio
                         label="Disponibilidade"
                         opcoes={DISPONIBILIDADES.map((d) => ({ value: d, label: ROTULO_DISPONIBILIDADE[d] }))}
                         value={field.value}
@@ -298,6 +330,7 @@ export function CandidaturaForm({
                 name="habilidadeIds"
                 render={({ field }) => (
                     <CheckboxGroup
+                        ref={field.ref}
                         id="habilidadeIds"
                         label="Habilidades específicas"
                         opcoes={habilidades.map((h) => ({ value: h.id, label: h.nome }))}
@@ -313,10 +346,21 @@ export function CandidaturaForm({
                     name="veiculoProprio"
                     render={({ field }) => (
                         <Switch
+                            ref={field.ref}
                             id="veiculoProprio"
                             label="Possui veículo próprio"
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(marcado) => {
+                                field.onChange(marcado)
+                                /*
+                                  Desligar o switch retira o campo da tela — e
+                                  um erro dele que continuasse no formulário
+                                  bloquearia o envio sem nada visível para
+                                  corrigir. Limpar aqui é o que evita esse beco
+                                  sem saída (016-formularios-rhf-zod, FR-014).
+                                */
+                                if (!marcado) clearErrors('tipoVeiculo')
+                            }}
                         />
                     )}
                 />
@@ -328,8 +372,10 @@ export function CandidaturaForm({
                         name="tipoVeiculo"
                         render={({ field }) => (
                             <RadioGroup
+                                ref={field.ref}
                                 id="tipoVeiculo"
                                 label="Tipo de veículo"
+                                obrigatorio
                                 orientacao="horizontal"
                                 opcoes={TIPOS_VEICULO.map((t) => ({ value: t, label: ROTULO_TIPO_VEICULO[t] }))}
                                 value={field.value}
@@ -358,6 +404,6 @@ export function CandidaturaForm({
             >
                 Enviar candidatura
             </Button>
-        </form>
+        </Formulario>
     )
 }

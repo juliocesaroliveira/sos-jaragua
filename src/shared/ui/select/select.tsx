@@ -3,7 +3,7 @@
 import { Portal } from '@ark-ui/react/portal'
 import { Select as Ark, createListCollection } from '@ark-ui/react/select'
 import { Check, ChevronsUpDown, X } from 'lucide-react'
-import { useMemo } from 'react'
+import { useMemo, type Ref } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 import { Tooltip } from '../tooltip/tooltip'
@@ -49,6 +49,13 @@ export interface SelectProps {
      * que ali não significa nada: não há submissão nem validação.
      */
     limpavel?: boolean
+    /**
+     * Alvo do foco quando o envio é bloqueado (016-formularios-rhf-zod,
+     * FR-011) — recebe `field.ref` do `Controller`. Sem isto o
+     * `shouldFocusError` do react-hook-form não teria o que focar, e um erro
+     * abaixo da dobra ficaria invisível para quem enviou o formulário.
+     */
+    ref?: Ref<HTMLButtonElement>
 }
 
 export function Select({
@@ -66,7 +73,8 @@ export function Select({
     disabled,
     placeholder = 'Selecione…',
     rotuloOculto,
-    limpavel: limpavelProp
+    limpavel: limpavelProp,
+    ref
 }: SelectProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
 
@@ -124,6 +132,7 @@ export function Select({
                 */}
                 <Ark.Control className="relative flex">
                     <Ark.Trigger
+                        ref={ref}
                         aria-invalid={erro ? true : undefined}
                         aria-describedby={ids.describedBy}
                         className={cn(

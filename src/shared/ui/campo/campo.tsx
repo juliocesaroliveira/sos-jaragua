@@ -33,6 +33,42 @@ export function idsCampo(id: string, temErro: boolean, temApoio: boolean): IdsCa
     return { idControle: id, idErro, idApoio, describedBy }
 }
 
+/**
+ * A faixa de mensagem isolada do resto da moldura (016-formularios-rhf-zod,
+ * FR-008/FR-010).
+ *
+ * Existe porque `CheckboxGroup`, `RadioGroup` e `Switch` **não podem** usar o
+ * `Campo` inteiro: ele emite um `<label htmlFor>`, e um grupo de opções não tem
+ * um controle único para o rótulo apontar — o rótulo correto ali é
+ * `<legend>`/`Ark.Label`. Antes disso, os três reimplementavam a faixa por
+ * conta própria, sem `apoio` e sem a regra de exclusão, e a mensagem de erro
+ * acabava diferente da dos campos de texto na mesma tela.
+ */
+export interface FaixaMensagemProps {
+    ids: IdsCampo
+    apoio?: string
+    erro?: string
+    className?: string
+}
+
+export function FaixaMensagem({ ids, apoio, erro, className }: FaixaMensagemProps) {
+    if (erro) {
+        return (
+            <p id={ids.idErro} role="alert" className={cn('text-sm text-danger-600 dark:text-danger-400', className)}>
+                {erro}
+            </p>
+        )
+    }
+    if (apoio) {
+        return (
+            <p id={ids.idApoio} className={cn('text-sm text-neutral-500 dark:text-neutral-400', className)}>
+                {apoio}
+            </p>
+        )
+    }
+    return null
+}
+
 export interface CampoProps {
     id: string
     label: string
@@ -81,24 +117,7 @@ export function Campo({ id, label, apoio, erro, obrigatorio, rotuloOculto, child
               conta como item flex — sem a margem, a mensagem encostaria no
               controle. Enquanto o apoio ficava acima, esse caso não existia.
             */}
-            {erro ? (
-                <p
-                    id={ids.idErro}
-                    role="alert"
-                    className={cn('text-sm text-danger-600 dark:text-danger-400', rotuloOculto && 'mt-1.5')}
-                >
-                    {erro}
-                </p>
-            ) : (
-                apoio && (
-                    <p
-                        id={ids.idApoio}
-                        className={cn('text-sm text-neutral-500 dark:text-neutral-400', rotuloOculto && 'mt-1.5')}
-                    >
-                        {apoio}
-                    </p>
-                )
-            )}
+            <FaixaMensagem ids={ids} apoio={apoio} erro={erro} className={cn(rotuloOculto && 'mt-1.5')} />
         </div>
     )
 }

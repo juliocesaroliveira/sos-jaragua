@@ -1,12 +1,18 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
 import { Check, Key, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
-import { camposComErro } from '@/src/shared/kernel'
-import { Button, Dialog, Input, Password, Select, avisar } from '@/src/shared/ui'
+import {
+    aplicarErrosDoServidor,
+    email,
+    selecaoObrigatoria,
+    senha,
+    textoObrigatorio,
+    useFormulario
+} from '@/src/shared/formulario'
+import { Button, Dialog, Formulario, Input, Password, Select, avisar } from '@/src/shared/ui'
 import { ROLES, ROTULO_ROLE, type Role } from '@/src/shared/auth/roles'
 import { criarUsuario, editarUsuario } from '@/src/modules/identidade/presentation/actions/usuarios'
 import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries/usuarios'
@@ -26,15 +32,15 @@ import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries
  * por Google ou Facebook.
  */
 const esquemaCriar = z.object({
-    nome: z.string().min(1, 'Informe o nome.'),
-    email: z.email('Informe um e-mail válido.'),
-    senha: z.string().min(8, 'A senha deve ter ao menos 8 caracteres.'),
-    role: z.enum(ROLES, { error: 'Selecione o papel.' })
+    nome: textoObrigatorio('Informe o nome.'),
+    email: email(),
+    senha: senha(),
+    role: selecaoObrigatoria(ROLES, 'Selecione o papel.')
 })
 
 const esquemaEditar = z.object({
-    nome: z.string().min(1, 'Informe o nome.'),
-    role: z.enum(ROLES, { error: 'Selecione o papel.' })
+    nome: textoObrigatorio('Informe o nome.'),
+    role: selecaoObrigatoria(ROLES, 'Selecione o papel.')
 })
 
 /**
@@ -43,16 +49,19 @@ const esquemaEditar = z.object({
  * (008-admin-password-reset, FR-011/FR-012).
  */
 const esquemaEditarComSenha = esquemaEditar.extend({
-    novaSenha: z.string().min(8, 'A senha deve ter ao menos 8 caracteres.')
+    novaSenha: senha()
 })
 
-type Formulario = {
+type DadosFormulario = {
     nome: string
     email?: string
     senha?: string
     novaSenha?: string
     role: Role
 }
+
+/** Campos que este formulário conhece — usado ao distribuir a recusa do servidor (FR-012). */
+const CAMPOS = ['nome', 'email', 'senha', 'novaSenha', 'role']
 
 const OPCOES_ROLE = ROLES.map((role) => ({ value: role, label: ROTULO_ROLE[role] }))
 
@@ -76,9 +85,17 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
         reset,
         setError,
         formState: { errors, isSubmitting }
-    } = useForm<Formulario>({
-        resolver: zodResolver(modoEdicao ? (trocandoSenha ? esquemaEditarComSenha : esquemaEditar) : esquemaCriar)
-    })
+        /*
+          Genérico explícito porque o esquema é **escolhido em tempo de
+          execução** entre três formas diferentes (cadastrar, editar, editar
+          trocando senha). Inferir do ternário daria a união dos três, e os
+          campos que só existem em um deles — `email`, `senha`, `novaSenha` —
+          ficariam inacessíveis no `register`. `DadosFormulario` é o superset
+          declarado acima, com os campos condicionais opcionais.
+        */
+    } = useFormulario<z.ZodType<DadosFormulario, DadosFormulario>>(
+        modoEdicao ? (trocandoSenha ? esquemaEditarComSenha : esquemaEditar) : esquemaCriar
+    )
 
     // Reinicialização única: cobre abrir o diálogo e também alternar de uma
     // conta para outra sem fechá-lo — a senha digitada para uma conta jamais
@@ -96,7 +113,7 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
         reset((valores) => ({ ...valores, novaSenha: undefined }))
     }
 
-    async function enviar(dados: Formulario) {
+    async function enviar(dados: DadosFormulario) {
         const resultado = modoEdicao
             ? await editarUsuario({
                   id: usuario!.id,
@@ -109,11 +126,15 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
             : await criarUsuario({ nome: dados.nome, email: dados.email, senha: dados.senha, role: dados.role })
 
         if (!resultado.ok) {
-            const campos = camposComErro(resultado.erro)
-            for (const [campo, mensagem] of Object.entries(campos)) {
-                setError(campo as keyof Formulario, { message: mensagem })
-            }
-            avisar.erro(modoEdicao ? 'Não foi possível salvar' : 'Não foi possível cadastrar', resultado.erro.mensagem)
+            const { mensagemGeral } = aplicarErrosDoServidor({
+                erro: resultado.erro,
+                camposConhecidos: CAMPOS,
+                definirErro: (campo, mensagem) => setError(campo as keyof DadosFormulario, { message: mensagem })
+            })
+            avisar.erro(
+                modoEdicao ? 'Não foi possível salvar' : 'Não foi possível cadastrar',
+                mensagemGeral ?? resultado.erro.mensagem
+            )
             // A senha nunca é reapresentada depois de uma falha (U-05.3).
             if (trocandoSenha) reset((valores) => ({ ...valores, novaSenha: undefined }))
             return
@@ -171,7 +192,7 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                 </>
             }
         >
-            <form id="usuario-form" onSubmit={handleSubmit(enviar)} className="flex flex-col gap-4">
+            <Formulario id="usuario-form" onSubmit={handleSubmit(enviar)} className="flex flex-col gap-4">
                 <Input id="nome" label="Nome" obrigatorio erro={errors.nome?.message} {...register('nome')} />
 
                 {/* Na edição o e-mail é exibido, mas desabilitado e **fora** do
@@ -229,6 +250,7 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                     control={control}
                     render={({ field }) => (
                         <Select
+                            ref={field.ref}
                             id="role"
                             label="Papel"
                             obrigatorio
@@ -239,7 +261,7 @@ export function UsuarioFormDialog({ open, onOpenChange, onSucesso, usuario }: Us
                         />
                     )}
                 />
-            </form>
+            </Formulario>
         </Dialog>
     )
 }

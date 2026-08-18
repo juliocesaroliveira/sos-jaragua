@@ -7,6 +7,7 @@ export { cn, ANEL_FOCO, ALTURA_POR_TAMANHO, type TamanhoControle } from './cn'
 export { Button, type ButtonProps, type VarianteBotao } from './button/button'
 export { IconButton, type IconButtonProps } from './icon-button/icon-button'
 
+export { Formulario, type FormularioProps } from './formulario/formulario'
 export { Campo, type CampoProps } from './campo/campo'
 export { Input, type InputProps } from './input/input'
 export { Password, type PasswordProps } from './password/password'
