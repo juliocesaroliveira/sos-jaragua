@@ -20,6 +20,7 @@ export const RAIZ_USUARIOS = raizDe(CACHE_TAGS.identidadeListagem)
 export const RAIZ_VOLUNTARIOS = raizDe(CACHE_TAGS.voluntariadoListagem)
 export const RAIZ_ESTOQUE = raizDe(CACHE_TAGS.estoqueListagem)
 export const RAIZ_SAIDAS = raizDe(CACHE_TAGS.estoqueSaidas)
+export const RAIZ_HABILIDADES = raizDe(CACHE_TAGS.habilidadesListagem)
 
 /**
  * `pageSize` faz parte da chave tanto aqui quanto no `'use cache'` do servidor:
@@ -27,6 +28,10 @@ export const RAIZ_SAIDAS = raizDe(CACHE_TAGS.estoqueSaidas)
  */
 export function chaveUsuarios(params: ParametrosPaginacao) {
     return [...RAIZ_USUARIOS, params] as const
+}
+
+export function chaveHabilidades(params: ParametrosPaginacao) {
+    return [...RAIZ_HABILIDADES, params] as const
 }
 
 export function chaveVoluntarios(params: ParametrosPaginacao & { status?: string; habilidadeId?: string }) {

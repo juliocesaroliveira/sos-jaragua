@@ -14,6 +14,7 @@ import {
     TriangleAlert,
     UserCheck,
     Users,
+    Wrench,
     type LucideIcon
 } from 'lucide-react'
 import type { NomeIcone } from '../../auth/navegacao'
@@ -40,5 +41,6 @@ export const ICONES: Readonly<Record<NomeIcone, LucideIcon>> = {
     Package,
     Trash2,
     Megaphone,
-    FileSpreadsheet
+    FileSpreadsheet,
+    Wrench
 }

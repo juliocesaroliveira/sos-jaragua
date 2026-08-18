@@ -138,6 +138,10 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
     },
     { href: '/voluntarios', rotulo: 'Voluntários', icone: 'UserCheck', grupo: 'operacao', roles: STAFF },
     { href: '/atividades', rotulo: 'Atividades', icone: 'ClipboardList', grupo: 'operacao', roles: STAFF },
+    // Sem `atalho`: tela de manutenção de cadastro, não de operação de campo —
+    // mesmo critério que deixa `/voluntarios` e `/atividades` fora dos cards
+    // (017-gestao-habilidades).
+    { href: '/habilidades', rotulo: 'Habilidades', icone: 'Wrench', grupo: 'operacao', roles: STAFF },
     {
         href: '/crise',
         rotulo: 'Variáveis da crise',

@@ -50,6 +50,9 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     // Triagem, atividades e dashboard
     { prefixo: '/cadastros-pendentes', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/voluntarios', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
+    // Cadastro de habilidades — mesma atribuição das demais telas de operação
+    // interna (017-gestao-habilidades, FR-002).
+    { prefixo: '/habilidades', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/atividades', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     { prefixo: '/dashboard', roles: ['membro_defesa_civil', 'coordenador', 'administrador'] },
     // Variáveis da crise: atribuídas à Defesa Civil, não à coordenação. As

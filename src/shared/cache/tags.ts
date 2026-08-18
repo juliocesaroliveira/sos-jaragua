@@ -29,6 +29,16 @@ export const CACHE_TAGS = {
     atividades: 'atividades:lista',
     /** Tabelas lookup livres (habilidade, atividade_categoria). */
     lookups: 'lookups',
+    /**
+     * Listagem paginada de habilidades (Gestão de Habilidades, `/habilidades`).
+     *
+     * Separada de `lookups` porque são dois consumidores com ciclos diferentes:
+     * esta muda a cada operação da tela e é paginada; `lookups` alimenta o
+     * formulário de candidatura e o filtro de alocação. Toda escrita de
+     * habilidade invalida **as duas** — sem isso, uma habilidade recém-criada
+     * não apareceria na candidatura (017, research.md D6).
+     */
+    habilidadesListagem: 'habilidades:listagem',
     /** Listagem paginada de contas (Gestão de Usuários, `/admin`). */
     identidadeListagem: 'identidade:listagem'
 } as const

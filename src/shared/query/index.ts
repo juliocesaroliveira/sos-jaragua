@@ -11,9 +11,11 @@ export {
     chaveVoluntarios,
     chaveEstoque,
     chaveSaidas,
+    chaveHabilidades,
     chaveNotificacoes,
     RAIZ_USUARIOS,
     RAIZ_VOLUNTARIOS,
     RAIZ_ESTOQUE,
-    RAIZ_SAIDAS
+    RAIZ_SAIDAS,
+    RAIZ_HABILIDADES
 } from './chaves'

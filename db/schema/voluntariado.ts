@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { boolean, date, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { user } from './identidade'
 
@@ -21,11 +21,21 @@ export const statusAlocacaoEnum = pgEnum('status_alocacao', ['confirmado', 'canc
 
 // -- Tabelas lookup livres (DB_SCHEMA.md §4.3, §5.1) --------------------------
 
-export const habilidade = pgTable('habilidade', {
-    id: uuid().primaryKey().defaultRandom(),
-    nome: text().notNull().unique(),
-    criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
-})
+export const habilidade = pgTable(
+    'habilidade',
+    {
+        id: uuid().primaryKey().defaultRandom(),
+        nome: text().notNull(),
+        criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
+    },
+    (t) => [
+        // Único **ignorando caixa**, não o `unique()` simples de antes: com ele,
+        // "Motosserra" e "motosserra" coexistiam. A checagem na aplicação sozinha
+        // perde a corrida entre duas criações simultâneas — só o índice fecha
+        // essa janela (017-gestao-habilidades, research.md D3 / INV-01).
+        uniqueIndex('habilidade_nome_lower_idx').on(sql`lower(${t.nome})`)
+    ]
+)
 
 export const atividadeCategoria = pgTable('atividade_categoria', {
     id: uuid().primaryKey().defaultRandom(),
@@ -82,9 +92,16 @@ export const voluntarioHabilidade = pgTable(
         voluntarioPerfilId: uuid()
             .notNull()
             .references(() => voluntarioPerfil.id, { onDelete: 'cascade' }),
+        /**
+         * `restrict`, não `cascade`: excluir uma habilidade apagava em silêncio
+         * a declaração de todos os voluntários que a possuíam. A regra "não
+         * excluir habilidade vinculada" é do negócio (017, FR-012) e precisa
+         * valer para **qualquer** caminho de escrita, não só o caso de uso —
+         * daí morar no banco (research.md D4 / INV-04).
+         */
         habilidadeId: uuid()
             .notNull()
-            .references(() => habilidade.id, { onDelete: 'cascade' })
+            .references(() => habilidade.id, { onDelete: 'restrict' })
     },
     (t) => [
         uniqueIndex('voluntario_habilidade_unico_idx').on(t.voluntarioPerfilId, t.habilidadeId),

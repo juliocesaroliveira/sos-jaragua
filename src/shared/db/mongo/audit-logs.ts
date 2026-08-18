@@ -18,8 +18,9 @@ export type AcaoAuditada = 'create' | 'update' | 'delete'
  * - `Atividade`  → `atividade`, `turno`, `alocacao`
  * - `Doacao`     → `entrada`, `saida`/`saida_item`, `descarte`, `kit`/`kit_receita_item`
  * - `Usuario`    → `user` (006-user-management-page: cadastro/edição de conta e papel)
+ * - `Habilidade` → `habilidade` (017-gestao-habilidades: cadastro/edição/exclusão)
  */
-export const ENTIDADES_AUDITADAS = ['Voluntario', 'Atividade', 'Doacao', 'Usuario'] as const
+export const ENTIDADES_AUDITADAS = ['Voluntario', 'Atividade', 'Doacao', 'Usuario', 'Habilidade'] as const
 export type EntidadeAuditada = (typeof ENTIDADES_AUDITADAS)[number]
 
 export type RegistroAuditoria = {
