@@ -197,6 +197,29 @@ cadastrado, CPF com dígito verificador inválido) e verificar a posição da me
 
 ---
 
+## Phase 5b: Correção de escopo — formulários que o inventário perdeu
+
+O inventário original (3 formulários) buscou por `onSubmit`/`<form>` e perdeu todas as telas
+que submetem por `onClick` de botão — o módulo de Estoque inteiro. FR-017 ("todos os
+formulários existentes") não estava cumprido. Inventário corrigido em
+[data-model.md](data-model.md) §6.
+
+- [X] T038 Migrar `app/(interno)/(staff)/estoque/entrada/entrada-form.tsx` para o padrão:
+      esquema Zod com quantidade positiva e validade de perecível (reusando
+      `validadeEstaVencida` do domínio), `Formulario`, `useFormulario`,
+      `aplicarErrosDoServidor` e `ref` em todos os `Controller`
+- [X] T039 Migrar `app/(interno)/(staff)/estoque/saida/saida-form.tsx`
+- [X] T040 Migrar `app/(interno)/(staff)/estoque/descarte/descarte-form.tsx`
+- [X] T041 Migrar `app/(interno)/(staff)/estoque/kits/gestao-kits.tsx`
+- [X] T042 Migrar `app/(interno)/(staff)/atividades/gestao-atividades.tsx`
+- [X] T043 Migrar `app/(interno)/(staff)/convocacao/convocacao-form.tsx`
+- [X] T044 Migrar `app/(interno)/(staff)/crise/gestao-crise.tsx` (dois formulários no arquivo)
+- [X] T045 Migrar (havia sim um formulário: o diálogo de rejeição com motivo obrigatório)
+      — antes: Avaliar `app/(interno)/(staff)/cadastros-pendentes/fila-triagem.tsx` — pode ser só
+      ações sobre uma fila, sem campos a validar; se for, registrar como fora de escopo
+
+---
+
 ## Phase 6: User Story 4 - Formulário novo já nasce no padrão (Priority: P3)
 
 **Goal**: o padrão está documentado a ponto de uma tela nova segui-lo sem decisão ad-hoc, e um

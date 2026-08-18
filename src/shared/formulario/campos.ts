@@ -48,3 +48,17 @@ export function selecaoObrigatoria<const T extends readonly [string, ...string[]
 export function listaNaoVazia<T extends z.ZodType>(item: T, mensagem: string) {
     return z.array(item, { error: mensagem }).min(1, mensagem)
 }
+
+/**
+ * Quantidade de estoque vinda de um `NumberInput` — que entrega **texto**, não
+ * número; daí a validação ser sobre string.
+ *
+ * Duas mensagens de propósito: campo em branco e campo zerado são erros
+ * distintos para quem preenche. "Informe a quantidade" e "deve ser maior que
+ * zero" pedem correções diferentes, e juntá-las numa mensagem só faria o
+ * operador reler o campo procurando o que há de errado com um valor que ele
+ * acabou de digitar.
+ */
+export function quantidadePositiva(mensagemVazio = 'Informe a quantidade.') {
+    return textoObrigatorio(mensagemVazio).refine((valor) => Number(valor) > 0, 'A quantidade deve ser maior que zero.')
+}

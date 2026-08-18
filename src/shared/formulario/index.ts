@@ -12,4 +12,4 @@ export {
     type AplicarErrosDoServidorParams,
     type ErrosDoServidorAplicados
 } from './erros-servidor'
-export { email, listaNaoVazia, selecaoObrigatoria, senha, textoObrigatorio } from './campos'
+export { email, listaNaoVazia, quantidadePositiva, selecaoObrigatoria, senha, textoObrigatorio } from './campos'

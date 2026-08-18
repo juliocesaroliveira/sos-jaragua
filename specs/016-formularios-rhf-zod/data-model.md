@@ -136,11 +136,54 @@ Estado atual por componente (`src/shared/ui/`) e a lacuna a fechar:
 
 ## 6. Inventário dos formulários existentes (alvo de FR-017)
 
-| Formulário                                          | RHF + Zod | `noValidate` | Erros por campo | Pendências                                                     |
-| --------------------------------------------------- | --------- | ------------ | --------------- | -------------------------------------------------------------- |
-| `app/(publico)/login/login-form.tsx`                 | ✅        | ✅           | ✅              | migrar para `Formulario`/`useFormulario`; mensagem de senha unificada |
-| `app/(interno)/voluntariado/candidatura/candidatura-form.tsx` | ✅ | ✅       | ✅              | condicional de `tipoVeiculo` no esquema (D8); `ref` nos `Controller`; helper de erro do servidor |
-| `app/(interno)/(staff)/admin/usuario-form-dialog.tsx` | ✅       | ❌ **falta** | ✅              | `noValidate` (via `Formulario`); `ref` no `Select`; helper de erro do servidor |
+> **Correção de 2026-08-17** — a primeira versão desta seção listava **três** formulários e
+> estava errada. O levantamento buscou por `onSubmit` e `<form>`, o que encontra o *formato*
+> de um formulário e não o seu *comportamento*: toda tela que coleta campos e submete por
+> `onClick` de um botão — que é como o módulo de Estoque inteiro foi construído — ficou
+> invisível para a busca. O critério correto é "coleta campos e submete", não "tem `<form>`".
+
+### Já em conformidade
+
+| Formulário                                                    | Observação                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------- |
+| `app/(publico)/login/login-form.tsx`                           | migrado; erro de credencial segue geral, por segurança  |
+| `app/(interno)/voluntariado/candidatura/candidatura-form.tsx`  | migrado; condicional de `tipoVeiculo` agora no esquema  |
+| `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`          | migrado; era o que estava sem `noValidate`              |
+| `app/(interno)/(staff)/estoque/entrada/entrada-form.tsx`       | migrado                                                 |
+
+### Migrados na correção de escopo
+
+Todos seguiam o mesmo desenho: `useState` por campo + `useTransition`, sem `<form>`, sem
+esquema Zod, **sem validação alguma no cliente** — o primeiro retorno ao operador vinha do
+servidor, depois do round-trip.
+
+| Tela                                                          | Regra de cliente que passou a existir                          |
+| ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `estoque/entrada/entrada-form.tsx`                             | quantidade > 0; validade obrigatória e não retroativa           |
+| `estoque/saida/saida-form.tsx`                                 | item e quantidade **por linha**; destino e responsável          |
+| `estoque/descarte/descarte-form.tsx`                           | item; quantidade > 0 e **não maior que o saldo**                |
+| `estoque/kits/gestao-kits.tsx`                                 | nome; ≥1 componente; item sem repetição na receita              |
+| `atividades/gestao-atividades.tsx`                             | título, categoria, local, início; turnos 1–12; vagas ≥ 1        |
+| `convocacao/convocacao-form.tsx`                               | título e mensagem (antes: botão apenas `disabled`)              |
+| `crise/gestao-crise.tsx`                                       | contagens obrigatórias e inteiras; proporção quando há base     |
+| `cadastros-pendentes/fila-triagem.tsx`                         | motivo da rejeição, mínimo de 5 caracteres                      |
+
+`app/(interno)/design-system/galeria.tsx` é vitrine de componentes, não formulário de
+operação — fora de escopo.
+
+### Defeitos encontrados durante a migração
+
+Não eram "falta de validação" apenas — em três telas o comportamento antigo produzia dado
+errado em silêncio:
+
+- **`crise/gestao-crise.tsx`**: campo vazio virava `Number('') === 0` e era gravado. O painel
+  passaria a dizer "0 famílias afetadas" porque alguém não preencheu, sem nada na tela
+  indicando isso.
+- **`estoque/kits/gestao-kits.tsx`**: linhas de receita incompletas eram **descartadas
+  silenciosamente** no `filter` antes do envio; um kit podia ser salvo sem receita nenhuma
+  sem uma única mensagem.
+- **`estoque/saida/saida-form.tsx`**: mesmo `filter` silencioso nas linhas, e o único aviso
+  possível era um alerta genérico acima da lista, não a linha com problema.
 
 Fora de escopo (Assumption da spec): controles de filtro/busca/paginação de listagens, que não
 submetem dados.

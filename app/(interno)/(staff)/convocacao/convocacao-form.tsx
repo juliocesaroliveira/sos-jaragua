@@ -2,8 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
+import { Controller } from 'react-hook-form'
 import { Megaphone, Send, X } from 'lucide-react'
-import { Alert, Button, Dialog, Input, Select, Textarea, avisar } from '@/src/shared/ui'
+import { z } from '@/src/shared/validacao/zod-ptbr'
+import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { Alert, Button, Dialog, Formulario, Input, Select, Textarea, avisar } from '@/src/shared/ui'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { enviarBroadcast } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
 
@@ -14,29 +17,69 @@ import { enviarBroadcast } from '@/src/modules/notificacoes/presentation/actions
  * que dispara mensagem para toda a base de voluntários de uma vez, e um envio
  * acidental não tem desfazer.
  */
+const esquema = z.object({
+    titulo: textoObrigatorio('Informe o título da convocação.'),
+    mensagem: textoObrigatorio('Escreva a mensagem da convocação.'),
+    habilidadeId: z.string().optional()
+})
+
+/** Campos que este formulário conhece — usado ao distribuir a recusa do servidor (FR-012). */
+const CAMPOS = Object.keys(esquema.shape)
+
+type DadosFormulario = z.infer<typeof esquema>
+
+const VALORES_INICIAIS: DadosFormulario = { titulo: '', mensagem: '', habilidadeId: undefined }
+
 export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: Lookup[]; totalAprovados: number }) {
     const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
 
-    const [titulo, setTitulo] = useState('')
-    const [mensagem, setMensagem] = useState('')
-    const [habilidadeId, setHabilidadeId] = useState<string[]>([])
     const [confirmando, setConfirmando] = useState(false)
     const [erro, setErro] = useState<string | null>(null)
 
-    const habilidadeEscolhida = habilidades.find((h) => h.id === habilidadeId[0])
+    const {
+        control,
+        register,
+        handleSubmit,
+        getValues,
+        setError,
+        reset,
+        watch,
+        formState: { errors }
+    } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
+
+    const habilidadeEscolhida = habilidades.find((h) => h.id === watch('habilidadeId'))
+
+    /**
+     * Submeter o formulário **valida e abre a confirmação** — nunca dispara a
+     * convocação direto. O envio real só acontece no botão do diálogo.
+     *
+     * Antes, o botão de envio ficava `disabled` enquanto título ou mensagem
+     * estivessem vazios. Botão desabilitado não diz o que falta; agora o envio é
+     * bloqueado com a mensagem sob o campo que precisa ser preenchido.
+     */
+    function confirmar() {
+        setErro(null)
+        setConfirmando(true)
+    }
 
     function enviar() {
+        const dados = getValues()
         setErro(null)
         iniciarTransicao(async () => {
             const resultado = await enviarBroadcast({
-                titulo,
-                mensagem,
-                habilidadeId: habilidadeId[0] ?? null
+                titulo: dados.titulo,
+                mensagem: dados.mensagem,
+                habilidadeId: dados.habilidadeId ?? null
             })
 
             if (!resultado.ok) {
-                setErro(resultado.erro.mensagem)
+                const { mensagemGeral } = aplicarErrosDoServidor({
+                    erro: resultado.erro,
+                    camposConhecidos: CAMPOS,
+                    definirErro: (campo, msg) => setError(campo as keyof DadosFormulario, { message: msg })
+                })
+                setErro(mensagemGeral)
                 setConfirmando(false)
                 return
             }
@@ -46,18 +89,14 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 'Convocação enviada',
                 total === 1 ? '1 voluntário foi notificado.' : `${total} voluntários foram notificados.`
             )
-            setTitulo('')
-            setMensagem('')
-            setHabilidadeId([])
+            reset(VALORES_INICIAIS)
             setConfirmando(false)
             router.refresh()
         })
     }
 
-    const podeEnviar = titulo.trim().length > 0 && mensagem.trim().length > 0
-
     return (
-        <div className="flex max-w-2xl flex-col gap-6">
+        <Formulario onSubmit={handleSubmit(confirmar)} className="flex max-w-2xl flex-col gap-6">
             {erro && <Alert tom="danger" titulo={erro} />}
 
             <Alert tom="warning" titulo="Esta mensagem vai para muitos voluntários de uma vez">
@@ -69,8 +108,8 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 label="Título"
                 obrigatorio
                 apoio="Aparece como assunto do e-mail e título da notificação."
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
+                erro={errors.titulo?.message}
+                {...register('titulo')}
             />
 
             <Textarea
@@ -78,27 +117,34 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 label="Mensagem"
                 obrigatorio
                 rows={6}
-                value={mensagem}
-                onChange={(e) => setMensagem(e.target.value)}
+                erro={errors.mensagem?.message}
+                {...register('mensagem')}
             />
 
-            <Select
-                id="habilidadeId"
-                label="Filtrar por habilidade"
-                placeholder={`Todos os voluntários aprovados (${totalAprovados})`}
-                apoio="Sem filtro, a convocação vai para toda a base aprovada."
-                opcoes={habilidades.map((h) => ({ value: h.id, label: h.nome }))}
-                value={habilidadeId}
-                onValueChange={setHabilidadeId}
+            <Controller
+                control={control}
+                name="habilidadeId"
+                render={({ field }) => (
+                    <Select
+                        ref={field.ref}
+                        id="habilidadeId"
+                        label="Filtrar por habilidade"
+                        placeholder={`Todos os voluntários aprovados (${totalAprovados})`}
+                        apoio="Sem filtro, a convocação vai para toda a base aprovada."
+                        opcoes={habilidades.map((h) => ({ value: h.id, label: h.nome }))}
+                        value={field.value ? [field.value] : []}
+                        onValueChange={(v) => field.onChange(v[0])}
+                        erro={errors.habilidadeId?.message}
+                    />
+                )}
             />
 
             <div className="flex justify-end">
                 <Button
+                    type="submit"
                     size="lg"
                     variant="danger"
-                    disabled={!podeEnviar}
                     iconeInicio={<Megaphone aria-hidden className="size-5" />}
-                    onClick={() => setConfirmando(true)}
                 >
                     Enviar convocação
                 </Button>
@@ -136,10 +182,12 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 }
             >
                 <div className="flex flex-col gap-2">
-                    <p className="text-base font-semibold text-foreground">{titulo}</p>
-                    <p className="text-base whitespace-pre-wrap text-neutral-600 dark:text-neutral-300">{mensagem}</p>
+                    <p className="text-base font-semibold text-foreground">{watch('titulo')}</p>
+                    <p className="text-base whitespace-pre-wrap text-neutral-600 dark:text-neutral-300">
+                        {watch('mensagem')}
+                    </p>
                 </div>
             </Dialog>
-        </div>
+        </Formulario>
     )
 }

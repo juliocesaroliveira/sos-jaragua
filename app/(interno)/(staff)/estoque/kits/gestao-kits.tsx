@@ -1,13 +1,17 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useId, useRef, useState, useTransition } from 'react'
+import { useEffect, useId, useState, useTransition } from 'react'
+import { Controller, useFieldArray } from 'react-hook-form'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { z } from '@/src/shared/validacao/zod-ptbr'
+import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
 import {
     Alert,
     Badge,
     Button,
     Dialog,
+    Formulario,
     IconButton,
     Input,
     NumberInput,
@@ -29,77 +33,136 @@ import { salvarKit } from '@/src/modules/estoque/presentation/actions/estoque'
  * mesmo `kitsPossiveis` do domínio que alimenta o painel de crise — a
  * coordenação vê o efeito da receita sobre a capacidade sem trocar de tela.
  */
-type LinhaReceita = { id: string; itemId: string[]; quantidade: string }
+const esquemaBase = z.object({
+    nome: textoObrigatorio('Informe o nome do kit.'),
+    descricao: z.string().optional(),
+    ativo: z.boolean(),
+    componentes: z
+        .array(
+            z.object({
+                itemId: textoObrigatorio('Selecione o item.'),
+                quantidade: quantidadePositiva('Informe a quantidade por kit.')
+            })
+        )
+        .min(1, 'O kit precisa de ao menos um componente.')
+})
+
+/**
+ * O mesmo item não pode aparecer duas vezes na receita: duas linhas do mesmo
+ * item significam duas verdades sobre quanto o kit consome dele, e o cálculo de
+ * "kits montáveis" passaria a depender de qual das duas o servidor considerou.
+ */
+const esquema = esquemaBase.superRefine((dados, ctx) => {
+    const vistos = new Map<string, number>()
+    dados.componentes.forEach((componente, indice) => {
+        if (!componente.itemId) return
+        if (vistos.has(componente.itemId)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['componentes', indice, 'itemId'],
+                message: 'Este item já está na receita.'
+            })
+        }
+        vistos.set(componente.itemId, indice)
+    })
+})
+
+const CAMPOS = Object.keys(esquemaBase.shape)
+
+type DadosFormulario = z.infer<typeof esquemaBase>
+
+const COMPONENTE_VAZIO = { itemId: '', quantidade: '' }
+
+const VALORES_INICIAIS: DadosFormulario = {
+    nome: '',
+    descricao: '',
+    ativo: true,
+    componentes: [COMPONENTE_VAZIO]
+}
 
 export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: ItemComSaldo[] }) {
     const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
 
-    /**
-     * Ids por instância, com prefixo de `useId` — um contador de módulo
-     * persistiria entre requisições no servidor e o SSR divergiria da
-     * hidratação, quebrando o `htmlFor` de cada label.
-     */
-    const idBase = useId()
-    const sequencia = useRef(0)
-    const proximoId = useCallback(() => `${idBase}${sequencia.current++}`, [idBase])
-    const novaLinha = useCallback((): LinhaReceita => ({ id: proximoId(), itemId: [], quantidade: '' }), [proximoId])
-
     const [editando, setEditando] = useState<KitComReceita | null>(null)
     const [aberto, setAberto] = useState(false)
-    const [nome, setNome] = useState('')
-    const [descricao, setDescricao] = useState('')
-    const [ativo, setAtivo] = useState(true)
-    const [receita, setReceita] = useState<LinhaReceita[]>(() => [novaLinha()])
     const [erro, setErro] = useState<string | null>(null)
+
+    /** Prefixo de `id` estável entre servidor e cliente — ver `saida-form.tsx`. */
+    const idBase = useId()
 
     const saldos = new Map(itens.map((i) => [i.id, i.saldo]))
 
+    const {
+        control,
+        register,
+        handleSubmit,
+        setError,
+        reset,
+        formState: { errors }
+    } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
+
+    const { fields, append, remove } = useFieldArray({ control, name: 'componentes' })
+
+    /**
+     * Reinicialização ao abrir: cobre tanto "Novo kit" quanto trocar de um kit
+     * para outro sem fechar o diálogo. Sem isto, a receita de um kit vazaria
+     * para a edição do seguinte, e mensagens de erro do envio anterior
+     * continuariam na tela (FR-016).
+     */
+    useEffect(() => {
+        if (!aberto) return
+        setErro(null)
+        reset(
+            editando
+                ? {
+                      nome: editando.nome,
+                      descricao: editando.descricao ?? '',
+                      ativo: editando.ativo,
+                      componentes:
+                          editando.componentes.length > 0
+                              ? editando.componentes.map((c) => ({
+                                    itemId: c.itemId,
+                                    quantidade: String(c.quantidadePorKit)
+                                }))
+                              : [COMPONENTE_VAZIO]
+                  }
+                : VALORES_INICIAIS
+        )
+    }, [aberto, editando, reset])
+
     function abrirNovo() {
         setEditando(null)
-        setNome('')
-        setDescricao('')
-        setAtivo(true)
-        setReceita([novaLinha()])
-        setErro(null)
         setAberto(true)
     }
 
     function abrirEdicao(kit: KitComReceita) {
         setEditando(kit)
-        setNome(kit.nome)
-        setDescricao(kit.descricao ?? '')
-        setAtivo(kit.ativo)
-        setReceita(
-            kit.componentes.length > 0
-                ? kit.componentes.map((c) => ({
-                      id: proximoId(),
-                      itemId: [c.itemId],
-                      quantidade: String(c.quantidadePorKit)
-                  }))
-                : [novaLinha()]
-        )
-        setErro(null)
         setAberto(true)
     }
 
-    function salvar() {
+    function salvar(dados: DadosFormulario) {
         setErro(null)
-        const componentes = receita
-            .filter((l) => l.itemId[0] && Number(l.quantidade) > 0)
-            .map((l) => ({ itemId: l.itemId[0], quantidadePorKit: Number(l.quantidade) }))
 
         iniciarTransicao(async () => {
             const resultado = await salvarKit({
                 id: editando?.id,
-                nome,
-                descricao: descricao.trim() || null,
-                ativo,
-                componentes
+                nome: dados.nome,
+                descricao: dados.descricao?.trim() || null,
+                ativo: dados.ativo,
+                componentes: dados.componentes.map((c) => ({
+                    itemId: c.itemId,
+                    quantidadePorKit: Number(c.quantidade)
+                }))
             })
 
             if (!resultado.ok) {
-                setErro(resultado.erro.mensagem)
+                const { mensagemGeral } = aplicarErrosDoServidor({
+                    erro: resultado.erro,
+                    camposConhecidos: CAMPOS,
+                    definirErro: (campo, msg) => setError(campo as keyof DadosFormulario, { message: msg })
+                })
+                setErro(mensagemGeral)
                 return
             }
 
@@ -203,112 +266,142 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
                 acoes={
                     <>
                         <Button
+                            type="button"
                             variant="secondary"
                             iconeInicio={<X className="size-4" />}
                             onClick={() => setAberto(false)}
                         >
                             Cancelar
                         </Button>
-                        <Button iconeInicio={<Check className="size-4" />} loading={enviando} onClick={salvar}>
+                        {/* Fora do `<form>`: o `form=` é o que liga o botão a ele. */}
+                        <Button
+                            type="submit"
+                            form="kit-form"
+                            iconeInicio={<Check className="size-4" />}
+                            loading={enviando}
+                        >
                             Salvar
                         </Button>
                     </>
                 }
             >
-                <div className="flex flex-col gap-4">
+                <Formulario id="kit-form" onSubmit={handleSubmit(salvar)} className="flex flex-col gap-4">
                     {erro && <Alert tom="danger" titulo={erro} />}
 
                     <Input
                         id="nomeKit"
                         label="Nome do kit"
                         obrigatorio
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
+                        erro={errors.nome?.message}
+                        {...register('nome')}
                     />
                     <Textarea
                         id="descricaoKit"
                         label="Descrição"
-                        value={descricao}
-                        onChange={(e) => setDescricao(e.target.value)}
+                        erro={errors.descricao?.message}
+                        {...register('descricao')}
                     />
                     {editando && (
-                        <Switch
-                            id="ativoKit"
-                            label="Kit ativo"
-                            apoio="Kits inativos não aparecem na tela de saída."
-                            checked={ativo}
-                            onCheckedChange={setAtivo}
+                        <Controller
+                            control={control}
+                            name="ativo"
+                            render={({ field }) => (
+                                <Switch
+                                    ref={field.ref}
+                                    id="ativoKit"
+                                    label="Kit ativo"
+                                    apoio="Kits inativos não aparecem na tela de saída."
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    erro={errors.ativo?.message}
+                                />
+                            )}
                         />
                     )}
 
                     <div className="flex flex-col gap-3">
                         <h3 className="text-lg font-semibold text-foreground">Receita</h3>
 
-                        {receita.map((linha) => {
+                        {errors.componentes?.root?.message && (
+                            <Alert tom="danger" titulo={errors.componentes.root.message} />
+                        )}
+
+                        {fields.map((campo, indice) => {
                             // Um kit sem componente algum não consumiria nada.
-                            const ultimoComponente = receita.length === 1
+                            const ultimoComponente = fields.length === 1
                             return (
-                                <div key={linha.id} className="flex items-end gap-2">
+                                <div key={campo.id} className="flex items-start gap-2">
                                     <div className="min-w-0 flex-1">
-                                        <Select
-                                            id={`item-${linha.id}`}
-                                            label="Item"
-                                            opcoes={itens.map((i) => ({ value: i.id, label: i.nome }))}
-                                            value={linha.itemId}
-                                            onValueChange={(v) =>
-                                                setReceita((atuais) =>
-                                                    atuais.map((l) => (l.id === linha.id ? { ...l, itemId: v } : l))
-                                                )
-                                            }
+                                        <Controller
+                                            control={control}
+                                            name={`componentes.${indice}.itemId`}
+                                            render={({ field }) => (
+                                                <Select
+                                                    ref={field.ref}
+                                                    id={`item-${idBase}-${indice}`}
+                                                    label="Item"
+                                                    obrigatorio
+                                                    opcoes={itens.map((i) => ({ value: i.id, label: i.nome }))}
+                                                    value={field.value ? [field.value] : []}
+                                                    onValueChange={(v) => field.onChange(v[0] ?? '')}
+                                                    erro={errors.componentes?.[indice]?.itemId?.message}
+                                                />
+                                            )}
                                         />
                                     </div>
                                     <div className="w-32 shrink-0">
-                                        <NumberInput
-                                            id={`qtdKit-${linha.id}`}
-                                            label="Por kit"
-                                            min={0}
-                                            value={linha.quantidade}
-                                            onValueChange={(v) =>
-                                                setReceita((atuais) =>
-                                                    atuais.map((l) => (l.id === linha.id ? { ...l, quantidade: v } : l))
-                                                )
-                                            }
+                                        <Controller
+                                            control={control}
+                                            name={`componentes.${indice}.quantidade`}
+                                            render={({ field }) => (
+                                                <NumberInput
+                                                    ref={field.ref}
+                                                    id={`qtdKit-${idBase}-${indice}`}
+                                                    label="Por kit"
+                                                    obrigatorio
+                                                    min={0}
+                                                    value={field.value}
+                                                    onValueChange={field.onChange}
+                                                    erro={errors.componentes?.[indice]?.quantidade?.message}
+                                                />
+                                            )}
                                         />
                                     </div>
                                     {/* Mesma condição de antes; agora ela se explica (A-05). */}
-                                    <Tooltip
-                                        conteudo={
-                                            ultimoComponente
-                                                ? 'O kit precisa de ao menos um componente'
-                                                : 'Remover componente'
-                                        }
-                                        descricao={ultimoComponente}
-                                    >
-                                        <IconButton
-                                            aria-label="Remover componente"
-                                            icone={<Trash2 aria-hidden className="size-5" />}
-                                            variant="ghost"
-                                            inativo={ultimoComponente}
-                                            onClick={() =>
-                                                setReceita((atuais) => atuais.filter((l) => l.id !== linha.id))
+                                    <div className="mt-7 shrink-0">
+                                        <Tooltip
+                                            conteudo={
+                                                ultimoComponente
+                                                    ? 'O kit precisa de ao menos um componente'
+                                                    : 'Remover componente'
                                             }
-                                        />
-                                    </Tooltip>
+                                            descricao={ultimoComponente}
+                                        >
+                                            <IconButton
+                                                aria-label="Remover componente"
+                                                icone={<Trash2 aria-hidden className="size-5" />}
+                                                variant="ghost"
+                                                inativo={ultimoComponente}
+                                                onClick={() => remove(indice)}
+                                            />
+                                        </Tooltip>
+                                    </div>
                                 </div>
                             )
                         })}
 
                         <div>
                             <Button
+                                type="button"
                                 variant="secondary"
                                 iconeInicio={<Plus aria-hidden className="size-5" />}
-                                onClick={() => setReceita((atuais) => [...atuais, novaLinha()])}
+                                onClick={() => append(COMPONENTE_VAZIO)}
                             >
                                 Adicionar componente
                             </Button>
                         </div>
                     </div>
-                </div>
+                </Formulario>
             </Dialog>
         </>
     )

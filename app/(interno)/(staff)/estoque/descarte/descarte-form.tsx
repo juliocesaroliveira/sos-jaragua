@@ -1,12 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useMemo, useState } from 'react'
+import { Controller } from 'react-hook-form'
 import { Trash2 } from 'lucide-react'
-import { Alert, Button, NumberInput, Select, Textarea, avisar } from '@/src/shared/ui'
+import { z } from '@/src/shared/validacao/zod-ptbr'
+import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { Alert, Button, Formulario, NumberInput, Select, Textarea, avisar } from '@/src/shared/ui'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
-import { camposComErro } from '@/src/shared/kernel'
 import type { ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
 import { registrarDescarte } from '@/src/modules/estoque/presentation/actions/estoque'
 
@@ -17,101 +19,157 @@ import { registrarDescarte } from '@/src/modules/estoque/presentation/actions/es
  * por estrutura, que o descarte nunca apareça nos relatórios de "itens
  * entregues à população" (DESIGN.md §9.4).
  */
+const esquemaBase = z.object({
+    // O nome do campo espelha a chave devolvida pelo caso de uso em
+    // `detalhes.campos` — é o que leva a recusa do servidor ao campo certo.
+    itemId: textoObrigatorio('Selecione o item.'),
+    quantidade: quantidadePositiva('Informe a quantidade a descartar.'),
+    motivo: z.string().optional()
+})
+
+/** Campos que este formulário conhece — usado ao distribuir a recusa do servidor (FR-012). */
+const CAMPOS = Object.keys(esquemaBase.shape)
+
+type DadosFormulario = z.infer<typeof esquemaBase>
+
+const VALORES_INICIAIS: DadosFormulario = { itemId: '', quantidade: '', motivo: '' }
+
 export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
     const router = useRouter()
-    const [enviando, iniciarTransicao] = useTransition()
-
-    const [itemId, setItemId] = useState<string[]>([])
-    const [quantidade, setQuantidade] = useState('')
-    const [motivo, setMotivo] = useState('')
-    const [erros, setErros] = useState<Record<string, string>>({})
     const [erroGeral, setErroGeral] = useState<string | null>(null)
 
-    const selecionado = itens.find((i) => i.id === itemId[0])
+    /**
+     * O saldo do item escolhido entra na validação, então o esquema depende de
+     * dados que só existem em tempo de execução — daí ser construído aqui, e
+     * não no módulo. Sem isto, pedir baixa de 50 unidades de um item com 3 em
+     * estoque só seria recusado depois da ida ao servidor, com a mensagem
+     * genérica de "descarte bloqueado".
+     */
+    const esquema = useMemo(
+        () =>
+            esquemaBase.superRefine((dados, ctx) => {
+                const item = itens.find((i) => i.id === dados.itemId)
+                if (!item || !dados.quantidade) return
 
-    function salvar() {
-        setErros({})
+                if (Number(dados.quantidade) > item.saldo) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['quantidade'],
+                        message: `Saldo disponível: ${formatarQuantidade(item.saldo)} ${ABREVIACAO_UNIDADE[item.unidadeMedida]}.`
+                    })
+                }
+            }),
+        [itens]
+    )
+
+    const {
+        control,
+        register,
+        handleSubmit,
+        setError,
+        reset,
+        watch,
+        formState: { errors, isSubmitting }
+    } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
+
+    const selecionado = itens.find((i) => i.id === watch('itemId'))
+
+    async function salvar(dados: DadosFormulario) {
         setErroGeral(null)
 
-        iniciarTransicao(async () => {
-            const resultado = await registrarDescarte({
-                itemId: itemId[0],
-                quantidade: Number(quantidade),
-                motivo: motivo.trim() || null
-            })
-
-            if (!resultado.ok) {
-                setErros(camposComErro(resultado.erro))
-                setErroGeral(resultado.erro.mensagem)
-                avisar.erro('Descarte não registrado', resultado.erro.mensagem)
-                return
-            }
-
-            avisar.sucesso('Descarte registrado', 'O saldo foi deduzido do estoque.')
-            setItemId([])
-            setQuantidade('')
-            setMotivo('')
-            router.refresh()
+        const resultado = await registrarDescarte({
+            itemId: dados.itemId,
+            quantidade: Number(dados.quantidade),
+            motivo: dados.motivo?.trim() || null
         })
+
+        if (!resultado.ok) {
+            const { mensagemGeral } = aplicarErrosDoServidor({
+                erro: resultado.erro,
+                camposConhecidos: CAMPOS,
+                definirErro: (campo, mensagem) => setError(campo as keyof DadosFormulario, { message: mensagem })
+            })
+            setErroGeral(mensagemGeral)
+            avisar.erro('Descarte não registrado', resultado.erro.mensagem)
+            return
+        }
+
+        avisar.sucesso('Descarte registrado', 'O saldo foi deduzido do estoque.')
+        reset(VALORES_INICIAIS)
+        router.refresh()
     }
 
     return (
-        <div className="flex max-w-2xl flex-col gap-6">
+        <Formulario onSubmit={handleSubmit(salvar)} className="flex max-w-2xl flex-col gap-6">
             <Alert tom="warning" titulo="Esta baixa não conta como entrega">
                 Itens descartados saem do saldo, mas ficam fora dos relatórios de itens entregues à população.
             </Alert>
 
             {erroGeral && <Alert tom="danger" titulo={erroGeral} />}
 
-            <Select
-                id="itemId"
-                label="Item"
-                obrigatorio
-                opcoes={itens.map((i) => ({
-                    value: i.id,
-                    label: `${i.nome} — ${formatarQuantidade(i.saldo)} ${ABREVIACAO_UNIDADE[i.unidadeMedida]} em estoque`,
-                    disabled: i.saldo <= 0
-                }))}
-                value={itemId}
-                onValueChange={setItemId}
-                erro={erros.itemId}
+            <Controller
+                control={control}
+                name="itemId"
+                render={({ field }) => (
+                    <Select
+                        ref={field.ref}
+                        id="itemId"
+                        label="Item"
+                        obrigatorio
+                        opcoes={itens.map((i) => ({
+                            value: i.id,
+                            label: `${i.nome} — ${formatarQuantidade(i.saldo)} ${ABREVIACAO_UNIDADE[i.unidadeMedida]} em estoque`,
+                            disabled: i.saldo <= 0
+                        }))}
+                        value={field.value ? [field.value] : []}
+                        onValueChange={(v) => field.onChange(v[0] ?? '')}
+                        erro={errors.itemId?.message}
+                    />
+                )}
             />
 
-            <NumberInput
-                id="quantidade"
-                label="Quantidade a descartar"
-                obrigatorio
-                min={0}
-                max={selecionado?.saldo}
-                value={quantidade}
-                onValueChange={setQuantidade}
-                apoio={
-                    selecionado
-                        ? `Saldo disponível: ${formatarQuantidade(selecionado.saldo)} ${ABREVIACAO_UNIDADE[selecionado.unidadeMedida]}.`
-                        : undefined
-                }
-                erro={erros.quantidade}
+            <Controller
+                control={control}
+                name="quantidade"
+                render={({ field }) => (
+                    <NumberInput
+                        ref={field.ref}
+                        id="quantidade"
+                        label="Quantidade a descartar"
+                        obrigatorio
+                        min={0}
+                        max={selecionado?.saldo}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        apoio={
+                            selecionado
+                                ? `Saldo disponível: ${formatarQuantidade(selecionado.saldo)} ${ABREVIACAO_UNIDADE[selecionado.unidadeMedida]}.`
+                                : undefined
+                        }
+                        erro={errors.quantidade?.message}
+                    />
+                )}
             />
 
             <Textarea
                 id="motivo"
                 label="Motivo"
                 apoio="Ex.: vencido, avariado, embalagem inutilizada. Opcional, mas recomendado."
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
+                erro={errors.motivo?.message}
+                {...register('motivo')}
             />
 
             <div className="flex justify-end">
                 <Button
+                    type="submit"
                     variant="danger"
                     iconeInicio={<Trash2 className="size-4" />}
                     size="lg"
-                    loading={enviando}
-                    onClick={salvar}
+                    loading={isSubmitting}
                 >
                     Registrar descarte
                 </Button>
             </div>
-        </div>
+        </Formulario>
     )
 }

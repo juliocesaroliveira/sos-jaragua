@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, Eye, Trash2, X } from 'lucide-react'
-import { Alert, Badge, Button, Dialog, Textarea, avisar } from '@/src/shared/ui'
+import { z } from '@/src/shared/validacao/zod-ptbr'
+import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { Alert, Badge, Button, Dialog, Formulario, Textarea, avisar } from '@/src/shared/ui'
 import { formatarCep, formatarCpf, formatarTelefone } from '@/src/modules/identidade/domain'
 import { ROTULO_DISPONIBILIDADE, ROTULO_TIPO_VEICULO } from '@/src/modules/voluntariado/domain/candidatura'
 import type { CandidaturaPendente } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
@@ -15,13 +17,42 @@ import { aprovarCandidatura, rejeitarCandidatura } from '@/src/modules/voluntari
  * A lista é renderizada como cards e não como tabela: em campo a triagem é
  * feita no celular, e cada decisão precisa dos dados completos à vista.
  */
+
+/**
+ * O mínimo de 5 caracteres é a mesma regra que o domínio aplica
+ * (`rejeitar-candidatura.ts`). Repeti-la aqui não é duplicação por descuido: é
+ * o que evita que o coordenador escreva "não" e só descubra depois da ida ao
+ * servidor que o candidato precisa de um motivo aproveitável para reenviar.
+ */
+const esquema = z.object({
+    motivo: textoObrigatorio('Informe o motivo da rejeição.').min(5, 'Descreva o motivo com ao menos 5 caracteres.')
+})
+
+const CAMPOS = Object.keys(esquema.shape)
+
+type DadosRejeicao = z.infer<typeof esquema>
 export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendente[] }) {
     const router = useRouter()
     const [emAndamento, iniciarTransicao] = useTransition()
     const [detalhe, setDetalhe] = useState<CandidaturaPendente | null>(null)
     const [aRejeitar, setARejeitar] = useState<CandidaturaPendente | null>(null)
-    const [motivo, setMotivo] = useState('')
-    const [erroMotivo, setErroMotivo] = useState<string | null>(null)
+    const [erroGeral, setErroGeral] = useState<string | null>(null)
+
+    const {
+        register,
+        handleSubmit,
+        setError,
+        reset,
+        formState: { errors }
+    } = useFormulario(esquema, { defaultValues: { motivo: '' } })
+
+    // Cada rejeição começa com o campo limpo: o motivo escrito para uma
+    // candidatura não pode reaparecer na seguinte (FR-016).
+    useEffect(() => {
+        if (!aRejeitar) return
+        setErroGeral(null)
+        reset({ motivo: '' })
+    }, [aRejeitar, reset])
 
     function aprovar(candidatura: CandidaturaPendente) {
         iniciarTransicao(async () => {
@@ -36,21 +67,24 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
         })
     }
 
-    function confirmarRejeicao() {
+    function confirmarRejeicao(dados: DadosRejeicao) {
         if (!aRejeitar) return
-        setErroMotivo(null)
+        setErroGeral(null)
 
         iniciarTransicao(async () => {
-            const resultado = await rejeitarCandidatura({ perfilId: aRejeitar.id, motivo })
+            const resultado = await rejeitarCandidatura({ perfilId: aRejeitar.id, motivo: dados.motivo })
             if (!resultado.ok) {
-                const campo = (resultado.erro.detalhes?.campos as Record<string, string> | undefined)?.motivo
-                setErroMotivo(campo ?? resultado.erro.mensagem)
+                const { mensagemGeral } = aplicarErrosDoServidor({
+                    erro: resultado.erro,
+                    camposConhecidos: CAMPOS,
+                    definirErro: (campo, msg) => setError(campo as keyof DadosRejeicao, { message: msg })
+                })
+                setErroGeral(mensagemGeral)
                 return
             }
             avisar.info('Candidatura rejeitada', `${aRejeitar.nomeCompleto} foi notificado do motivo.`)
             setARejeitar(null)
             setDetalhe(null)
-            setMotivo('')
             router.refresh()
         })
     }
@@ -173,10 +207,7 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
             <Dialog
                 open={aRejeitar !== null}
                 onOpenChange={(aberto) => {
-                    if (!aberto) {
-                        setARejeitar(null)
-                        setErroMotivo(null)
-                    }
+                    if (!aberto) setARejeitar(null)
                 }}
                 titulo="Rejeitar candidatura"
                 descricao={`O motivo é enviado a ${aRejeitar?.nomeCompleto ?? 'o candidato'}, que pode corrigir e reenviar.`}
@@ -189,25 +220,35 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                         >
                             Cancelar
                         </Button>
+                        {/* Fora do `<form>`: o `form=` é o que liga o botão a ele. */}
                         <Button
+                            type="submit"
+                            form="rejeicao-form"
                             variant="danger"
                             iconeInicio={<Trash2 className="size-4" />}
                             loading={emAndamento}
-                            onClick={confirmarRejeicao}
                         >
                             Rejeitar
                         </Button>
                     </>
                 }
             >
-                <Textarea
-                    id="motivoRejeicao"
-                    label="Motivo da rejeição"
-                    obrigatorio
-                    value={motivo}
-                    onChange={(e) => setMotivo(e.target.value)}
-                    erro={erroMotivo ?? undefined}
-                />
+                <Formulario
+                    id="rejeicao-form"
+                    onSubmit={handleSubmit(confirmarRejeicao)}
+                    className="flex flex-col gap-4"
+                >
+                    {erroGeral && <Alert tom="danger" titulo={erroGeral} />}
+
+                    <Textarea
+                        id="motivoRejeicao"
+                        label="Motivo da rejeição"
+                        obrigatorio
+                        apoio="O candidato lê este texto para saber o que corrigir antes de reenviar."
+                        erro={errors.motivo?.message}
+                        {...register('motivo')}
+                    />
+                </Formulario>
             </Dialog>
         </>
     )

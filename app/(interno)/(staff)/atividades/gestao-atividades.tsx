@@ -2,14 +2,18 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
+import { Controller } from 'react-hook-form'
 import { ClipboardList, MoreVertical, Plus, X } from 'lucide-react'
+import { z } from '@/src/shared/validacao/zod-ptbr'
+import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
 import {
     Alert,
     Badge,
     Button,
     COR_STATUS_ATIVIDADE,
     Dialog,
+    Formulario,
     Input,
     Menu,
     NumberInput,
@@ -29,49 +33,82 @@ import { alterarStatusAtividade, criarAtividade } from '@/src/modules/voluntaria
  * (BR-VOL-04), então o formulário pede **quantos** turnos consecutivos criar a
  * partir de um horário inicial — e o servidor recusa qualquer bloco diferente.
  */
+const inteiroEntre = (minimo: number, maximo: number, mensagem: string) =>
+    textoObrigatorio(mensagem).refine((valor) => {
+        const numero = Number(valor)
+        return Number.isInteger(numero) && numero >= minimo && numero <= maximo
+    }, `Informe um número inteiro entre ${minimo} e ${maximo}.`)
+
+const esquema = z.object({
+    titulo: textoObrigatorio('Informe o título da atividade.'),
+    categoriaId: textoObrigatorio('Selecione a categoria.'),
+    local: textoObrigatorio('Informe o local.'),
+    primeiroTurnoInicio: textoObrigatorio('Informe o início do primeiro turno.'),
+    quantidadeTurnos: inteiroEntre(1, 12, 'Informe a quantidade de turnos.'),
+    vagasPorTurno: inteiroEntre(1, 999, 'Informe as vagas por turno.')
+})
+
+/** Campos que este formulário conhece — usado ao distribuir a recusa do servidor (FR-012). */
+const CAMPOS = Object.keys(esquema.shape)
+
+type DadosFormulario = z.infer<typeof esquema>
+
+const VALORES_INICIAIS: DadosFormulario = {
+    titulo: '',
+    categoriaId: '',
+    local: '',
+    primeiroTurnoInicio: '',
+    quantidadeTurnos: '2',
+    vagasPorTurno: '5'
+}
 export function GestaoAtividades({ atividades, categorias }: { atividades: LinhaAtividade[]; categorias: Lookup[] }) {
     const router = useRouter()
     const [emAndamento, iniciarTransicao] = useTransition()
     const [criando, setCriando] = useState(false)
 
-    const [titulo, setTitulo] = useState('')
-    const [categoriaId, setCategoriaId] = useState<string[]>([])
-    const [local, setLocal] = useState('')
-    const [inicio, setInicio] = useState('')
-    const [quantidadeTurnos, setQuantidadeTurnos] = useState('2')
-    const [vagasPorTurno, setVagasPorTurno] = useState('5')
     const [erro, setErro] = useState<string | null>(null)
 
-    function limpar() {
-        setTitulo('')
-        setCategoriaId([])
-        setLocal('')
-        setInicio('')
-        setQuantidadeTurnos('2')
-        setVagasPorTurno('5')
-        setErro(null)
-    }
+    const {
+        control,
+        register,
+        handleSubmit,
+        setError,
+        reset,
+        formState: { errors }
+    } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
 
-    function salvar() {
+    // Reabrir o diálogo recomeça do zero, sem valores nem mensagens de erro do
+    // envio anterior (FR-016).
+    useEffect(() => {
+        if (!criando) return
+        setErro(null)
+        reset(VALORES_INICIAIS)
+    }, [criando, reset])
+
+    function salvar(dados: DadosFormulario) {
         setErro(null)
         iniciarTransicao(async () => {
             const resultado = await criarAtividade({
-                titulo,
-                categoriaId: categoriaId[0] ?? '',
-                local,
-                primeiroTurnoInicio: inicio,
-                quantidadeTurnos: Number(quantidadeTurnos),
-                vagasPorTurno: Number(vagasPorTurno)
+                titulo: dados.titulo,
+                categoriaId: dados.categoriaId,
+                local: dados.local,
+                primeiroTurnoInicio: dados.primeiroTurnoInicio,
+                quantidadeTurnos: Number(dados.quantidadeTurnos),
+                vagasPorTurno: Number(dados.vagasPorTurno)
             })
 
             if (!resultado.ok) {
-                setErro(resultado.erro.mensagem)
+                const { mensagemGeral } = aplicarErrosDoServidor({
+                    erro: resultado.erro,
+                    camposConhecidos: CAMPOS,
+                    definirErro: (campo, msg) => setError(campo as keyof DadosFormulario, { message: msg })
+                })
+                setErro(mensagemGeral)
                 return
             }
 
-            avisar.sucesso('Atividade criada', `${quantidadeTurnos} turno(s) de ${DURACAO_TURNO_HORAS}h gerados.`)
+            avisar.sucesso('Atividade criada', `${dados.quantidadeTurnos} turno(s) de ${DURACAO_TURNO_HORAS}h gerados.`)
             setCriando(false)
-            limpar()
             router.refresh()
         })
     }
@@ -183,10 +220,7 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
 
             <Dialog
                 open={criando}
-                onOpenChange={(aberto) => {
-                    setCriando(aberto)
-                    if (!aberto) limpar()
-                }}
+                onOpenChange={setCriando}
                 titulo="Nova atividade"
                 descricao={`Os turnos são gerados em blocos consecutivos de ${DURACAO_TURNO_HORAS} horas.`}
                 tamanho="lg"
@@ -199,66 +233,92 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                         >
                             Cancelar
                         </Button>
-                        <Button iconeInicio={<Plus className="size-4" />} loading={emAndamento} onClick={salvar}>
+                        {/* Fora do `<form>`: o `form=` é o que liga o botão a ele. */}
+                        <Button
+                            type="submit"
+                            form="atividade-form"
+                            iconeInicio={<Plus className="size-4" />}
+                            loading={emAndamento}
+                        >
                             Criar atividade
                         </Button>
                     </>
                 }
             >
-                <div className="flex flex-col gap-4">
+                <Formulario id="atividade-form" onSubmit={handleSubmit(salvar)} className="flex flex-col gap-4">
                     {erro && <Alert tom="danger" titulo={erro} />}
 
                     <Input
                         id="titulo"
                         label="Título"
                         obrigatorio
-                        value={titulo}
-                        onChange={(e) => setTitulo(e.target.value)}
+                        erro={errors.titulo?.message}
+                        {...register('titulo')}
                     />
-                    <Select
-                        id="categoriaId"
-                        label="Categoria"
-                        obrigatorio
-                        opcoes={categorias.map((c) => ({ value: c.id, label: c.nome }))}
-                        value={categoriaId}
-                        onValueChange={setCategoriaId}
+                    <Controller
+                        control={control}
+                        name="categoriaId"
+                        render={({ field }) => (
+                            <Select
+                                ref={field.ref}
+                                id="categoriaId"
+                                label="Categoria"
+                                obrigatorio
+                                opcoes={categorias.map((c) => ({ value: c.id, label: c.nome }))}
+                                value={field.value ? [field.value] : []}
+                                onValueChange={(v) => field.onChange(v[0] ?? '')}
+                                erro={errors.categoriaId?.message}
+                            />
+                        )}
                     />
-                    <Input
-                        id="local"
-                        label="Local"
-                        obrigatorio
-                        value={local}
-                        onChange={(e) => setLocal(e.target.value)}
-                    />
+                    <Input id="local" label="Local" obrigatorio erro={errors.local?.message} {...register('local')} />
                     <Input
                         id="inicio"
                         label="Início do primeiro turno"
                         type="datetime-local"
                         obrigatorio
-                        value={inicio}
-                        onChange={(e) => setInicio(e.target.value)}
+                        erro={errors.primeiroTurnoInicio?.message}
+                        {...register('primeiroTurnoInicio')}
                     />
                     <div className="grid gap-4 sm:grid-cols-2">
-                        <NumberInput
-                            id="quantidadeTurnos"
-                            label="Quantidade de turnos"
-                            apoio={`Cada turno tem ${DURACAO_TURNO_HORAS} horas.`}
-                            min={1}
-                            max={12}
-                            casasDecimais={0}
-                            value={quantidadeTurnos}
-                            onValueChange={setQuantidadeTurnos}
+                        <Controller
+                            control={control}
+                            name="quantidadeTurnos"
+                            render={({ field }) => (
+                                <NumberInput
+                                    ref={field.ref}
+                                    id="quantidadeTurnos"
+                                    label="Quantidade de turnos"
+                                    obrigatorio
+                                    apoio={`Cada turno tem ${DURACAO_TURNO_HORAS} horas.`}
+                                    min={1}
+                                    max={12}
+                                    casasDecimais={0}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    erro={errors.quantidadeTurnos?.message}
+                                />
+                            )}
                         />
-                        <NumberInput
-                            id="vagasPorTurno"
-                            label="Vagas por turno"
-                            min={1}
-                            casasDecimais={0}
-                            value={vagasPorTurno}
-                            onValueChange={setVagasPorTurno}
+                        <Controller
+                            control={control}
+                            name="vagasPorTurno"
+                            render={({ field }) => (
+                                <NumberInput
+                                    ref={field.ref}
+                                    id="vagasPorTurno"
+                                    label="Vagas por turno"
+                                    obrigatorio
+                                    min={1}
+                                    casasDecimais={0}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    erro={errors.vagasPorTurno?.message}
+                                />
+                            )}
                         />
                     </div>
-                </div>
+                </Formulario>
             </Dialog>
         </>
     )
