@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarHabilidades } from '@/src/modules/voluntariado/presentation/queries/lookups'
-import { listarVoluntarios } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
+import { contarVoluntariosAprovados } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import { ConvocacaoForm } from './convocacao-form'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
@@ -36,10 +36,7 @@ async function Formulario() {
     // ROLES_STAFF (DESIGN.md §6.2).
     await exigirAcessoA('/convocacao')
 
-    const [habilidades, aprovados] = await Promise.all([
-        listarHabilidades(),
-        listarVoluntarios({ page: 1, pageSize: 1, status: 'aprovado' })
-    ])
+    const [habilidades, totalAprovados] = await Promise.all([listarHabilidades(), contarVoluntariosAprovados()])
 
-    return <ConvocacaoForm habilidades={habilidades} totalAprovados={aprovados.totalCount} />
+    return <ConvocacaoForm habilidades={habilidades} totalAprovados={totalAprovados} />
 }

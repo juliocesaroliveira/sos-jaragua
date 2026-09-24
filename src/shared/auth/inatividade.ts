@@ -4,8 +4,9 @@ import { ROLES_COM_TIMEOUT_INATIVIDADE, type Role } from './roles'
  * Timeout de inatividade customizado para staff (NFR §3, DESIGN.md §6.3).
  *
  * O better-auth não tem expiração de sessão por role, então o mecanismo é
- * próprio: `session.lastActivityAt` é atualizado a cada requisição autenticada
- * de Coordenador/Membro Defesa Civil, e a sessão é tratada como expirada quando
+ * próprio: `session.lastActivityAt` é atualizado pelo `proxy.ts` (no máximo
+ * 1×/min) nas navegações de Coordenador/Membro Defesa Civil, e a sessão é
+ * tratada como expirada quando
  * a inatividade ultrapassa `STAFF_INACTIVITY_TIMEOUT_MINUTES`.
  *
  * Mitiga o risco de sessão aberta em computador compartilhado da central de

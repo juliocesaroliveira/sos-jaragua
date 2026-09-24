@@ -61,7 +61,11 @@ async function renderizar({ lado, ocupacao, fundo }) {
         create: { width: lado, height: lado, channels: 4, background: fundo }
     })
         .composite([{ input: marca, top: margem, left: margem }])
-        .png({ compressionLevel: 9 })
+        // `palette`: PNG de paleta (até 256 cores, quantizado) em vez de
+        // truecolor. O brasão tem poucas cores chapadas, então a diferença não
+        // se vê — mas o arquivo cai a uma fração (o 512px tinha ~360 KB), e
+        // estes ícones são baixados por todo navegador que instala o app.
+        .png({ compressionLevel: 9, palette: true, quality: 90, effort: 10 })
         .toBuffer()
 }
 

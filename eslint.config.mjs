@@ -41,7 +41,35 @@ export default [
                 {
                     selector: "JSXOpeningElement[name.name='form']",
                     message:
-                        'Use o componente `Formulario` de `@/src/shared/ui` em vez de `<form>`. Ele aplica `noValidate`, exigido pelo padrão de formulários (016-formularios-rhf-zod, FR-003).'
+                        'Use o componente `Formulario` de `@/src/shared/ui/formulario/formulario` em vez de `<form>`. Ele aplica `noValidate`, exigido pelo padrão de formulários (016-formularios-rhf-zod, FR-003).'
+                }
+            ],
+            /**
+             * Barrels do design system e da paginação são proibidos como
+             * origem de import (bundle do cliente).
+             *
+             * Importar `@/src/shared/ui` de uma página ou layout faz o bundler
+             * tratar **todos** os Client Components reexportados como parte
+             * daquele segmento: com o barrel na fronteira `not-found` raiz,
+             * select, combobox, date-picker, menu e a tabela iam para toda
+             * rota, inclusive `/login`. O de paginação arrastava o zod e código
+             * de servidor para o rodapé da tabela.
+             */
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: '@/src/shared/ui',
+                            message:
+                                'Importe do arquivo do componente (ex.: `@/src/shared/ui/button/button`). O barrel coloca o design system inteiro no bundle de cada rota.'
+                        },
+                        {
+                            name: '@/src/shared/paginacao',
+                            message:
+                                'Importe do arquivo específico (`constantes`, `faixa`, `esquema`, `use-parametros-listagem`). O barrel mistura código de servidor e zod.'
+                        }
+                    ]
                 }
             ]
         }

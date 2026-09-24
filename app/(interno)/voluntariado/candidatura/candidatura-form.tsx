@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { UserPlus } from 'lucide-react'
@@ -12,18 +11,16 @@ import {
     textoObrigatorio,
     useFormulario
 } from '@/src/shared/formulario'
-import {
-    Alert,
-    Button,
-    CheckboxGroup,
-    DatePicker,
-    Formulario,
-    Input,
-    RadioGroup,
-    Switch,
-    Textarea,
-    avisar
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { CheckboxGroup } from '@/src/shared/ui/checkbox-group/checkbox-group'
+import { DatePicker } from '@/src/shared/ui/date-picker/date-picker'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { RadioGroup } from '@/src/shared/ui/radio-group/radio-group'
+import { Switch } from '@/src/shared/ui/switch/switch'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import {
     DISPONIBILIDADES,
     ROTULO_DISPONIBILIDADE,
@@ -110,7 +107,6 @@ export function CandidaturaForm({
     nomeInicial,
     dataNascimentoDaConta
 }: CandidaturaFormProps) {
-    const router = useRouter()
     const [erroGeral, setErroGeral] = useState<string | null>(null)
     const [enviada, setEnviada] = useState(false)
 
@@ -163,7 +159,6 @@ export function CandidaturaForm({
 
         setEnviada(true)
         avisar.sucesso('Candidatura enviada', 'A Defesa Civil fará a triagem e avisará você.')
-        router.refresh()
     }
 
     if (enviada || statusAtual === 'pendente') {

@@ -1,7 +1,7 @@
 import { HydrationBoundary } from '@tanstack/react-query'
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
 import { chaveVoluntarios } from '@/src/shared/query'
 import { estadoHidratado } from '@/src/shared/query/hidratacao'

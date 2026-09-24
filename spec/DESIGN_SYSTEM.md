@@ -695,6 +695,14 @@ Um componente por pasta (padrão já usado em `src/shared/ui/theme/`); cada past
 um `index.ts` de barrel se o componente crescer em múltiplos arquivos (ex.: partes
 compostas de `select/`).
 
+**Telas importam do arquivo do componente**, nunca do barrel `src/shared/ui/index.ts`
+(ex.: `import { Button } from '@/src/shared/ui/button/button'`). O barrel importado de uma
+página ou layout faz o bundler tratar todo Client Component reexportado como parte daquele
+segmento — com ele na fronteira `not-found` raiz, select, combobox, date-picker, menu e a
+tabela iam para o bundle de toda rota, inclusive `/login`. A regra `no-restricted-imports`
+do `eslint.config.mjs` impede a regressão. O `index.ts` continua como índice do que o design
+system oferece. Continua valendo que telas não importam `@ark-ui/react` diretamente.
+
 ---
 
 ## 6. Diretrizes de Acessibilidade e Responsividade

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarAtividades } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import { listarCategoriasAtividade } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { GestaoAtividades } from './gestao-atividades'

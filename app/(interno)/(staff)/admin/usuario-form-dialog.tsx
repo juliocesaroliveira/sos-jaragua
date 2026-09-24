@@ -12,7 +12,13 @@ import {
     textoObrigatorio,
     useFormulario
 } from '@/src/shared/formulario'
-import { Button, Dialog, Formulario, Input, Password, Select, avisar } from '@/src/shared/ui'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { Password } from '@/src/shared/ui/password/password'
+import { Select } from '@/src/shared/ui/select/select'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { ROLES, ROTULO_ROLE, type Role } from '@/src/shared/auth/roles'
 import { criarUsuario, editarUsuario } from '@/src/modules/identidade/presentation/actions/usuarios'
 import type { LinhaUsuario } from '@/src/modules/identidade/presentation/queries/usuarios'

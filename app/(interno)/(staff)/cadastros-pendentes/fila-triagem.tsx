@@ -1,11 +1,16 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { Check, Eye, Trash2, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import { Alert, Badge, Button, Dialog, Formulario, Textarea, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { formatarCep, formatarCpf, formatarTelefone } from '@/src/modules/identidade/domain'
 import { ROTULO_DISPONIBILIDADE, ROTULO_TIPO_VEICULO } from '@/src/modules/voluntariado/domain/candidatura'
 import type { CandidaturaPendente } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
@@ -32,7 +37,6 @@ const CAMPOS = Object.keys(esquema.shape)
 
 type DadosRejeicao = z.infer<typeof esquema>
 export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendente[] }) {
-    const router = useRouter()
     const [emAndamento, iniciarTransicao] = useTransition()
     const [detalhe, setDetalhe] = useState<CandidaturaPendente | null>(null)
     const [aRejeitar, setARejeitar] = useState<CandidaturaPendente | null>(null)
@@ -63,7 +67,6 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
             }
             avisar.sucesso('Candidatura aprovada', `${candidatura.nomeCompleto} agora é voluntário.`)
             setDetalhe(null)
-            router.refresh()
         })
     }
 
@@ -85,7 +88,6 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
             avisar.info('Candidatura rejeitada', `${aRejeitar.nomeCompleto} foi notificado do motivo.`)
             setARejeitar(null)
             setDetalhe(null)
-            router.refresh()
         })
     }
 

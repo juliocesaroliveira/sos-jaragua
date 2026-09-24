@@ -39,13 +39,61 @@ function normalizarDataNascimento(valor: unknown): string | null {
 }
 
 /**
+ * Resultado de `resolverSessao`: o ator (ou `null`) e os `Set-Cookie` que o
+ * better-auth emitiu ao resolvê-lo — renovação do cookie cache quando a
+ * leitura foi ao banco, ou limpeza dos cookies quando a sessão acabou.
+ */
+export type SessaoResolvida = {
+    ator: SessaoAtor | null
+    setCookies: string[]
+}
+
+/**
  * Sessão autoritativa lida no servidor (`auth.api.getSession`) — a fonte de
  * verdade de autorização, complementando a barreira rápida do `proxy.ts`
  * (defesa em profundidade, DESIGN.md §6.2).
  *
- * Retorna `null` quando não há sessão, quando o usuário foi desativado
+ * `ator` é `null` quando não há sessão, quando o usuário foi desativado
  * (`user.ativo = false`) ou quando a sessão de staff expirou por inatividade
  * (DESIGN.md §6.3) — neste último caso a sessão também é invalidada.
+ *
+ * Devolve os `Set-Cookie` para quem **pode** gravá-los (Route Handlers). Um
+ * Server Component não pode, e por isso usa `obterSessao`, que os descarta: o
+ * cookie cache de quem navega é renovado pelo `proxy.ts`.
+ */
+export async function resolverSessao(cabecalhos: Headers): Promise<SessaoResolvida> {
+    const { headers: resposta, response: sessao } = await auth.api.getSession({
+        headers: cabecalhos,
+        returnHeaders: true
+    })
+    const setCookies = resposta?.getSetCookie() ?? []
+    if (!sessao) return { ator: null, setCookies }
+
+    const role = ehRole(sessao.user.role) ? sessao.user.role : 'usuario'
+
+    const encerrar = !sessao.user.ativo || expirouPorInatividade(role, sessao.session.lastActivityAt as Date | null)
+    if (encerrar) {
+        const saida = await auth.api.signOut({ headers: cabecalhos, returnHeaders: true })
+        return { ator: null, setCookies: saida.headers?.getSetCookie() ?? [] }
+    }
+
+    return {
+        ator: {
+            userId: sessao.user.id,
+            role,
+            nome: sessao.user.name,
+            email: sessao.user.email,
+            // Só chega aqui quem passou pelo `encerrar` acima.
+            ativo: true,
+            dataNascimento: normalizarDataNascimento(sessao.user.dataNascimento),
+            sessionToken: sessao.session.token
+        },
+        setCookies
+    }
+}
+
+/**
+ * `resolverSessao` para Server Components e Server Actions.
  *
  * **Memoizada por request** (`cache` do React). A defesa em profundidade exige
  * que vários pontos releiam a sessão no mesmo render — `(interno)/layout.tsx`
@@ -58,31 +106,7 @@ function normalizarDataNascimento(valor: unknown): string | null {
  * não há risco de servir sessão de um usuário a outro.
  */
 export const obterSessao = cache(async function obterSessao(): Promise<SessaoAtor | null> {
-    const cabecalhos = await headers()
-    const sessao = await auth.api.getSession({ headers: cabecalhos })
-    if (!sessao) return null
-
-    const role = ehRole(sessao.user.role) ? sessao.user.role : 'usuario'
-
-    if (!sessao.user.ativo) {
-        await auth.api.signOut({ headers: cabecalhos })
-        return null
-    }
-
-    if (expirouPorInatividade(role, sessao.session.lastActivityAt as Date | null)) {
-        await auth.api.signOut({ headers: cabecalhos })
-        return null
-    }
-
-    return {
-        userId: sessao.user.id,
-        role,
-        nome: sessao.user.name,
-        email: sessao.user.email,
-        ativo: sessao.user.ativo,
-        dataNascimento: normalizarDataNascimento(sessao.user.dataNascimento),
-        sessionToken: sessao.session.token
-    }
+    return (await resolverSessao(await headers())).ator
 })
 
 /** Exige sessão válida; redireciona para `/login` caso contrário. */

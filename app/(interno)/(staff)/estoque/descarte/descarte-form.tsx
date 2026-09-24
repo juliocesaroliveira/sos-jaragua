@@ -1,12 +1,17 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { Trash2 } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import { Alert, Button, Formulario, NumberInput, Select, Textarea, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
 import type { ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
@@ -35,7 +40,6 @@ type DadosFormulario = z.infer<typeof esquemaBase>
 const VALORES_INICIAIS: DadosFormulario = { itemId: '', quantidade: '', motivo: '' }
 
 export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
-    const router = useRouter()
     const [erroGeral, setErroGeral] = useState<string | null>(null)
 
     /**
@@ -96,7 +100,6 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
 
         avisar.sucesso('Descarte registrado', 'O saldo foi deduzido do estoque.')
         reset(VALORES_INICIAIS)
-        router.refresh()
     }
 
     return (

@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 import { itensDeNavegacao } from '@/src/shared/auth/navegacao'
 import { ROTULO_ROLE } from '@/src/shared/auth/roles'
 import type { SessaoAtor } from '@/src/shared/auth/sessao'
-import { AppShell } from '@/src/shared/ui'
-import { contarNaoLidas, listarNotificacoes } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
+import { AppShell } from '@/src/shared/ui/shell/app-shell'
+import { lerEstadoNotificacoes } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
 import { SinoNotificacoes } from '../(interno)/sino-notificacoes'
 
 /**
@@ -33,8 +33,9 @@ export async function ShellAutenticado({ ator, children }: { ator: SessaoAtor; c
     // **semente** do cache do cliente, não mais a única fonte: o sino passa a se
     // reconsultar sozinho a cada 30s com a aba visível. Resolvê-los aqui
     // continua valendo a pena — é o que evita abrir o sino vazio e só então
-    // disparar a primeira consulta.
-    const [notificacoes, naoLidas] = await Promise.all([listarNotificacoes(ator.userId), contarNaoLidas(ator.userId)])
+    // disparar a primeira consulta. Lista, contador e versão saem de uma
+    // consulta só.
+    const estado = await lerEstadoNotificacoes(ator.userId)
 
     return (
         <AppShell
@@ -42,7 +43,7 @@ export async function ShellAutenticado({ ator, children }: { ator: SessaoAtor; c
             // Filtrado no servidor: o cliente recebe só o que já pode ver.
             itens={itensDeNavegacao(ator.role)}
             rotuloRole={ROTULO_ROLE[ator.role]}
-            notificacoes={<SinoNotificacoes notificacoes={notificacoes} naoLidas={naoLidas} />}
+            notificacoes={<SinoNotificacoes {...estado} />}
         >
             {children}
         </AppShell>

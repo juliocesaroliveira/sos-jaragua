@@ -92,12 +92,11 @@ export async function listarCandidaturasPendentes(): Promise<CandidaturaPendente
     }))
 }
 
-/** Contador usado pelo alerta `cadastros_acumulados` (BRD §6). */
+/**
+ * Contador usado pelo alerta `cadastros_acumulados` (BRD §6). Sem cache: é
+ * lido logo após a submissão de uma candidatura, e precisa já contá-la.
+ */
 export async function contarCandidaturasPendentes(): Promise<number> {
-    'use cache'
-    cacheTag(CACHE_TAGS.voluntariadoPendentes)
-    cacheLife(CACHE_LIFE.curto)
-
     const [linha] = await db
         .select({ total: count() })
         .from(voluntarioPerfil)
@@ -120,6 +119,22 @@ export type LinhaVoluntario = {
     telefone: string
     status: StatusVoluntarioFiltro
     habilidades: string[]
+}
+
+/**
+ * Total de voluntários aprovados — o público da convocação de urgência
+ * (NOT-05). Só a contagem: a tela não precisa de nenhuma linha.
+ */
+export async function contarVoluntariosAprovados(): Promise<number> {
+    'use cache'
+    cacheTag(CACHE_TAGS.voluntariadoListagem)
+    cacheLife(CACHE_LIFE.medio)
+
+    const [linha] = await db
+        .select({ total: count() })
+        .from(voluntarioPerfil)
+        .where(eq(voluntarioPerfil.status, 'aprovado'))
+    return linha?.total ?? 0
 }
 
 /**

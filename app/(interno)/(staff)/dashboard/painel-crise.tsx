@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import { Boxes, PackageCheck, TriangleAlert, Users } from 'lucide-react'
-import { Alert, Badge, Progress, StatCard } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge } from '@/src/shared/ui/badge/badge'
+import { Progress } from '@/src/shared/ui/progress/progress'
+import { StatCard } from '@/src/shared/ui/stat-card/stat-card'
 import type { Projecao } from '@/src/modules/logistica/application/use-cases/projetar-demanda'
 import { ROTULO_BASE_DEMANDA } from '@/src/modules/logistica/domain/projecao'
 

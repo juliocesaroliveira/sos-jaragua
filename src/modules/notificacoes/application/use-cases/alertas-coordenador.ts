@@ -9,9 +9,11 @@ import type { EventoNotificacao } from '../ports/notificacao-service'
 /**
  * Alertas para coordenadores (BRD §6, NOT-08).
  *
- * Gerados **em leitura**, não por job separado (DESIGN.md §12): quem carrega o
- * painel ou a fila é quem avalia a condição. Evita infra de agendamento para
- * três checagens baratas.
+ * Avaliados **depois das escritas que podem disparar a condição** (via
+ * `after()`, em `presentation/alertas.ts`), com o cron diário como rede de
+ * segurança (DESIGN.md §12). Antes eram avaliados a cada render do painel e da
+ * fila — várias consultas e, às vezes, INSERTs por página aberta, mesmo sem
+ * nada ter mudado.
  *
  * Idempotência: uma notificação por "condição ativa". Reemitimos o mesmo alerta
  * só depois de `JANELA_REEMISSAO_HORAS` — sem isso, cada refresh de dashboard
@@ -39,8 +41,11 @@ function limiarDeficitPercentual(): number {
     return Number.isFinite(bruto) && bruto > 0 ? bruto : 80
 }
 
-/** Coordenadores e administradores ativos — destinatários dos três alertas. */
-async function coordenadoresAtivos(): Promise<string[]> {
+/**
+ * Coordenadores e administradores ativos — destinatários dos três alertas.
+ * Quem avalia mais de um alerta de uma vez busca a lista uma vez só e a repassa.
+ */
+export async function coordenadoresAtivos(): Promise<string[]> {
     const linhas = await db
         .select({ id: user.id })
         .from(user)
@@ -68,8 +73,14 @@ async function alertaRecente(evento: EventoNotificacao, destinatarios: string[])
     return Boolean(existente)
 }
 
-async function emitir(evento: EventoNotificacao, titulo: string, mensagem: string, contexto: Record<string, unknown>) {
-    const destinatarios = await coordenadoresAtivos()
+async function emitir(
+    evento: EventoNotificacao,
+    titulo: string,
+    mensagem: string,
+    contexto: Record<string, unknown>,
+    destinatariosConhecidos?: string[]
+) {
+    const destinatarios = destinatariosConhecidos ?? (await coordenadoresAtivos())
     if (await alertaRecente(evento, destinatarios)) return
 
     await notificacaoService.enviarEmLote(
@@ -87,7 +98,7 @@ async function emitir(evento: EventoNotificacao, titulo: string, mensagem: strin
 }
 
 /** "Existem X cadastros de voluntários aguardando aprovação." */
-export async function avaliarCadastrosAcumulados(pendentes: number): Promise<void> {
+export async function avaliarCadastrosAcumulados(pendentes: number, destinatarios?: string[]): Promise<void> {
     const limiar = limiarCadastrosPendentes()
     if (pendentes < limiar) return
 
@@ -95,12 +106,17 @@ export async function avaliarCadastrosAcumulados(pendentes: number): Promise<voi
         'cadastros_acumulados',
         'Cadastros aguardando triagem',
         `Existem ${pendentes} cadastros de voluntários aguardando aprovação.`,
-        { pendentes, limiar }
+        { pendentes, limiar },
+        destinatarios
     )
 }
 
 /** "A capacidade de montagem de kits está X% abaixo da demanda." */
-export async function avaliarDeficitAtendimento(necessarios: number, possiveis: number): Promise<void> {
+export async function avaliarDeficitAtendimento(
+    necessarios: number,
+    possiveis: number,
+    destinatarios?: string[]
+): Promise<void> {
     if (necessarios <= 0) return
 
     const deficitPercentual = Math.round(((necessarios - possiveis) / necessarios) * 100)
@@ -110,7 +126,8 @@ export async function avaliarDeficitAtendimento(necessarios: number, possiveis: 
         'deficit_atendimento',
         'Déficit de atendimento',
         `A capacidade de montagem de kits está ${deficitPercentual}% abaixo da demanda de vítimas.`,
-        { necessarios, possiveis, deficitPercentual }
+        { necessarios, possiveis, deficitPercentual },
+        destinatarios
     )
 }
 
@@ -121,7 +138,10 @@ export async function avaliarDeficitAtendimento(necessarios: number, possiveis: 
  * o schema não tem um mínimo por item, e criar essa coluna é decisão de produto
  * ainda aberta (PENDENCIAS.md §8).
  */
-export async function avaliarEstoqueCritico(itens: { nome: string; saldo: number }[]): Promise<void> {
+export async function avaliarEstoqueCritico(
+    itens: { nome: string; saldo: number }[],
+    destinatarios?: string[]
+): Promise<void> {
     const limiar = limiarEstoqueMinimo()
     const criticos = itens.filter((i) => i.saldo <= limiar)
     if (criticos.length === 0) return
@@ -136,6 +156,7 @@ export async function avaliarEstoqueCritico(itens: { nome: string; saldo: number
         'estoque_critico',
         'Estoque crítico',
         `${listados} ${verbo} o estoque mínimo de segurança (${limiar}).`,
-        { limiar, itens: criticos.map((i) => i.nome) }
+        { limiar, itens: criticos.map((i) => i.nome) },
+        destinatarios
     )
 }
