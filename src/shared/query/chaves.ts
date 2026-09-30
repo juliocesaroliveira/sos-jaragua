@@ -1,5 +1,5 @@
 import { CACHE_TAGS } from '@/src/shared/cache'
-import type { ParametrosPaginacao } from '@/src/shared/paginacao'
+import type { ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 
 /**
  * `queryKey`s do TanStack Query espelhando o catálogo de `cacheTag`

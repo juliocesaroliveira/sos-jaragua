@@ -1,23 +1,20 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useId, useState } from 'react'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { Check, Plus, Trash2 } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import {
-    Alert,
-    Button,
-    Formulario,
-    IconButton,
-    Input,
-    NumberInput,
-    RadioGroup,
-    Select,
-    Tooltip,
-    avisar
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { Input } from '@/src/shared/ui/input/input'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { RadioGroup } from '@/src/shared/ui/radio-group/radio-group'
+import { Select } from '@/src/shared/ui/select/select'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { ABREVIACAO_UNIDADE, type TipoSaida } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
 import type { ItemComSaldo, KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
@@ -79,7 +76,6 @@ const VALORES_INICIAIS: DadosFormulario = {
 }
 
 export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitComReceita[] }) {
-    const router = useRouter()
     const [erroDeficit, setErroDeficit] = useState<string | null>(null)
     const [erroGeral, setErroGeral] = useState<string | null>(null)
 
@@ -150,7 +146,6 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
 
         avisar.sucesso('Saída registrada', 'O saldo foi deduzido do estoque.')
         reset(VALORES_INICIAIS)
-        router.refresh()
     }
 
     const opcoes =

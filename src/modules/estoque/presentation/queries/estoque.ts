@@ -1,6 +1,6 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { asc, count, desc, eq, sql } from 'drizzle-orm'
+import { asc, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
@@ -19,9 +19,15 @@ export type ItemComSaldo = {
 /**
  * Catálogo de itens para o autocomplete da Entrada (BR-EST-01).
  * Cacheado sob `estoque:itens`, invalidado por qualquer criação de item.
+ *
+ * **`'use cache: remote'`** (DESIGN.md §7): em serverless o `'use cache'`
+ * padrão guarda o resultado na memória de cada instância, que raramente
+ * atende o request seguinte. Dados de referência — poucas chaves, lidos em
+ * quase toda tela — vão para o cache remoto da plataforma, compartilhado entre
+ * instâncias; `cacheTag` + `updateTag`/`revalidateTag` o invalidam igual.
  */
 export async function listarItens(): Promise<ItemComSaldo[]> {
-    'use cache'
+    'use cache: remote'
     cacheTag(CACHE_TAGS.estoqueItens, CACHE_TAGS.estoqueSaldo)
     cacheLife(CACHE_LIFE.curto)
 
@@ -108,9 +114,12 @@ export type KitComReceita = {
     componentes: ComponenteDoKit[]
 }
 
-/** Kits com a receita completa (BR-EST-02/03), para a tela de kits e a saída. */
+/**
+ * Kits com a receita completa (BR-EST-02/03), para a tela de kits e a saída.
+ * Cache remoto pelo mesmo motivo de `listarItens`.
+ */
 export async function listarKitsComReceita(apenasAtivos = false): Promise<KitComReceita[]> {
-    'use cache'
+    'use cache: remote'
     cacheTag(CACHE_TAGS.estoqueKits, CACHE_TAGS.estoqueSaldo)
     cacheLife(CACHE_LIFE.curto)
 
@@ -119,6 +128,8 @@ export async function listarKitsComReceita(apenasAtivos = false): Promise<KitCom
         .from(kit)
         .where(apenasAtivos ? eq(kit.ativo, true) : undefined)
         .orderBy(asc(kit.nome))
+
+    if (kits.length === 0) return []
 
     const componentes = await db
         .select({
@@ -132,6 +143,16 @@ export async function listarKitsComReceita(apenasAtivos = false): Promise<KitCom
         .from(kitReceitaItem)
         .innerJoin(item, eq(item.id, kitReceitaItem.itemId))
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, kitReceitaItem.itemId))
+        // Só as receitas dos kits retornados — com `apenasAtivos`, as dos
+        // inativos seriam lidas e descartadas.
+        .where(
+            apenasAtivos
+                ? inArray(
+                      kitReceitaItem.kitId,
+                      kits.map((k) => k.id)
+                  )
+                : undefined
+        )
         .orderBy(asc(item.nome))
 
     const porKit = new Map<string, ComponenteDoKit[]>()
@@ -148,64 +169,6 @@ export async function listarKitsComReceita(apenasAtivos = false): Promise<KitCom
     }
 
     return kits.map((k) => ({ ...k, componentes: porKit.get(k.id) ?? [] })) as KitComReceita[]
-}
-
-export type LinhaHistoricoSaida = {
-    saidaId: string
-    tipo: 'avulso' | 'kit'
-    destino: string
-    responsavelTransporte: string
-    criadoEm: string
-    itens: { nome: string; quantidade: number; unidadeMedida: UnidadeMedida }[]
-}
-
-/** Histórico de saídas — base do relatório BR-REL-01 e da conferência em tela. */
-export async function listarHistoricoSaidas(limite = 100): Promise<LinhaHistoricoSaida[]> {
-    'use cache'
-    cacheTag(CACHE_TAGS.estoqueListagem)
-    cacheLife(CACHE_LIFE.curto)
-
-    const saidas = await db
-        .select({
-            saidaId: saida.id,
-            tipo: saida.tipo,
-            destino: saida.destino,
-            responsavelTransporte: saida.responsavelTransporte,
-            criadoEm: saida.criadoEm
-        })
-        .from(saida)
-        .orderBy(desc(saida.criadoEm))
-        .limit(limite)
-
-    if (saidas.length === 0) return []
-
-    const itens = await db
-        .select({
-            saidaId: saidaItem.saidaId,
-            nome: item.nome,
-            unidadeMedida: item.unidadeMedida,
-            quantidade: saidaItem.quantidade
-        })
-        .from(saidaItem)
-        .innerJoin(item, eq(item.id, saidaItem.itemId))
-
-    const porSaida = new Map<string, LinhaHistoricoSaida['itens']>()
-    for (const i of itens) {
-        const lista = porSaida.get(i.saidaId) ?? []
-        lista.push({
-            nome: i.nome,
-            quantidade: paraNumero(i.quantidade),
-            unidadeMedida: i.unidadeMedida as UnidadeMedida
-        })
-        porSaida.set(i.saidaId, lista)
-    }
-
-    return saidas.map((s) => ({
-        ...s,
-        tipo: s.tipo as 'avulso' | 'kit',
-        criadoEm: s.criadoEm.toISOString(),
-        itens: porSaida.get(s.saidaId) ?? []
-    }))
 }
 
 /** Saldo de todos os itens, como mapa — insumo do cálculo de capacidade. */

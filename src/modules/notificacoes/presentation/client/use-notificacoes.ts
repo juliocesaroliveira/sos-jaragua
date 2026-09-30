@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { chaveNotificacoes } from '@/src/shared/query'
 import { marcarComoLida, marcarTodasComoLidas } from '../actions/notificacoes'
-import type { NotificacaoInApp } from '../queries/notificacoes'
+import type { EstadoNotificacoes } from '../queries/notificacoes'
 import { INTERVALO_MS, proximoIntervalo } from './politica-intervalo'
 
 /**
@@ -15,10 +15,7 @@ import { INTERVALO_MS, proximoIntervalo } from './politica-intervalo'
  * otimismo — tudo isso vive aqui, para que ele permaneça apresentação.
  */
 
-export type EstadoNotificacoes = {
-    notificacoes: NotificacaoInApp[]
-    naoLidas: number
-}
+export type { EstadoNotificacoes }
 
 /** Status que significa "a sessão acabou" — o cliente para em definitivo. */
 const STATUS_SEM_SESSAO = 401
@@ -30,13 +27,22 @@ class SemSessaoError extends Error {
     }
 }
 
-async function buscarNotificacoes(sinal: AbortSignal): Promise<EstadoNotificacoes> {
-    const resposta = await fetch('/api/notificacoes', { signal: sinal })
+/** Status de "nada mudou desde a `versao` enviada". */
+const STATUS_SEM_MUDANCA = 204
+
+/**
+ * Consulta o servidor informando a versão já exibida. Devolve `null` quando
+ * nada mudou — o servidor respondeu `204` sem ler a lista.
+ */
+async function buscarNotificacoes(sinal: AbortSignal, versao: string | undefined): Promise<EstadoNotificacoes | null> {
+    const url = versao ? `/api/notificacoes?versao=${encodeURIComponent(versao)}` : '/api/notificacoes'
+    const resposta = await fetch(url, { signal: sinal })
 
     // Distinguir 401 de falha de rede é o que permite parar em vez de espaçar
     // (data-model.md R4).
     if (resposta.status === STATUS_SEM_SESSAO) throw new SemSessaoError()
     if (!resposta.ok) throw new Error('Não foi possível atualizar as notificações.')
+    if (resposta.status === STATUS_SEM_MUDANCA) return null
 
     return (await resposta.json()) as EstadoNotificacoes
 }
@@ -52,7 +58,13 @@ export function useNotificacoes(semente: EstadoNotificacoes) {
 
     const query = useQuery({
         queryKey: chave,
-        queryFn: ({ signal }) => buscarNotificacoes(signal),
+        // Sem mudança, o ciclo mantém o que já está em cache — é um ciclo
+        // bem-sucedido, então o intervalo e o recuo seguem normalmente.
+        queryFn: async ({ signal, queryKey }) => {
+            const atual = queryClient.getQueryData<EstadoNotificacoes>(queryKey)
+            // `null` só volta quando uma versão foi enviada — logo, `atual` existe.
+            return (await buscarNotificacoes(signal, atual?.versao)) ?? atual!
+        },
 
         // Dado real vindo do banco pelo Server Component — vai para o cache
         // (`initialData`), não é placeholder de UI. Evita o waterfall de abrir o
@@ -117,6 +129,9 @@ export function useNotificacoes(semente: EstadoNotificacoes) {
         mutationFn: (id: string) => marcarComoLida({ id }),
         onMutate: (id) =>
             aplicarLeituraOtimista((estado) => ({
+                // A `versao` continua a do servidor: é ela que faz a
+                // reconciliação trazer o estado real em vez de um `204`.
+                ...estado,
                 notificacoes: estado.notificacoes.map((n) => (n.id === id ? { ...n, lida: true } : n)),
                 // `Math.max` protege o caso de o item já estar lido em outra
                 // aba: o contador não pode ficar negativo.
@@ -130,6 +145,7 @@ export function useNotificacoes(semente: EstadoNotificacoes) {
         mutationFn: () => marcarTodasComoLidas(),
         onMutate: () =>
             aplicarLeituraOtimista((estado) => ({
+                ...estado,
                 notificacoes: estado.notificacoes.map((n) => ({ ...n, lida: true })),
                 naoLidas: 0
             })),

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { obterSessao } from '@/src/shared/auth/sessao'
-import { contarNaoLidas, listarNotificacoes } from '../queries/notificacoes'
+import { resolverSessao } from '@/src/shared/auth/sessao'
+import { lerEstadoNotificacoes, versaoNotificacoes } from '../queries/notificacoes'
 
 /**
  * Leitura periódica do sino (012-notificacoes-tempo-real,
@@ -26,32 +26,43 @@ import { contarNaoLidas, listarNotificacoes } from '../queries/notificacoes'
  * o timeout de inatividade de staff. Atividade de fundo não é atividade do
  * usuário.
  *
- * A autorização não fica mais fraca por isso: `obterSessao()` é a checagem
+ * A autorização não fica mais fraca por isso: `resolverSessao()` é a checagem
  * autoritativa — a mesma das Server Actions — e **lê** a sessão sem renovar
- * carimbo, inclusive encerrando as que já expiraram por inatividade.
+ * carimbo, inclusive encerrando as que já expiraram por inatividade. Os
+ * `Set-Cookie` que ela devolve (cookie cache renovado) vão na resposta: uma
+ * aba parada numa página, só consultando o sino, mantém assim o cache vivo sem
+ * passar pelo proxy.
+ *
+ * **Custo por ciclo.** O cliente envia a `versao` do que já exibe; se nada
+ * mudou, a resposta é `204` sem corpo, ao preço de uma consulta agregada
+ * pequena. A lista só é lida quando a versão difere.
  */
-export async function lerNotificacoesDaSessao(): Promise<NextResponse> {
-    const ator = await obterSessao()
+export async function lerNotificacoesDaSessao(request: Request): Promise<NextResponse> {
+    const { ator, setCookies } = await resolverSessao(request.headers)
 
     // Sem corpo: logout, expiração por inatividade e conta desativada colapsam
-    // no mesmo 401, porque `obterSessao()` já trata os três como ausência de
+    // no mesmo 401, porque `resolverSessao()` já trata os três como ausência de
     // sessão. O cliente usa este status para parar em definitivo.
-    if (!ator) return new NextResponse(null, { status: 401 })
+    if (!ator) return comCookies(new NextResponse(null, { status: 401 }), setCookies)
 
-    // Em paralelo e na mesma resposta: dois endpoints separados poderiam
-    // devolver estados de instantes diferentes, e o contador é justamente o que
-    // não pode divergir da lista (SC-006).
-    const [notificacoes, naoLidas] = await Promise.all([listarNotificacoes(ator.userId), contarNaoLidas(ator.userId)])
+    const versaoDoCliente = new URL(request.url).searchParams.get('versao')
+    if (versaoDoCliente && versaoDoCliente === (await versaoNotificacoes(ator.userId))) {
+        return comCookies(new NextResponse(null, { status: 204, headers: SEM_CACHE }), setCookies)
+    }
 
-    return NextResponse.json(
-        { notificacoes, naoLidas },
-        {
-            headers: {
-                // Dado por-usuário derivado de sessão: DESIGN.md §7 proíbe
-                // cachear. Sem isto, um intermediário poderia servir as
-                // notificações de uma pessoa para outra.
-                'Cache-Control': 'no-store'
-            }
-        }
-    )
+    // Lista, contador e versão saem da mesma consulta: dois endpoints ou duas
+    // leituras poderiam devolver estados de instantes diferentes, e o contador
+    // é justamente o que não pode divergir da lista (SC-006).
+    return comCookies(NextResponse.json(await lerEstadoNotificacoes(ator.userId), { headers: SEM_CACHE }), setCookies)
+}
+
+/**
+ * Dado por-usuário derivado de sessão: DESIGN.md §7 proíbe cachear. Sem isto,
+ * um intermediário poderia servir as notificações de uma pessoa para outra.
+ */
+const SEM_CACHE = { 'Cache-Control': 'no-store' }
+
+function comCookies(resposta: NextResponse, setCookies: string[]) {
+    for (const cookie of setCookies) resposta.headers.append('set-cookie', cookie)
+    return resposta
 }

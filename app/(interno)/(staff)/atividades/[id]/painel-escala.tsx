@@ -3,20 +3,16 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { Check, UserMinus, UserPlus, X } from 'lucide-react'
-import {
-    Alert,
-    Badge,
-    Button,
-    COR_STATUS_ATIVIDADE,
-    Dialog,
-    IconButton,
-    KanbanCard,
-    KanbanColumn,
-    ROTULO_STATUS_ATIVIDADE,
-    Select,
-    Tooltip,
-    avisar
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { KanbanCard } from '@/src/shared/ui/kanban/kanban-card'
+import { KanbanColumn } from '@/src/shared/ui/kanban/kanban-column'
+import { Select } from '@/src/shared/ui/select/select'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import type { AtividadeDetalhada, TurnoDetalhado } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import type { LinhaVoluntario } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
@@ -80,7 +76,6 @@ export function PainelEscala({
             avisar.sucesso('Voluntário alocado', 'A pessoa foi notificada do turno.')
             setTurnoAlvo(null)
             setSelecionado([])
-            router.refresh()
         })
     }
 
@@ -92,7 +87,6 @@ export function PainelEscala({
                 return
             }
             avisar.info('Alocação cancelada', `${nome} foi avisado.`)
-            router.refresh()
         })
     }
 

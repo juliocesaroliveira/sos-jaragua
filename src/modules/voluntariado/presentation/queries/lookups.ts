@@ -11,9 +11,15 @@ export type Lookup = { id: string; nome: string }
  * Tabelas lookup livres (`habilidade`, `atividade_categoria`) — mudam
  * raramente e são lidas em quase toda tela de voluntariado, então cacheiam sob
  * uma tag comum (DESIGN.md §7).
+ *
+ * **`'use cache: remote'`** (DESIGN.md §7): em serverless o `'use cache'`
+ * padrão guarda o resultado na memória de cada instância, que raramente
+ * atende o request seguinte. Dados de referência — poucas chaves, lidos em
+ * quase toda tela — vão para o cache remoto da plataforma, compartilhado entre
+ * instâncias; `cacheTag` + `updateTag`/`revalidateTag` o invalidam igual.
  */
 export async function listarHabilidades(): Promise<Lookup[]> {
-    'use cache'
+    'use cache: remote'
     cacheTag(CACHE_TAGS.lookups)
     cacheLife(CACHE_LIFE.medio)
 
@@ -21,7 +27,7 @@ export async function listarHabilidades(): Promise<Lookup[]> {
 }
 
 export async function listarCategoriasAtividade(): Promise<Lookup[]> {
-    'use cache'
+    'use cache: remote'
     cacheTag(CACHE_TAGS.lookups)
     cacheLife(CACHE_LIFE.medio)
 

@@ -100,7 +100,11 @@ trocar/remover a de desenvolvimento. Não versionar a senha.
 
 **Estado atual.** Implementado (`session.lastActivityAt` atualizado no
 `proxy.ts` com throttle de 1 min; expiração checada no proxy e em
-`obterSessao`). **Não marcado `[x]`** no TASKS.md porque a regra do arquivo é só
+`obterSessao`). **Corrigido em 2026-09-24:** antes o carimbo só era gravado no
+primeiro minuto após o login — o cookie cache (60s) nunca era renovado, e o
+proxy pulava o carimbo sem ele —, o que deslogava staff ativo ~15 min depois.
+Agora o proxy renova o cookie cache e o reemite a cada carimbo
+(DESIGN.md §6.2.1). **Não marcado `[x]`** no TASKS.md porque a regra do arquivo é só
 marcar após exercitar o fluxo, e verificar exige um usuário `coordenador` e
 esperar a janela de inatividade.
 

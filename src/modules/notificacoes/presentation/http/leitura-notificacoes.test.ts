@@ -12,16 +12,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
  * consultar quando a sessão acaba. Se um dia este endpoint passar a redirecionar
  * em vez de responder 401, uma aba esquecida aberta consultaria para sempre.
  */
-const obterSessao = vi.hoisted(() => vi.fn())
-const listarNotificacoes = vi.hoisted(() => vi.fn())
-const contarNaoLidas = vi.hoisted(() => vi.fn())
+const resolverSessao = vi.hoisted(() => vi.fn())
+const lerEstadoNotificacoes = vi.hoisted(() => vi.fn())
+const versaoNotificacoes = vi.hoisted(() => vi.fn())
 
-vi.mock('@/src/shared/auth/sessao', () => ({ obterSessao }))
-vi.mock('../queries/notificacoes', () => ({ listarNotificacoes, contarNaoLidas }))
+vi.mock('@/src/shared/auth/sessao', () => ({ resolverSessao }))
+vi.mock('../queries/notificacoes', () => ({ lerEstadoNotificacoes, versaoNotificacoes }))
 
-const { lerNotificacoesDaSessao: GET } = await import('./leitura-notificacoes')
+const { lerNotificacoesDaSessao } = await import('./leitura-notificacoes')
+
+const GET = (versao?: string) =>
+    lerNotificacoesDaSessao(
+        new Request(`http://localhost/api/notificacoes${versao ? `?versao=${encodeURIComponent(versao)}` : ''}`)
+    )
 
 const ATOR = { userId: 'user-1', role: 'voluntario' as const }
+const COOKIE_RENOVADO = 'better-auth.session_data=abc; Path=/; HttpOnly'
 
 const NOTIFICACAO = {
     id: '11111111-1111-1111-1111-111111111111',
@@ -32,18 +38,20 @@ const NOTIFICACAO = {
     criadoEm: '2026-08-16T14:31:00.000Z'
 }
 
+const ESTADO = { notificacoes: [NOTIFICACAO], naoLidas: 7, versao: '9:7:1786890660000' }
+
 describe('GET /api/notificacoes — sem sessão', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        obterSessao.mockResolvedValue(null)
+        resolverSessao.mockResolvedValue({ ator: null, setCookies: [] })
     })
 
     it('responde 401 e não consulta o banco', async () => {
         const resposta = await GET()
 
         expect(resposta.status).toBe(401)
-        expect(listarNotificacoes).not.toHaveBeenCalled()
-        expect(contarNaoLidas).not.toHaveBeenCalled()
+        expect(lerEstadoNotificacoes).not.toHaveBeenCalled()
+        expect(versaoNotificacoes).not.toHaveBeenCalled()
     })
 
     it('responde sem corpo — nada a vazar para quem não está autenticado', async () => {
@@ -61,28 +69,50 @@ describe('GET /api/notificacoes — sem sessão', () => {
         expect(ehRedirecionamento).toBe(false)
         expect(resposta.headers.get('location')).toBeNull()
     })
+
+    it('repassa a limpeza de cookies emitida ao encerrar a sessão', async () => {
+        resolverSessao.mockResolvedValue({ ator: null, setCookies: ['better-auth.session_token=; Max-Age=0'] })
+        const resposta = await GET()
+        expect(resposta.headers.getSetCookie()).toEqual(['better-auth.session_token=; Max-Age=0'])
+    })
 })
 
 describe('GET /api/notificacoes — com sessão', () => {
     beforeEach(() => {
         vi.clearAllMocks()
-        obterSessao.mockResolvedValue(ATOR)
-        listarNotificacoes.mockResolvedValue([NOTIFICACAO])
-        contarNaoLidas.mockResolvedValue(7)
+        resolverSessao.mockResolvedValue({ ator: ATOR, setCookies: [] })
+        lerEstadoNotificacoes.mockResolvedValue(ESTADO)
+        versaoNotificacoes.mockResolvedValue(ESTADO.versao)
     })
 
-    it('devolve lista e contador na mesma resposta', async () => {
+    it('sem versão: devolve lista, contador e versão na mesma resposta', async () => {
         const resposta = await GET()
 
         expect(resposta.status).toBe(200)
-        await expect(resposta.json()).resolves.toEqual({ notificacoes: [NOTIFICACAO], naoLidas: 7 })
+        await expect(resposta.json()).resolves.toEqual(ESTADO)
+        expect(versaoNotificacoes).not.toHaveBeenCalled()
     })
 
     it('consulta sempre pelo usuário da sessão', async () => {
-        await GET()
+        await GET('outra')
 
-        expect(listarNotificacoes).toHaveBeenCalledWith('user-1')
-        expect(contarNaoLidas).toHaveBeenCalledWith('user-1')
+        expect(versaoNotificacoes).toHaveBeenCalledWith('user-1')
+        expect(lerEstadoNotificacoes).toHaveBeenCalledWith('user-1')
+    })
+
+    it('versão igual à atual: 204 sem corpo e sem ler a lista', async () => {
+        const resposta = await GET(ESTADO.versao)
+
+        expect(resposta.status).toBe(204)
+        expect(await resposta.text()).toBe('')
+        expect(lerEstadoNotificacoes).not.toHaveBeenCalled()
+    })
+
+    it('versão diferente: devolve o estado novo', async () => {
+        const resposta = await GET('8:6:1786890000000')
+
+        expect(resposta.status).toBe(200)
+        await expect(resposta.json()).resolves.toEqual(ESTADO)
     })
 
     it('devolve o total de não-lidas, e não o tamanho da lista truncada em 30', async () => {
@@ -95,7 +125,14 @@ describe('GET /api/notificacoes — com sessão', () => {
     })
 
     it('proíbe cache da resposta — é dado por-usuário derivado de sessão', async () => {
-        const resposta = await GET()
-        expect(resposta.headers.get('cache-control')).toContain('no-store')
+        expect((await GET()).headers.get('cache-control')).toContain('no-store')
+        expect((await GET(ESTADO.versao)).headers.get('cache-control')).toContain('no-store')
+    })
+
+    it('repassa o cookie cache renovado, inclusive no 204', async () => {
+        resolverSessao.mockResolvedValue({ ator: ATOR, setCookies: [COOKIE_RENOVADO] })
+
+        expect((await GET()).headers.getSetCookie()).toEqual([COOKIE_RENOVADO])
+        expect((await GET(ESTADO.versao)).headers.getSetCookie()).toEqual([COOKIE_RENOVADO])
     })
 })

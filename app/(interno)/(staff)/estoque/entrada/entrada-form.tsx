@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { Check, RotateCcw } from 'lucide-react'
@@ -12,7 +11,15 @@ import {
     textoObrigatorio,
     useFormulario
 } from '@/src/shared/formulario'
-import { Alert, Button, Combobox, DatePicker, Formulario, NumberInput, Select, Switch, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Combobox } from '@/src/shared/ui/combobox/combobox'
+import { DatePicker } from '@/src/shared/ui/date-picker/date-picker'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
+import { Switch } from '@/src/shared/ui/switch/switch'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import {
     CATEGORIAS_ITEM,
     CONDICOES_ITEM,
@@ -92,8 +99,6 @@ const VALORES_INICIAIS: DadosFormulario = {
 }
 
 export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) {
-    const router = useRouter()
-
     const [sugestoes, setSugestoes] = useState<ItemEncontrado[]>([])
     const [buscando, setBuscando] = useState(false)
     const [itemSelecionado, setItemSelecionado] = useState<ItemEncontrado | null>(null)
@@ -170,7 +175,6 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
 
         avisar.sucesso('Entrada registrada', 'O saldo do item foi atualizado.')
         limpar()
-        router.refresh()
     }
 
     return (

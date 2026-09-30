@@ -5,6 +5,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
+import { agendarAlertaDeCadastros } from '@/src/modules/notificacoes/presentation/alertas'
 import { unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from '../../application/use-cases/submeter-candidatura'
 import { DISPONIBILIDADES, TIPOS_VEICULO } from '../../domain/candidatura'
@@ -67,6 +68,8 @@ export async function submeterCandidatura(
         // A fila de triagem precisa refletir a nova candidatura imediatamente.
         updateTag(CACHE_TAGS.voluntariadoPendentes)
         revalidateTag(CACHE_TAGS.voluntariadoListagem, PERFIL_REVALIDACAO)
+        // A fila pode ter passado do limiar de alerta (NOT-08).
+        agendarAlertaDeCadastros()
     }
 
     return serializar(resultado.ok ? { ok: true, valor: { perfilId: resultado.valor.id } } : resultado)

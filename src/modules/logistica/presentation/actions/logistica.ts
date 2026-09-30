@@ -7,6 +7,7 @@ import { erroAction, type ResultadoAction } from '@/src/shared/kernel'
 import type { Role } from '@/src/shared/auth/roles'
 import { rolesExigidas } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
+import { agendarAlertasDeEstoque } from '@/src/modules/notificacoes/presentation/alertas'
 import { BASES_DEMANDA } from '../../domain/projecao'
 import { criseRepository, metricaKitRepository } from '../../infrastructure/drizzle/logistica-repository'
 
@@ -46,6 +47,8 @@ export async function atualizarVariaveisCrise(
     // O painel precisa refletir o novo número na mesma resposta — quem acabou
     // de digitar espera ver o efeito (DESIGN.md §7, read-your-writes).
     updateTag(CACHE_TAGS.dashboardKits)
+    // Demanda mudou: o déficit de atendimento pode ter surgido (NOT-08).
+    agendarAlertasDeEstoque({ estoqueCritico: false })
 
     return { ok: true, valor: { id: linha.id } }
 }
@@ -68,6 +71,8 @@ export async function definirMetricaKit(
 
     await metricaKitRepository.definir(parse.data)
     updateTag(CACHE_TAGS.dashboardKits)
+    // Demanda mudou: o déficit de atendimento pode ter surgido (NOT-08).
+    agendarAlertasDeEstoque({ estoqueCritico: false })
 
     return { ok: true, valor: { kitId: parse.data.kitId } }
 }
@@ -81,6 +86,8 @@ export async function removerMetricaKit(entrada: { kitId: string }): Promise<Res
 
     await metricaKitRepository.remover(parse.data.kitId)
     updateTag(CACHE_TAGS.dashboardKits)
+    // Demanda mudou: o déficit de atendimento pode ter surgido (NOT-08).
+    agendarAlertasDeEstoque({ estoqueCritico: false })
 
     return { ok: true, valor: { kitId: parse.data.kitId } }
 }

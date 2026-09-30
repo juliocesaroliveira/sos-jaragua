@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarCandidaturasPendentes } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
-import { avaliarCadastrosAcumulados } from '@/src/modules/notificacoes/application/use-cases/alertas-coordenador'
 import { FilaTriagem } from './fila-triagem'
 
 export const metadata: Metadata = {
@@ -28,11 +27,9 @@ export default function CadastrosPendentesPage() {
 }
 
 async function Fila() {
+    // O alerta de fila acumulada (NOT-08) é avaliado quando uma candidatura
+    // chega, não a cada abertura da fila (`notificacoes/presentation/alertas.ts`).
     const candidaturas = await listarCandidaturasPendentes()
-
-    // Alerta gerado em leitura (NOT-08): carregar a fila é o momento natural de
-    // avaliar se ela acumulou além do limiar.
-    await avaliarCadastrosAcumulados(candidaturas.length)
 
     return <FilaTriagem candidaturas={candidaturas} />
 }

@@ -1,8 +1,8 @@
 'use client'
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import { useParametrosListagem } from '@/src/shared/paginacao'
-import type { PaginaDe, ParametrosPaginacao } from '@/src/shared/paginacao'
+import { useParametrosListagem } from '@/src/shared/paginacao/use-parametros-listagem'
+import type { PaginaDe, ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import type { ResultadoAction } from '@/src/shared/kernel'
 
 /**

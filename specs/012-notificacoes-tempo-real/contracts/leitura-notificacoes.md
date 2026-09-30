@@ -5,7 +5,7 @@
 ## C-01 — Endpoint
 
 ```
-GET /api/notificacoes
+GET /api/notificacoes[?versao=<versao>]
 ```
 
 Route Handler em `app/api/notificacoes/route.ts`.
@@ -30,22 +30,25 @@ Removê-la de lá quebra a feature de duas formas (research.md D13):
   consulta automática a cada 30s anularia o timeout de inatividade de `coordenador` e
   `membro_defesa_civil`, que o Princípio IV declara não contornável.
 
-A autorização não é enfraquecida: `obterSessao()` é a checagem autoritativa, e o proxy é a
-"barreira rápida" por definição da própria constituição.
+A autorização não é enfraquecida: `resolverSessao()` é a checagem autoritativa, e o proxy é a
+"barreira rápida" por definição da própria constituição. Como o proxy não roda aqui, é o próprio
+endpoint que devolve ao navegador os `Set-Cookie` de renovação do cookie cache de sessão emitidos
+por `resolverSessao()` — em toda resposta, inclusive `204` e `401`.
 
 ## C-02 — Autorização
 
 | Situação | Resposta |
 | --- | --- |
-| Sessão válida | `200` com o corpo de C-03 |
+| Sessão válida, sem `versao` ou com `versao` diferente da atual | `200` com o corpo de C-03 |
+| Sessão válida e `versao` igual à atual | `204`, **sem corpo** (C-03a) |
 | Sem sessão, sessão expirada por inatividade, ou conta desativada | `401`, **sem corpo** |
 
 **Invariantes**:
 
-- O destinatário MUST ser derivado de `obterSessao()` no servidor.
-- O endpoint MUST NOT aceitar identificador de usuário por query string, header ou corpo. Não há
-  parâmetro algum a ser lido do cliente.
-- Os três casos de fim de sessão colapsam no mesmo `401` porque `obterSessao()`
+- O destinatário MUST ser derivado de `resolverSessao()` no servidor.
+- O endpoint MUST NOT aceitar identificador de usuário por query string, header ou corpo. O único
+  parâmetro lido do cliente é `versao`, que só decide entre `200` e `204` — nunca de quem é o dado.
+- Os três casos de fim de sessão colapsam no mesmo `401` porque `resolverSessao()`
   (`src/shared/auth/sessao.ts:44-54`) já trata os três como ausência de sessão — o endpoint não
   reimplementa essa regra.
 
@@ -63,7 +66,8 @@ A autorização não é enfraquecida: `obterSessao()` é a checagem autoritativa
       "criadoEm": "2026-08-16T14:31:00.000Z"
     }
   ],
-  "naoLidas": 3
+  "naoLidas": 3,
+  "versao": "12:3:1786890660000"
 }
 ```
 
@@ -71,10 +75,20 @@ A autorização não é enfraquecida: `obterSessao()` é a checagem autoritativa
 
 - `notificacoes`: até **30**, mais recentes primeiro, todas do usuário da sessão.
 - `naoLidas`: total de não-lidas do usuário — **não** é o tamanho da lista, que é truncada em 30.
-- As duas resolvidas na **mesma** requisição, em paralelo, para nunca representarem instantes
-  diferentes (research.md D4).
+- Lista, `naoLidas` e `versao` saem da **mesma consulta** (funções de janela avaliadas antes do
+  `LIMIT`), para nunca representarem instantes diferentes (research.md D4).
+- `versao`: impressão digital opaca do estado (`total:naoLidas:msDaMaisRecente`). Muda sempre
+  que o sino mudaria — notificação nova ou marcação de leitura, inclusive em outra aba.
 - `criadoEm` é ISO gerada no servidor; o cliente nunca ordena por relógio local.
 - Nenhum campo além dos acima (FR-021).
+
+## C-03a — Sem mudança
+
+Com `?versao=` igual à versão atual do usuário, o endpoint MUST responder `204` sem corpo e MUST
+NOT ler a lista: o custo do ciclo é uma única consulta agregada sobre o índice
+`notificacao(destinatarioUserId, lida)`. O cliente mantém o que já exibe e trata o `204` como
+ciclo bem-sucedido (sem recuo). A otimização existe porque a maioria dos ciclos não encontra
+novidade.
 
 ## C-04 — Cache
 
@@ -86,15 +100,16 @@ original de notificações.
 
 ## C-05 — Reuso das consultas existentes
 
-O handler MUST chamar `listarNotificacoes(userId)` e `contarNaoLidas(userId)` de
+O handler MUST chamar `versaoNotificacoes(userId)` e `lerEstadoNotificacoes(userId)` de
 `src/modules/notificacoes/presentation/queries/notificacoes.ts`, sem reimplementar as consultas.
 
-São exatamente as mesmas funções que o Server Component do shell já usa
-(`app/_shell/shell-autenticado.tsx:31`); duplicar a consulta criaria dois lugares onde o formato
+`lerEstadoNotificacoes` é exatamente a mesma função que o Server Component do shell usa
+(`app/_shell/shell-autenticado.tsx`); duplicar a consulta criaria dois lugares onde o formato
 da lista pode divergir do que a semente entrega.
 
 ## C-06 — Custo
 
-O handler MUST resolver as duas consultas em paralelo e MUST NOT executar trabalho adicional
+O handler MUST executar no máximo duas consultas (versão e, se ela mudou, estado) e MUST NOT
+executar trabalho adicional
 (nenhuma auditoria, nenhum envio, nenhuma escrita). É o caminho mais executado da aplicação depois
 que a feature entra: uma vez por usuário conectado a cada 30 segundos.

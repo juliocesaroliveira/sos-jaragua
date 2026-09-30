@@ -1,0 +1,147 @@
+import type { BetterAuthOptions } from 'better-auth'
+import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { db } from '@/src/shared/db/postgres'
+import * as schema from '@/db/schema'
+import { ROLE_PADRAO } from './roles'
+
+/**
+ * Janela do cookie cache de sessão, em segundos.
+ *
+ * Dentro dela, `getSession` responde a partir do cookie assinado, sem ir ao
+ * banco; o `proxy.ts` renova o cookie quando ele expira, então na prática a
+ * sessão é lida do banco no máximo uma vez por janela por usuário ativo.
+ *
+ * **Trade-off aceito:** desativar uma conta ou trocar sua role leva até esta
+ * janela para valer nas leituras que confiam no cookie (proxy e renders). As
+ * sessões do usuário continuam sendo apagadas do banco na hora.
+ */
+export const JANELA_COOKIE_CACHE_SEGUNDOS = 5 * 60
+
+/**
+ * Configuração do better-auth **sem** `databaseHooks` (DESIGN.md §6.1).
+ *
+ * Existe separada de `auth.ts` por causa do `proxy.ts`: ele precisa ler e
+ * renovar a sessão, mas não cria usuários — e o hook de criação arrasta o
+ * módulo de auditoria (e o driver do MongoDB) para o bundle do proxy, que
+ * roda em toda navegação. As duas instâncias compartilham segredo, cookies e
+ * schema, então os cookies emitidos por uma são válidos na outra.
+ *
+ * - `emailAndPassword` habilitado como fallback independente de provedor social.
+ * - `socialProviders`: Google + Facebook. **Instagram fora do MVP** — a API
+ *   atual é voltada a contas business/creator, inviável para login pessoal de
+ *   voluntários; documentado como escopo v2.
+ * - `role`/`ativo` como additionalFields em `user` e `lastActivityAt` em
+ *   `session`, refletidos manualmente em `db/schema/identidade.ts`.
+ */
+export const opcoesAuth = {
+    secret: process.env.BETTER_AUTH_SECRET,
+    baseURL: {
+        allowedHosts: [process.env.BETTER_AUTH_URL!.replace('https://', ''), '*.vercel.app', 'localhost:3000'],
+        protocol: 'https',
+        fallback: process.env.BETTER_AUTH_URL!
+    },
+
+    database: drizzleAdapter(db, {
+        provider: 'pg',
+        schema: {
+            user: schema.user,
+            session: schema.session,
+            account: schema.account,
+            verification: schema.verification
+        }
+    }),
+
+    emailAndPassword: {
+        enabled: true,
+        minPasswordLength: 8,
+        autoSignIn: true
+    },
+
+    /**
+     * **Escopos básicos apenas** — nome e e-mail (011-auto-cadastro-provedor,
+     * FR-004/SC-008). Não adicionar `scope` nem `mapProfileToUser` aqui para
+     * buscar data de nascimento: no Google isso exige `user.birthday.read` +
+     * People API (que costuma omitir o ano), e no Facebook `user_birthday` com
+     * App Review. Custo externo alto para um dado que o candidato informa uma
+     * única vez no formulário (research.md D2).
+     */
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? ''
+        },
+        facebook: {
+            clientId: process.env.FACEBOOK_CLIENT_ID ?? '',
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET ?? ''
+        }
+    },
+
+    /**
+     * **Contrato de configuração de vinculação de contas** — os três defaults
+     * abaixo são deixados de propósito sem declaração explícita, e mudá-los
+     * exige nova decisão documentada (contracts/auto-cadastro.md C-01):
+     *
+     * - `accountLinking.updateUserInfoOnLink` (default `false`): ativá-lo faria
+     *   o nome da conta ser sobrescrito pelo provedor a cada vinculação —
+     *   trocaria o nome de um voluntário já aprovado sem rastro (FR-008).
+     * - `overrideUserInfo` nos provedores (default `false`): mesmo efeito.
+     * - `accountLinking.requireLocalEmailVerified` (default `true`): é o que
+     *   impede alguém de pré-registrar uma conta local no e-mail da vítima e
+     *   capturar a identidade OAuth dela no primeiro login. O preço é que quem
+     *   tem conta com senha **não** consegue entrar por Google com o mesmo
+     *   e-mail enquanto não houver verificação de e-mail no projeto — o que é
+     *   tratado como recusa explicada na tela de login, não afrouxando o gate
+     *   (research.md D4).
+     */
+
+    user: {
+        additionalFields: {
+            role: {
+                type: 'string',
+                required: false,
+                defaultValue: ROLE_PADRAO,
+                // Nunca aceito do cliente: a promoção para `voluntario` acontece
+                // dentro de AprovarCandidaturaUseCase (BR-VOL-03).
+                input: false
+            },
+            ativo: {
+                type: 'boolean',
+                required: false,
+                defaultValue: true,
+                input: false
+            },
+            /**
+             * Data de nascimento (`YYYY-MM-DD`), opcional — 011-auto-cadastro-provedor,
+             * FR-003. `input: false` pelo mesmo motivo de `role`: nenhum
+             * endpoint do better-auth aceita este campo do cliente. A única via
+             * de escrita é `UsuarioRepository.definirDataNascimentoSeAusente`,
+             * chamada pelo caso de uso da candidatura (FR-016).
+             */
+            dataNascimento: {
+                type: 'string',
+                required: false,
+                input: false
+            }
+        }
+    },
+
+    session: {
+        additionalFields: {
+            lastActivityAt: {
+                type: 'date',
+                required: false,
+                input: false
+            }
+        },
+        // Cookie cache evita um hit ao banco a cada leitura de sessão; quem o
+        // mantém renovado é o `proxy.ts` (RSC não consegue gravar cookie). O
+        // timeout de inatividade de staff é tratado à parte (DESIGN.md §6.3).
+        cookieCache: { enabled: true, maxAge: JANELA_COOKIE_CACHE_SEGUNDOS }
+    },
+
+    advanced: {
+        // NFR §3 / DESIGN.md §6.4 — httpOnly e sameSite=lax são padrão do
+        // better-auth; `secure` é forçado fora de desenvolvimento.
+        useSecureCookies: process.env.NODE_ENV === 'production'
+    }
+} satisfies BetterAuthOptions

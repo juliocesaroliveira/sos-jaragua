@@ -1,12 +1,18 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { Controller } from 'react-hook-form'
 import { Megaphone, Send, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import { Alert, Button, Dialog, Formulario, Input, Select, Textarea, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { Select } from '@/src/shared/ui/select/select'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { enviarBroadcast } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
 
@@ -31,7 +37,6 @@ type DadosFormulario = z.infer<typeof esquema>
 const VALORES_INICIAIS: DadosFormulario = { titulo: '', mensagem: '', habilidadeId: undefined }
 
 export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: Lookup[]; totalAprovados: number }) {
-    const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
 
     const [confirmando, setConfirmando] = useState(false)
@@ -91,7 +96,6 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
             )
             reset(VALORES_INICIAIS)
             setConfirmando(false)
-            router.refresh()
         })
     }
 

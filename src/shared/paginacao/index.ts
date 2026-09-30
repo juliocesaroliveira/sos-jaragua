@@ -10,8 +10,8 @@ export {
     normalizarPaginacao,
     clampPagina,
     paginarComClamp,
-    calcularFaixa,
     type ParametrosPaginacao,
     type PaginaDe
 } from './esquema'
+export { calcularFaixa } from './faixa'
 export { useParametrosListagem } from './use-parametros-listagem'

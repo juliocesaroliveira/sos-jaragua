@@ -1,8 +1,9 @@
 import { and, between, eq, inArray, isNull } from 'drizzle-orm'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, after, type NextRequest } from 'next/server'
 import { db } from '@/src/shared/db/postgres'
 import { alocacao, atividade, turno, voluntarioPerfil } from '@/db/schema/voluntariado'
 import { notificacaoService } from '@/src/modules/notificacoes/infrastructure'
+import { reavaliarTodosOsAlertas } from '@/src/modules/notificacoes/presentation/alertas'
 
 /**
  * Lembrete de turno (BRD §6, DESIGN.md §12).
@@ -24,6 +25,12 @@ export async function GET(request: NextRequest) {
     if (!autorizado) {
         return NextResponse.json({ erro: 'Não autorizado.' }, { status: 401 })
     }
+
+    // Aproveita a execução diária para reavaliar os alertas de coordenador
+    // (NOT-08) — rede de segurança para condições que não nasceram de uma
+    // escrita, como um limiar ajustado por variável de ambiente. O plano Hobby
+    // só tem um cron, então ele acumula esta função (DESIGN.md §12).
+    after(reavaliarTodosOsAlertas)
 
     const agora = Date.now()
     const inicioJanela = new Date(agora + JANELA_MINIMA_MINUTOS * 60_000)

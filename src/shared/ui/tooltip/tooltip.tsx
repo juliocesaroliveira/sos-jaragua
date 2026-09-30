@@ -68,6 +68,13 @@ export function Tooltip({ conteudo, children, posicao = 'top', atrasoMs = 300, d
             // Presente = dica puramente visual; ausente = dica exposta como
             // descrição do controle. É o interruptor descrito acima.
             aria-label={descricao ? undefined : conteudo}
+            // Dica visual só entra no DOM quando abre: há uma por ícone da
+            // topbar, por link da coluna recolhida e por linha de tabela, e
+            // montá-las todas de saída é portal e máquina de estado à toa. A
+            // dica **descritiva** fica montada, porque o `aria-describedby` do
+            // gatilho precisa achar o conteúdo antes de ela abrir.
+            lazyMount={!descricao}
+            unmountOnExit={!descricao}
         >
             <Ark.Trigger asChild>{children}</Ark.Trigger>
             <Portal>

@@ -1,7 +1,10 @@
 'use client'
 
 import { useId } from 'react'
-import { TAMANHOS_PAGINA, calcularFaixa, ehTamanhoPagina, type TamanhoPagina } from '@/src/shared/paginacao'
+// Arquivos diretos, não o barrel de paginação: ele também exporta o esquema
+// zod e o `paginarComClamp` do servidor, que o rodapé não usa.
+import { TAMANHOS_PAGINA, ehTamanhoPagina, type TamanhoPagina } from '@/src/shared/paginacao/constantes'
+import { calcularFaixa } from '@/src/shared/paginacao/faixa'
 import { Pagination } from '../pagination/pagination'
 import { Select, type OpcaoSelect } from '../select/select'
 

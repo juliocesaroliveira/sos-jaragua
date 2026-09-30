@@ -62,7 +62,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         sobre o conteúdo. */}
                     <Toaster />
                 </ThemeProvider>
-                <SpeedInsights />
+                {/* Amostra de 30% das visitas: o bastante para as métricas de
+                    performance, sem gastar a cota do plano a cada navegação. */}
+                <SpeedInsights sampleRate={0.3} />
                 <Analytics />
             </body>
         </html>

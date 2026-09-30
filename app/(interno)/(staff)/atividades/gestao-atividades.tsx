@@ -1,26 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState, useTransition } from 'react'
 import { Controller } from 'react-hook-form'
 import { ClipboardList, MoreVertical, Plus, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import {
-    Alert,
-    Badge,
-    Button,
-    COR_STATUS_ATIVIDADE,
-    Dialog,
-    Formulario,
-    Input,
-    Menu,
-    NumberInput,
-    ROTULO_STATUS_ATIVIDADE,
-    Select,
-    avisar
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { Menu } from '@/src/shared/ui/menu/menu'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { DURACAO_TURNO_HORAS } from '@/src/modules/voluntariado/domain/turno'
 import type { LinhaAtividade } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
@@ -62,7 +57,6 @@ const VALORES_INICIAIS: DadosFormulario = {
     vagasPorTurno: '5'
 }
 export function GestaoAtividades({ atividades, categorias }: { atividades: LinhaAtividade[]; categorias: Lookup[] }) {
-    const router = useRouter()
     const [emAndamento, iniciarTransicao] = useTransition()
     const [criando, setCriando] = useState(false)
 
@@ -109,7 +103,6 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
 
             avisar.sucesso('Atividade criada', `${dados.quantidadeTurnos} turno(s) de ${DURACAO_TURNO_HORAS}h gerados.`)
             setCriando(false)
-            router.refresh()
         })
     }
 
@@ -121,7 +114,6 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                 return
             }
             avisar.sucesso(`Atividade ${ROTULO_STATUS_ATIVIDADE[status].toLowerCase()}`)
-            router.refresh()
         })
     }
 
@@ -148,8 +140,11 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                             >
                                 <div className="flex min-w-0 flex-col gap-1">
                                     <div className="flex flex-wrap items-center gap-2">
+                                        {/* Sem prefetch: cada linha seria uma requisição ao
+                                            servidor só por aparecer na tela. */}
                                         <Link
                                             href={`/atividades/${a.id}`}
+                                            prefetch={false}
                                             className="text-lg font-semibold text-foreground underline-offset-4 hover:underline"
                                         >
                                             {a.titulo}
@@ -174,7 +169,7 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                                 </div>
 
                                 <div className="flex shrink-0 items-center gap-2">
-                                    <Link href={`/atividades/${a.id}`}>
+                                    <Link href={`/atividades/${a.id}`} prefetch={false}>
                                         <Button
                                             variant="secondary"
                                             iconeInicio={<ClipboardList aria-hidden className="size-4" />}

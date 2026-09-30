@@ -2,7 +2,10 @@
 
 import { Download, FileSpreadsheet, LifeBuoy, RotateCcw } from 'lucide-react'
 import type { RowData } from '@tanstack/react-table'
-import { Alert, Button, Table, Tabs, type ColunaTabela } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Table, type ColunaTabela } from '@/src/shared/ui/table/table'
+import { Tabs } from '@/src/shared/ui/tabs/tabs'
 import { chaveEstoque, chaveSaidas, useListagemPaginada } from '@/src/shared/query'
 import { ABREVIACAO_UNIDADE, ROTULO_CATEGORIA_ITEM } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
