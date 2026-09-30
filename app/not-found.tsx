@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { destinoDeRetorno } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
-import { ConteudoNaoEncontrado } from '@/src/shared/ui'
+import { ConteudoNaoEncontrado } from '@/src/shared/ui/nao-encontrado/nao-encontrado'
 import { ShellAutenticado } from './_shell/shell-autenticado'
 
 export const metadata: Metadata = {

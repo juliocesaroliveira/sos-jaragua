@@ -1,14 +1,9 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { podeAcessar } from '@/src/shared/auth/rotas'
 import { exigirSessao } from '@/src/shared/auth/sessao'
-import { listarItens } from '@/src/modules/estoque/presentation/queries/estoque'
 import { projecaoDeCrise } from '@/src/modules/logistica/presentation/queries/dashboard'
-import {
-    avaliarDeficitAtendimento,
-    avaliarEstoqueCritico
-} from '@/src/modules/notificacoes/application/use-cases/alertas-coordenador'
 import { PainelCrise } from './painel-crise'
 
 export const metadata: Metadata = {
@@ -40,17 +35,10 @@ export default function DashboardPage() {
 }
 
 async function Indicadores() {
+    // Os alertas de déficit e estoque crítico (NOT-08) não são avaliados aqui:
+    // rodam depois das escritas que podem dispará-los
+    // (`notificacoes/presentation/alertas.ts`, DESIGN.md §12).
     const projecao = await projecaoDeCrise()
-
-    // Alertas gerados **em leitura** (NOT-08, DESIGN.md §12): quem carrega o
-    // painel é quem avalia a condição. Ficam fora de `projecaoDeCrise()` de
-    // propósito — aquela função é cacheada, e efeito colateral dentro de cache
-    // dispararia de forma imprevisível.
-    const itens = await listarItens()
-    await Promise.all([
-        avaliarDeficitAtendimento(projecao.totalNecessarios, projecao.totalPossiveis),
-        avaliarEstoqueCritico(itens.map((i) => ({ nome: i.nome, saldo: i.saldo })))
-    ])
 
     // O painel é visível a toda a staff, mas `/crise` pertence à Defesa Civil.
     // Sem esta checagem o coordenador veria atalhos para uma tela que lhe

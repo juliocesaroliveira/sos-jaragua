@@ -2,7 +2,10 @@
 
 import { useMemo } from 'react'
 import { RotateCcw } from 'lucide-react'
-import { Alert, Button, Select, Table, type ColunaTabela } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Select } from '@/src/shared/ui/select/select'
+import { Table, type ColunaTabela } from '@/src/shared/ui/table/table'
 import { chaveEstoque, useListagemPaginada } from '@/src/shared/query'
 import {
     ABREVIACAO_UNIDADE,

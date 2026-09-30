@@ -5,6 +5,7 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import { withAudit } from '@/src/modules/auditoria'
+import { agendarAlertasDeEstoque } from '@/src/modules/notificacoes/presentation/alertas'
 import type { Role } from '@/src/shared/auth/roles'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { CATEGORIAS_ITEM, CONDICOES_ITEM, UNIDADES_MEDIDA } from '../../domain/item'
@@ -14,6 +15,8 @@ import {
     entradaRepository,
     itemRepository,
     kitRepository,
+    nomesDeKits,
+    receitasDeKits,
     saidaRepository
 } from '../../infrastructure/drizzle/estoque-repository'
 import { RegistrarEntradaUseCase } from '../../application/use-cases/registrar-entrada'
@@ -125,14 +128,16 @@ export async function registrarSaida(entrada: EntradaFormularioSaida): Promise<R
 
     // A receita é lida no servidor, nunca aceita do cliente: senão bastaria
     // forjar o payload para deduzir menos do que o kit realmente consome.
-    const kitsComReceita = await Promise.all(
-        (parse.data.kits ?? []).map(async (k) => ({
-            kitId: k.kitId,
-            nome: (await kitRepository.buscarPorId(k.kitId))?.nome ?? 'Kit',
-            quantidade: k.quantidade,
-            componentes: await kitRepository.receita(k.kitId)
-        }))
-    )
+    // Duas consultas em lote para todos os kits, e não duas por kit.
+    const kits = parse.data.kits ?? []
+    const kitIds = [...new Set(kits.map((k) => k.kitId))]
+    const [receitas, nomes] = await Promise.all([receitasDeKits(kitIds), nomesDeKits(kitIds)])
+    const kitsComReceita = kits.map((k) => ({
+        kitId: k.kitId,
+        nome: nomes.get(k.kitId) ?? 'Kit',
+        quantidade: k.quantidade,
+        componentes: receitas.get(k.kitId) ?? []
+    }))
 
     const useCase = new RegistrarSaidaUseCase(saidaRepository)
     const resultado = await comAtorDaSessao(ator, () =>
@@ -146,7 +151,13 @@ export async function registrarSaida(entrada: EntradaFormularioSaida): Promise<R
         })
     )
 
-    if (resultado.ok) invalidarSaldo()
+    if (resultado.ok) {
+        invalidarSaldo()
+        // A aba "Saídas" de /relatorios lista as saídas registradas; sem isto
+        // ela seguiria mostrando o histórico anterior até o cache expirar.
+        revalidateTag(CACHE_TAGS.estoqueSaidas, PERFIL_REVALIDACAO)
+        agendarAlertasDeEstoque({ estoqueCritico: true })
+    }
 
     return serializar(resultado)
 }
@@ -171,7 +182,10 @@ export async function registrarDescarte(
     const useCase = new RegistrarDescarteUseCase(descarteRepository)
     const resultado = await comAtorDaSessao(ator, () => useCase.executar({ ...parse.data, registradoPor: ator.userId }))
 
-    if (resultado.ok) invalidarSaldo()
+    if (resultado.ok) {
+        invalidarSaldo()
+        agendarAlertasDeEstoque({ estoqueCritico: true })
+    }
 
     return serializar(resultado)
 }
@@ -240,6 +254,7 @@ export async function salvarKit(entrada: EntradaFormularioKit): Promise<Resultad
     updateTag(CACHE_TAGS.estoqueKits)
     // Mudar a receita muda quantos kits são montáveis (BR-INT-02).
     revalidateTag(CACHE_TAGS.dashboardKits, PERFIL_REVALIDACAO)
+    agendarAlertasDeEstoque({ estoqueCritico: false })
 
     return { ok: true, valor: { id: kit.id } }
 }

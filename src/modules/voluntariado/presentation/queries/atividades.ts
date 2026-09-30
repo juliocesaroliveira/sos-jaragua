@@ -1,6 +1,6 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { and, asc, desc, eq, gte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { alocacao, atividade, atividadeCategoria, turno, voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS, tagAtividade } from '@/src/shared/cache'
@@ -208,13 +208,4 @@ export async function buscarMinhaCandidatura(userId: string) {
         .where(eq(voluntarioPerfil.userId, userId))
         .limit(1)
     return linha ?? null
-}
-
-/** Turnos futuros de uma atividade — evita oferecer alocação no passado. */
-export async function turnosFuturos(atividadeId: string) {
-    return db
-        .select({ id: turno.id, inicio: turno.inicio, fim: turno.fim })
-        .from(turno)
-        .where(and(eq(turno.atividadeId, atividadeId), gte(turno.inicio, new Date())))
-        .orderBy(asc(turno.inicio))
 }

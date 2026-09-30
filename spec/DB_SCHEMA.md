@@ -92,7 +92,7 @@ padrão do adapter (não necessariamente `criadoEm`/`atualizadoEm`).
 | `id`                                           | uuid/string, pk       |                                                                                                                             |
 | `userId`                                       | fk → `user.id`        |                                                                                                                             |
 | `expiresAt`, `token`, `ipAddress`, `userAgent` | —                     | padrão better-auth                                                                                                          |
-| `lastActivityAt`                               | timestamptz, nullable | **additionalField** — atualizado por `proxy.ts` a cada requisição de staff; base do timeout de inatividade (DESIGN.md §6.3) |
+| `lastActivityAt`                               | timestamptz, nullable | **additionalField** — atualizado por `proxy.ts` em requisições de staff (no máximo 1×/min); base do timeout de inatividade (DESIGN.md §6.3) |
 
 **`account`** (vínculos OAuth) — padrão better-auth, um registro por provider vinculado ao
 `user`. Providers habilitados: `credential` (e-mail/senha), `google`, `facebook`.

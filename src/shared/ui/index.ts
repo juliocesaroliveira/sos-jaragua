@@ -1,6 +1,11 @@
 /**
- * Barrel do design system (DESIGN_SYSTEM.md §5). Telas importam daqui, nunca
- * de `@ark-ui/react` diretamente — é o que impede drift visual entre telas.
+ * Índice do design system (DESIGN_SYSTEM.md §5) — o catálogo do que existe.
+ *
+ * **Não é origem de import.** Telas importam do arquivo de cada componente
+ * (`@/src/shared/ui/button/button`), nunca daqui nem de `@ark-ui/react`: o
+ * barrel importado por uma página arrasta todos os Client Components abaixo
+ * para o bundle daquela rota. `no-restricted-imports` no `eslint.config.mjs`
+ * garante isso.
  */
 export { cn, ANEL_FOCO, ALTURA_POR_TAMANHO, type TamanhoControle } from './cn'
 

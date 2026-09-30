@@ -2,16 +2,11 @@
 
 import { useMemo } from 'react'
 import { RotateCcw } from 'lucide-react'
-import {
-    Alert,
-    Badge,
-    Button,
-    COR_STATUS_VOLUNTARIO,
-    ROTULO_STATUS_VOLUNTARIO,
-    Select,
-    Table,
-    type ColunaTabela
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge, COR_STATUS_VOLUNTARIO, ROTULO_STATUS_VOLUNTARIO } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Select } from '@/src/shared/ui/select/select'
+import { Table, type ColunaTabela } from '@/src/shared/ui/table/table'
 import { chaveVoluntarios, useListagemPaginada } from '@/src/shared/query'
 import { listarVoluntariosAction } from '@/src/modules/voluntariado/presentation/actions/voluntarios'
 import type { LinhaVoluntario } from '@/src/modules/voluntariado/presentation/queries/candidaturas'

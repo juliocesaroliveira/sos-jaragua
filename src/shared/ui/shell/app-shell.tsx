@@ -2,7 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
-import { signOut } from '../../auth/client'
 import type { ItemNavegacao } from '../../auth/navegacao'
 import { GavetaNavegacao } from './gaveta-navegacao'
 import { SidebarNav } from './sidebar-nav'
@@ -61,6 +60,9 @@ export function AppShell({ itens, nome, rotuloRole, notificacoes, children }: Ap
     }, [gavetaAberta])
 
     async function sair() {
+        // Carregado só no clique: o cliente do better-auth não precisa estar
+        // no bundle de toda página autenticada para servir a um botão.
+        const { signOut } = await import('../../auth/client')
         await signOut()
         router.push('/login')
         // Sem o refresh, o shell autenticado permaneceria no cache do roteador

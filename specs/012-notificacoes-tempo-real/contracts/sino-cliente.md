@@ -9,7 +9,7 @@ Em `src/modules/notificacoes/presentation/client/use-notificacoes.ts`.
 **Entrada** (a semente vinda do Server Component):
 
 ```
-{ notificacoes: NotificacaoInApp[], naoLidas: number }
+{ notificacoes: NotificacaoInApp[], naoLidas: number, versao: string }
 ```
 
 **Saída**:

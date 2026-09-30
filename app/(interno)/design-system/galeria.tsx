@@ -2,39 +2,36 @@
 
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
-import {
-    Accordion,
-    Alert,
-    Avatar,
-    Badge,
-    Button,
-    CheckboxGroup,
-    Combobox,
-    DatePicker,
-    Dialog,
-    Drawer,
-    IconButton,
-    Input,
-    KanbanCard,
-    KanbanColumn,
-    Menu,
-    NumberInput,
-    Pagination,
-    Password,
-    Popover,
-    Progress,
-    ProgressCircle,
-    RadioGroup,
-    Select,
-    Skeleton,
-    StatCard,
-    Switch,
-    Table,
-    Tabs,
-    Textarea,
-    Tooltip,
-    avisar
-} from '@/src/shared/ui'
+import { Accordion } from '@/src/shared/ui/accordion/accordion'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Avatar } from '@/src/shared/ui/avatar/avatar'
+import { Badge } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { CheckboxGroup } from '@/src/shared/ui/checkbox-group/checkbox-group'
+import { Combobox } from '@/src/shared/ui/combobox/combobox'
+import { DatePicker } from '@/src/shared/ui/date-picker/date-picker'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Drawer } from '@/src/shared/ui/drawer/drawer'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { Input } from '@/src/shared/ui/input/input'
+import { KanbanCard } from '@/src/shared/ui/kanban/kanban-card'
+import { KanbanColumn } from '@/src/shared/ui/kanban/kanban-column'
+import { Menu } from '@/src/shared/ui/menu/menu'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Pagination } from '@/src/shared/ui/pagination/pagination'
+import { Password } from '@/src/shared/ui/password/password'
+import { Popover } from '@/src/shared/ui/popover/popover'
+import { Progress, ProgressCircle } from '@/src/shared/ui/progress/progress'
+import { RadioGroup } from '@/src/shared/ui/radio-group/radio-group'
+import { Select } from '@/src/shared/ui/select/select'
+import { Skeleton } from '@/src/shared/ui/skeleton/skeleton'
+import { StatCard } from '@/src/shared/ui/stat-card/stat-card'
+import { Switch } from '@/src/shared/ui/switch/switch'
+import { Table } from '@/src/shared/ui/table/table'
+import { Tabs } from '@/src/shared/ui/tabs/tabs'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
+import { avisar } from '@/src/shared/ui/toast/toast'
 
 /**
  * Galeria de validação do design system (DS-19). Serve para conferir cada

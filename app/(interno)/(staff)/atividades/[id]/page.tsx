@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { buscarAtividadeDetalhada } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import { listarVoluntariosAprovados } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import { listarHabilidades } from '@/src/modules/voluntariado/presentation/queries/lookups'

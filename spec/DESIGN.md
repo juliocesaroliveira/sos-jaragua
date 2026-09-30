@@ -224,8 +224,11 @@ entrada explícita em nenhum mapa. Responsabilidades:
 
 4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).
-5. `config.matcher` exclui `/api/auth/*` e assets estáticos — não exclui mais nenhuma rota de
-   navegação; a landing (`/`) passou a exigir sessão junto com o restante da aplicação.
+5. `config.matcher` exclui `/api/auth/*`, `/api/notificacoes`, assets estáticos e **requisições
+   de prefetch** (`missing: next-router-prefetch / purpose=prefetch`) — prefetch não é atividade
+   do usuário, e o render que ele pede passa pela checagem autoritativa dos layouts. Não exclui
+   nenhuma navegação real; a landing (`/`) exige sessão junto com o restante da aplicação.
+6. **Mantém o cookie cache de sessão vivo** (§6.2.1).
 
 Um usuário já autenticado que acessa `/login` diretamente é redirecionado para a área padrão
 do seu papel (`areaPadraoPorRole`, `app/(auth)/login/page.tsx`) em vez de ver o formulário.
@@ -233,6 +236,24 @@ do seu papel (`areaPadraoPorRole`, `app/(auth)/login/page.tsx`) em vez de ver o 
 A checagem de role em `proxy.ts` é a **barreira rápida**; a fonte de verdade fica em cada
 `(staff)/layout.tsx`, que re-valida via `auth.api.getSession` no servidor (defesa em
 profundidade — cookies podem ser forjados/expirados entre o proxy e o render).
+
+### 6.2.1. Cookie cache de sessão
+
+`session.cookieCache` fica habilitado com janela de **5 minutos**
+(`JANELA_COOKIE_CACHE_SEGUNDOS`, `src/shared/auth/opcoes.ts`). Dentro dela, `getSession`
+responde a partir do cookie assinado, sem consulta ao banco — no proxy, nos layouts, nas Server
+Actions e no endpoint do sino.
+
+Server Components não conseguem gravar cookie, então **quem renova o cache é o `proxy.ts`**:
+quando o cookie expirou mas a sessão existe, o proxy lê a sessão uma vez
+(`auth-proxy.ts`, instância sem `databaseHooks` para não arrastar auditoria/MongoDB ao bundle
+do proxy), devolve o `Set-Cookie` ao navegador e injeta o cookie novo no request repassado ao
+render — que então resolve a sessão sem consulta. O endpoint do sino, fora do matcher, faz o
+mesmo com os `Set-Cookie` devolvidos por `resolverSessao()`.
+
+**Trade-off aceito:** desativar uma conta, trocar sua role ou encerrar suas sessões (ex.:
+redefinição de senha) leva até 5 minutos para valer nas leituras que confiam no cookie. As
+linhas de `session` continuam sendo apagadas na hora.
 
 ### 6.3. Timeout de inatividade (staff)
 
@@ -242,7 +263,9 @@ operações). better-auth **não tem** timeout de sessão por role nativamente �
 customizado, implementado em `src/shared/auth/`:
 
 - Cada requisição autenticada de um usuário com role `membro_defesa_civil` ou `coordenador`
-  atualiza `session.lastActivityAt = now()` em `proxy.ts`.
+  atualiza `session.lastActivityAt = now()` em `proxy.ts` — no máximo uma vez por minuto — e
+  reemite o cookie cache com o carimbo novo, que é de onde o proxy lê o carimbo na requisição
+  seguinte (§6.2.1). Prefetch e o poll do sino não carimbam: não são atividade do usuário.
 - A sessão é tratada como expirada quando `now() - lastActivityAt > STAFF_INACTIVITY_TIMEOUT_MINUTES`
   (variável de ambiente, default sugerido: 15 minutos) — o próximo request autenticado
   detecta isso e força novo login (invalida a sessão via `auth.api.signOut` server-side).
@@ -255,8 +278,8 @@ customizado, implementado em `src/shared/auth/`:
 
 O `proxy.ts` **não** é enforcement suficiente para rotas cuja regra é mais estrita que
 `ROLES_STAFF`. Ele decide a partir do cache de sessão em cookie e, quando esse cache não está
-disponível, deixa passar de propósito (`if (!cache) return NextResponse.next()`) — apostando que
-"o layout faz a checagem autoritativa em seguida".
+disponível, lê a sessão do banco — mas, se essa leitura falhar, deixa passar de propósito —
+apostando que "o layout faz a checagem autoritativa em seguida".
 
 Essa aposta vale para `/dashboard` e afins, onde `(staff)/layout.tsx` exige `ROLES_STAFF`. **Não
 valia** para `/crise`, `/relatorios`, `/estoque/kits`, `/estoque/descarte` e `/convocacao`: um
@@ -416,6 +439,16 @@ Server Action). Mutações onde uma pequena defasagem é aceitável (ex.: recál
 após uma entrada em outro terminal) usam `revalidateTag(tag, 'minutes')` (stale-while-
 revalidate, atualização em background).
 
+**`'use cache'` × `'use cache: remote'`.** Em serverless (Vercel), o `'use cache'` padrão guarda
+o resultado na memória de cada instância, que é efêmera — a documentação do Next instalado
+(`directives/use-cache.md`, tabela de ambientes) avisa que as entradas "typically don't persist
+across requests". Por isso, **dados de referência** — poucas chaves, lidos em quase toda tela —
+usam `'use cache: remote'`, o cache compartilhado entre instâncias que a plataforma provê:
+lookups (`habilidade`, `atividade_categoria`), catálogo de itens, kits com receita e os três
+leitores do painel de crise (`projecaoDeCrise`, `historicoDaCrise`, `metricasConfiguradas`).
+As listagens paginadas ficam no `'use cache'` padrão: têm uma chave por página/filtro, e o cache
+remoto consome cota da plataforma por entrada. A invalidação por tag é a mesma nos dois.
+
 ---
 
 ## 8. Integração TanStack Query + Server Actions
@@ -555,9 +588,13 @@ condicional que possa ser esquecido em um novo relatório).
   função da Vercel — mitigar processando em chunks dentro da mesma invocação e, se
   necessário no futuro, migrar para um endpoint de fan-out; fora de escopo para o MVP.
 - **Alertas para Coordenadores** (`cadastros_acumulados`, `estoque_critico`,
-  `deficit_atendimento`): gerados por checagem em leitura (não por job separado) — ex.: ao
-  carregar o dashboard/fila, se o contador ultrapassar o limiar configurado, a notificação
-  é criada (idempotente, uma por "condição ativa").
+  `deficit_atendimento`): avaliados **depois das escritas que podem disparar a condição**,
+  via `after()` (`src/modules/notificacoes/presentation/alertas.ts`) — saída/descarte →
+  estoque crítico e déficit; receita de kit, variáveis da crise e métricas → déficit;
+  candidatura submetida → cadastros acumulados. O cron diário (`/api/cron/lembrete-turno`)
+  reavalia os três como rede de segurança. Idempotente, uma notificação por "condição
+  ativa" a cada 12h. Antes eram checados a cada render do painel e da fila, o que custava
+  várias consultas (e às vezes INSERTs) por página aberta mesmo sem nada ter mudado.
 
 ---
 

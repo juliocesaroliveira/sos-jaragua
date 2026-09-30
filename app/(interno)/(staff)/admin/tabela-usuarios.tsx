@@ -3,7 +3,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { Alert, Button, IconButton, Table, Tooltip, type ColunaTabela } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { Table, type ColunaTabela } from '@/src/shared/ui/table/table'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
 import { RAIZ_USUARIOS, chaveUsuarios, useListagemPaginada } from '@/src/shared/query'
 import { ROTULO_ROLE } from '@/src/shared/auth/roles'
 import { listarUsuariosAction } from '@/src/modules/identidade/presentation/actions/usuarios'
@@ -110,11 +114,13 @@ export function TabelaUsuarios() {
                 onOpenChange={setDialogoAberto}
                 usuario={usuarioEditando ?? undefined}
                 onSucesso={() => {
-                    // A Server Action de escrita já invalidou a tag no servidor;
-                    // isto invalida o espelho no cliente. Substitui o
-                    // `router.refresh()`, que recarregava a rota inteira só para
-                    // atualizar a lista.
-                    void queryClient.invalidateQueries({ queryKey: RAIZ_USUARIOS })
+                    // A Server Action de escrita já invalidou a tag no servidor,
+                    // e o `updateTag` devolve na mesma resposta o render da
+                    // página atual — cuja hidratação atualiza a lista visível.
+                    // Aqui só marcamos as **outras** páginas em cache como
+                    // velhas, sem refazer a consulta agora (`refetchType:
+                    // 'none'`): refazê-la seria um segundo POST pelo mesmo dado.
+                    void queryClient.invalidateQueries({ queryKey: RAIZ_USUARIOS, refetchType: 'none' })
                 }}
             />
         </div>

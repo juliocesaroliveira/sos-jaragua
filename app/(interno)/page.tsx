@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { atalhosDeNavegacao } from '@/src/shared/auth/navegacao'
 import { ROTULO_ROLE } from '@/src/shared/auth/roles'
 import { exigirSessao } from '@/src/shared/auth/sessao'
-import { Alert, ANEL_FOCO, cn } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { ANEL_FOCO, cn } from '@/src/shared/ui/cn'
 import { ICONES } from '@/src/shared/ui/shell/icones'
 
 export const metadata: Metadata = {

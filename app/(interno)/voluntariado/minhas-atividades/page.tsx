@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { Alert, Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE, SkeletonLista } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE } from '@/src/shared/ui/badge/badge'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { exigirRoles } from '@/src/shared/auth/sessao'
 import { listarMinhasAtividades } from '@/src/modules/voluntariado/presentation/queries/atividades'
 

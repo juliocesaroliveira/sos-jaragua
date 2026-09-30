@@ -1,12 +1,16 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 import { Controller } from 'react-hook-form'
 import { Check } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import { Alert, Button, Formulario, NumberInput, Select, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { BASES_DEMANDA, ROTULO_BASE_DEMANDA, type BaseDemanda } from '@/src/modules/logistica/domain/projecao'
 import type {
     CriseVariaveis,
@@ -59,7 +63,6 @@ export function GestaoCrise({
     kits: { id: string; nome: string; ativo: boolean }[]
     metricas: MetricaKitConfigurada[]
 }) {
-    const router = useRouter()
     const [erro, setErro] = useState<string | null>(null)
 
     const {
@@ -93,7 +96,6 @@ export function GestaoCrise({
         }
 
         avisar.sucesso('Números atualizados', 'O painel de crise já reflete os novos valores.')
-        router.refresh()
     }
 
     return (
@@ -184,7 +186,6 @@ function MetricasKit({
     kits: { id: string; nome: string; ativo: boolean }[]
     metricas: MetricaKitConfigurada[]
 }) {
-    const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
     const [erro, setErro] = useState<string | null>(null)
 
@@ -205,7 +206,6 @@ function MetricasKit({
             }
 
             avisar.sucesso('Métrica atualizada')
-            router.refresh()
         })
     }
 

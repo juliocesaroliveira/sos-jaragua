@@ -1,4 +1,4 @@
-import { Logo } from '@/src/shared/ui'
+import { Logo } from '@/src/shared/ui/logo/logo'
 
 /**
  * Bloco institucional da tela de login (014-redesign-tela-login, FR-001, FR-002,

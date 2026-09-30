@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { descarte, entrada, item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { arredondar, paraNumeric, paraNumero } from '../../domain/quantidade'
@@ -313,12 +313,10 @@ export async function receitasDeKits(kitIds: string[]): Promise<Map<string, Comp
     return porKit
 }
 
-/** Guarda contra kit inativo entrando numa saída nova (BR-EST-02). */
-export async function kitEstaAtivo(kitId: string): Promise<boolean> {
-    const [linha] = await db
-        .select({ ativo: kit.ativo })
-        .from(kit)
-        .where(and(eq(kit.id, kitId), eq(kit.ativo, true)))
-        .limit(1)
-    return Boolean(linha)
+/** Nomes de vários kits de uma vez — rótulos da saída, sem uma consulta por kit. */
+export async function nomesDeKits(kitIds: string[]): Promise<Map<string, string>> {
+    if (kitIds.length === 0) return new Map()
+
+    const linhas = await db.select({ id: kit.id, nome: kit.nome }).from(kit).where(inArray(kit.id, kitIds))
+    return new Map(linhas.map((l) => [l.id, l.nome]))
 }

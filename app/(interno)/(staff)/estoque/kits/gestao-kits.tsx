@@ -1,26 +1,23 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useEffect, useId, useState, useTransition } from 'react'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import {
-    Alert,
-    Badge,
-    Button,
-    Dialog,
-    Formulario,
-    IconButton,
-    Input,
-    NumberInput,
-    Select,
-    Switch,
-    Textarea,
-    Tooltip,
-    avisar
-} from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Badge } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { Input } from '@/src/shared/ui/input/input'
+import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
+import { Switch } from '@/src/shared/ui/switch/switch'
+import { Textarea } from '@/src/shared/ui/textarea/textarea'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade, kitsPossiveis } from '@/src/modules/estoque/domain'
 import type { ItemComSaldo, KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
@@ -81,7 +78,6 @@ const VALORES_INICIAIS: DadosFormulario = {
 }
 
 export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: ItemComSaldo[] }) {
-    const router = useRouter()
     const [enviando, iniciarTransicao] = useTransition()
 
     const [editando, setEditando] = useState<KitComReceita | null>(null)
@@ -168,7 +164,6 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
 
             avisar.sucesso(editando ? 'Kit atualizado' : 'Kit criado')
             setAberto(false)
-            router.refresh()
         })
     }
 

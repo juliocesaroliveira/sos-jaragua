@@ -1,5 +1,5 @@
 import { destinoDeRetorno } from '@/src/shared/auth/rotas'
-import { ConteudoNaoEncontrado } from '@/src/shared/ui'
+import { ConteudoNaoEncontrado } from '@/src/shared/ui/nao-encontrado/nao-encontrado'
 
 /**
  * Fronteira de "não encontrado" da área autenticada (specs/003-not-found-page).

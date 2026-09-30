@@ -7,7 +7,12 @@ import { z } from '@/src/shared/validacao/zod-ptbr'
 import { email, senha, useFormulario } from '@/src/shared/formulario'
 import { signIn } from '@/src/shared/auth/client'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
-import { Alert, Button, cn, Formulario, Input, Password } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { cn } from '@/src/shared/ui/cn'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { Password } from '@/src/shared/ui/password/password'
 import { IconeFacebook, IconeGoogle } from './icones-provedor'
 
 const esquema = z.object({

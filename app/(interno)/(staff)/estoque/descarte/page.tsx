@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui'
+import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarItens } from '@/src/modules/estoque/presentation/queries/estoque'
 import { DescarteForm } from './descarte-form'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'

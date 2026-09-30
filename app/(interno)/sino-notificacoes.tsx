@@ -2,8 +2,13 @@
 
 import { useState } from 'react'
 import { Bell, CheckSquare } from 'lucide-react'
-import { Badge, Button, Drawer, IconButton, Tooltip, cn } from '@/src/shared/ui'
-import type { NotificacaoInApp } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
+import { Badge } from '@/src/shared/ui/badge/badge'
+import { Button } from '@/src/shared/ui/button/button'
+import { Drawer } from '@/src/shared/ui/drawer/drawer'
+import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
+import { cn } from '@/src/shared/ui/cn'
+import type { EstadoNotificacoes } from '@/src/modules/notificacoes/presentation/queries/notificacoes'
 import { useNotificacoes } from '@/src/modules/notificacoes/presentation/client/use-notificacoes'
 
 /**
@@ -40,7 +45,7 @@ const ROTULO_POR_EVENTO: Record<string, string> = {
  * reconsulta sozinho a cada 30s com a aba visível e imediatamente ao recuperar
  * o foco.
  */
-export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: NotificacaoInApp[]; naoLidas: number }) {
+export function SinoNotificacoes(semente: EstadoNotificacoes) {
     const [aberto, setAberto] = useState(false)
     const {
         notificacoes: lista,
@@ -48,7 +53,7 @@ export function SinoNotificacoes({ notificacoes, naoLidas }: { notificacoes: Not
         marcarUma,
         marcarTodas,
         processando
-    } = useNotificacoes({ notificacoes, naoLidas })
+    } = useNotificacoes(semente)
 
     function abrirEMarcar(id: string, lida: boolean) {
         if (lida) return
