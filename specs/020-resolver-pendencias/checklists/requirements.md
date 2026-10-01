@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -31,6 +31,6 @@
 
 ## Notes
 
-- Iteração 1: 3 marcadores [NEEDS CLARIFICATION] (Q1 biblioteca de planilhas, Q2 rota pública de cadastro por senha, Q3 mínimo de estoque por item). Aguardando resposta do responsável.
-- Nomes de pacotes (`xlsx`, `exceljs`) e de consoles externos aparecem só onde **são** o objeto da decisão herdada do `PENDENCIAS.md`. Os requisitos (FR) e critérios (SC) continuam agnósticos de tecnologia.
+- Iteração 1: 3 marcadores [NEEDS CLARIFICATION] (Q1 biblioteca de planilhas, Q2 rota pública de cadastro por senha, Q3 mínimo de estoque por item). Iteração 2: respondidas pelo responsável em 2026-10-01 (Q1: trocar por `exceljs`; Q2: fechar a rota pública; Q3: mínimo por item com fallback global) e registradas em `## Clarifications`. Todos os itens passam.
+- Nomes de pacotes (`xlsx`, `exceljs`) e de consoles externos aparecem só onde **são** o objeto da decisão herdada do `PENDENCIAS.md`. Fora o FR-007, que registra a própria decisão Q1, os requisitos (FR) e critérios (SC) continuam agnósticos de tecnologia.
 - Validação item a item feita contra o repositório em 2026-10-01: itens 9 e 12 já resolvidos; itens 1 e 14 com afirmações desatualizadas; achado novo de vulnerabilidades crítica e alta no `npm audit --omit=dev`.

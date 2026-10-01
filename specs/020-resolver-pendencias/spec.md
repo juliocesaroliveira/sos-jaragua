@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-01
 
-**Status**: Draft
+**Status**: Clarified
 
 **Input**: User description: "vamos analisar o documento de pendências @PENDENCIAS.md e validar item a item para resolve-los."
 
@@ -19,22 +19,22 @@ O `PENDENCIAS.md` lista 14 pontos que dependiam de decisão do time. Parte deles
 
 ### Validação item a item (estado em 2026-10-01)
 
-| #   | Item                                         | O que o repositório mostra hoje                                                                                                                                                                                                                                                             | Classificação                              |
-| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1   | `xlsx` com vulnerabilidade alta              | Continua `xlsx@0.18.5` do npm. **Desatualizado:** o documento diz que "nenhum código de exportação foi escrito ainda", mas a geração de planilhas já existe e é usada pelos relatórios. A auditoria de dependências agora acusa 10 vulnerabilidades, não 1 (ver "Achados novos").            | Código, com decisão pendente (Q1)          |
-| 2   | `/cadastro` removido                         | Resolvido (opção b). O resíduo continua aberto: a rota pública de auto-cadastro por senha segue aceitando requisições, sem tela.                                                                                                                                                             | Código, com decisão pendente (Q2)          |
-| 3   | Senha do admin de bootstrap                  | Credencial de desenvolvimento documentada. Falta a credencial de produção.                                                                                                                                                                                                                  | Operacional                                |
-| 4   | ID-06: timeout de inatividade                | Implementado e corrigido em 2026-09-24. Ainda desmarcado no TASKS.md. Os usuários de teste por papel (incluindo `coordenador`) já existem no banco de desenvolvimento, então a verificação não depende mais de criar usuário.                                                               | Verificação                                |
-| 5   | Formato do `datetime-local`                  | Campo nativo, sem mudança. A recomendação foi aceitar.                                                                                                                                                                                                                                      | Decisão: registrar (a) e encerrar          |
-| 6   | Provedor de e-mail                           | Os adapters estão prontos e degradam graciosamente. Falta a conta Resend e o domínio.                                                                                                                                                                                                      | Operacional                                |
-| 7   | Credenciais de login social                  | As variáveis continuam vazias e os botões aparecem mesmo assim. Com a decisão do item 2, o login social virou o **único** caminho público de entrada, então botão quebrado bloqueia o público inteiro.                                                                                      | Operacional + código (esconder sem config) |
-| 8   | Limiar dos alertas de coordenador            | A mecânica funciona. O limiar de estoque continua global.                                                                                                                                                                                                                                   | Decisão de negócio (Q3)                    |
-| 9   | Gestão de usuários (`/admin`)                | **Resolvido** pela feature `006-user-management-page`: a tela `/admin` existe, com listagem, criação e edição.                                                                                                                                                                              | Já resolvido: remover                      |
-| 10  | AUD-02: grants do Atlas                      | O usuário da aplicação continua administrativo.                                                                                                                                                                                                                                            | Operacional                                |
-| 11  | DNS SRV na rede de desenvolvimento           | É um problema do ambiente local, não do produto. A solução (string não-SRV) já está documentada.                                                                                                                                                                                           | Documentação: mover para o README          |
-| 12  | Degradação graciosa da auditoria             | **Resolvido** e coberto por teste. O próprio documento pede a remoção.                                                                                                                                                                                                                     | Já resolvido: remover                      |
-| 13  | DEPLOY-01 / DEPLOY-02                        | Dependem do painel da Vercel.                                                                                                                                                                                                                                                               | Operacional                                |
-| 14  | DEPLOY-06: verificação end-to-end            | Faltam `coordenador`, `voluntario` e `usuario`. Os usuários de teste existem. A ressalva "a área `/admin` não existe" está **desatualizada** (ver item 9).                                                                                                                                  | Verificação                                |
+| #   | Item                               | O que o repositório mostra hoje                                                                                                                                                                                                                                                   | Classificação                              |
+| --- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 1   | `xlsx` com vulnerabilidade alta    | Continua `xlsx@0.18.5` do npm. **Desatualizado:** o documento diz que "nenhum código de exportação foi escrito ainda", mas a geração de planilhas já existe e é usada pelos relatórios. A auditoria de dependências agora acusa 10 vulnerabilidades, não 1 (ver "Achados novos"). | Código: trocar por `exceljs` (Q1)          |
+| 2   | `/cadastro` removido               | Resolvido (opção b). O resíduo continua aberto: a rota pública de auto-cadastro por senha segue aceitando requisições, sem tela.                                                                                                                                                  | Código: fechar a rota pública (Q2)         |
+| 3   | Senha do admin de bootstrap        | Credencial de desenvolvimento documentada. Falta a credencial de produção.                                                                                                                                                                                                        | Operacional                                |
+| 4   | ID-06: timeout de inatividade      | Implementado e corrigido em 2026-09-24. Ainda desmarcado no TASKS.md. Os usuários de teste por papel (incluindo `coordenador`) já existem no banco de desenvolvimento, então a verificação não depende mais de criar usuário.                                                     | Verificação                                |
+| 5   | Formato do `datetime-local`        | Campo nativo, sem mudança. A recomendação foi aceitar.                                                                                                                                                                                                                            | Decisão: registrar (a) e encerrar          |
+| 6   | Provedor de e-mail                 | Os adapters estão prontos e degradam graciosamente. Falta a conta Resend e o domínio.                                                                                                                                                                                             | Operacional                                |
+| 7   | Credenciais de login social        | As variáveis continuam vazias e os botões aparecem mesmo assim. Com a decisão do item 2, o login social virou o **único** caminho público de entrada, então botão quebrado bloqueia o público inteiro.                                                                            | Operacional + código (esconder sem config) |
+| 8   | Limiar dos alertas de coordenador  | A mecânica funciona. O limiar de estoque continua global.                                                                                                                                                                                                                         | Código: mínimo por item (Q3)               |
+| 9   | Gestão de usuários (`/admin`)      | **Resolvido** pela feature `006-user-management-page`: a tela `/admin` existe, com listagem, criação e edição.                                                                                                                                                                    | Já resolvido: remover                      |
+| 10  | AUD-02: grants do Atlas            | O usuário da aplicação continua administrativo.                                                                                                                                                                                                                                   | Operacional                                |
+| 11  | DNS SRV na rede de desenvolvimento | É um problema do ambiente local, não do produto. A solução (string não-SRV) já está documentada.                                                                                                                                                                                  | Documentação: mover para o README          |
+| 12  | Degradação graciosa da auditoria   | **Resolvido** e coberto por teste. O próprio documento pede a remoção.                                                                                                                                                                                                            | Já resolvido: remover                      |
+| 13  | DEPLOY-01 / DEPLOY-02              | Dependem do painel da Vercel.                                                                                                                                                                                                                                                     | Operacional                                |
+| 14  | DEPLOY-06: verificação end-to-end  | Faltam `coordenador`, `voluntario` e `usuario`. Os usuários de teste existem. A ressalva "a área `/admin` não existe" está **desatualizada** (ver item 9).                                                                                                                        | Verificação                                |
 
 ### Achados novos (não estavam no documento)
 
@@ -69,7 +69,7 @@ A coordenação continua exportando relatórios e planilhas de contingência exa
 
 **Acceptance Scenarios**:
 
-1. **Given** a decisão de Q1 aplicada, **When** a auditoria de dependências roda, **Then** nenhuma vulnerabilidade da biblioteca de planilhas é reportada.
+1. **Given** a biblioteca de planilhas trocada por `exceljs`, **When** a auditoria de dependências roda, **Then** nenhuma vulnerabilidade da biblioteca de planilhas é reportada.
 2. **Given** um relatório exportado antes da mudança, **When** o mesmo relatório é exportado depois, **Then** abas, cabeçalhos, valores e larguras de coluna são equivalentes, e o arquivo abre no Excel em pt-BR com acentuação correta.
 3. **Given** uma instalação limpa das dependências (CI ou deploy), **When** o projeto é instalado, **Then** a instalação conclui sem configuração manual adicional.
 
@@ -87,8 +87,8 @@ Um voluntário novo abre a tela de login. Só aparecem os botões dos provedores
 
 1. **Given** um provedor social sem credenciais configuradas, **When** a tela de login é exibida, **Then** o botão desse provedor não aparece.
 2. **Given** nenhum provedor social configurado, **When** a tela de login é exibida, **Then** aparece só o login por e-mail e senha, sem espaço vazio nem divisor órfão.
-3. **Given** Q2 = fechar, **When** alguém não autenticado tenta criar conta com senha pela rota pública, **Then** a requisição é recusada e nenhuma conta é criada.
-4. **Given** Q2 = fechar, **When** um administrador cria uma conta com senha pela gestão de usuários, **Then** a conta é criada normalmente.
+3. **Given** a rota pública fechada, **When** alguém não autenticado tenta criar conta com senha pela rota pública, **Then** a requisição é recusada e nenhuma conta é criada.
+4. **Given** a rota pública fechada, **When** um administrador cria uma conta com senha pela gestão de usuários, **Then** a conta é criada normalmente.
 
 ---
 
@@ -113,14 +113,14 @@ Quem mantém o projeto percorre o roteiro de verificação com os usuários de t
 
 A coordenação recebe o alerta de estoque crítico quando um item cai abaixo do mínimo de segurança **daquele item**, e não de um número único para tudo.
 
-**Why this priority**: Com o limiar global, 5 cobertores e 5 kg de arroz disparam o mesmo alerta, e o alerta perde credibilidade. Depende da resposta de Q3.
+**Why this priority**: Com o limiar global, 5 cobertores e 5 kg de arroz disparam o mesmo alerta, e o alerta perde credibilidade. Decidido em Q3: mínimo por item com fallback global.
 
 **Independent Test**: Definir mínimos diferentes para dois itens, baixar o saldo de cada um até ficar logo abaixo do seu mínimo e confirmar que cada alerta dispara no momento certo, citando o item correto.
 
 **Acceptance Scenarios**:
 
-1. **Given** Q3 = por item e o item A com mínimo 20, **When** o saldo de A cai para 19, **Then** o alerta de estoque crítico cita A.
-2. **Given** Q3 = por item e um item sem mínimo definido, **When** o saldo cai, **Then** vale o limiar padrão global.
+1. **Given** o item A com mínimo 20, **When** o saldo de A cai para 19, **Then** o alerta de estoque crítico cita A.
+2. **Given** um item sem mínimo definido, **When** o saldo cai, **Then** vale o limiar padrão global.
 3. **Given** uma pessoa da gestão de estoque, **When** ela cadastra ou edita um item, **Then** ela pode informar o mínimo de segurança desse item.
 
 ---
@@ -142,10 +142,10 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 
 ### Edge Cases
 
-- **Instalação limpa sem acesso à origem alternativa do pacote (Q1 = a)**: se a origem fora do registro público ficar fora do ar, a instalação falha. O pacote precisa estar fixado no lockfile com verificação de integridade, para a falha ser explícita e não silenciosa.
+- **Diferenças de formato entre bibliotecas (Q1)**: a biblioteca nova pode gravar larguras de coluna, tipos de célula (número vs. texto) e nomes de aba de forma diferente. A equivalência é conferida pelo conteúdo aberto no Excel e por teste automatizado sobre o arquivo gerado, não pelos bytes. Nomes de aba com mais de 31 caracteres ou com caracteres proibidos precisam continuar sendo tratados.
 - **Provedor social configurado pela metade** (só o ID, sem o segredo): conta como não configurado, e o botão não aparece.
 - **Fechar a rota pública de cadastro por senha (Q2) sem quebrar a gestão de usuários**: a criação de contas pelo administrador não pode depender da rota pública.
-- **Item com mínimo de segurança zero ou vazio (Q3 = por item)**: zero desliga o alerta para o item; vazio usa o padrão global.
+- **Item com mínimo de segurança zero ou vazio (Q3)**: zero desliga o alerta para o item; vazio usa o padrão global.
 - **Atualizar o framework web para corrigir a vulnerabilidade crítica**: uma major nova pode trazer mudança incompatível. A atualização só entra se a suíte de testes e o build passarem; se não passar, fica registrada como pendência.
 - **Usuário de teste com credencial versionada no `PENDENCIAS.md`**: as credenciais de desenvolvimento não podem existir no banco de produção. O roteiro operacional inclui conferir isso.
 
@@ -164,7 +164,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 
 **Biblioteca de planilhas (item 1)**
 
-- **FR-007**: A exportação de planilhas MUST deixar de usar uma versão com vulnerabilidade conhecida, conforme a opção escolhida em Q1.
+- **FR-007**: A exportação de planilhas MUST deixar de usar uma versão com vulnerabilidade conhecida, substituindo a biblioteca atual por `exceljs` (Q1). A escolha de biblioteca de planilhas registrada na spec de projeto (`DESIGN.md` §16) MUST ser atualizada para refletir a troca.
 - **FR-008**: As planilhas e CSVs exportados MUST manter o conteúdo atual: abas, cabeçalhos, valores, larguras de coluna, separador `;` e acentuação legível no Excel em pt-BR.
 - **FR-009**: A instalação das dependências MUST funcionar em ambiente limpo (CI e deploy) sem passo manual.
 
@@ -196,7 +196,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 
 - **Pendência**: ponto em aberto no `PENDENCIAS.md`. Atributos: número, título, contexto, estado atual, responsável (código, operação ou negócio), ação necessária e tasks bloqueadas.
 - **Decisão consolidada**: registro de decisão na spec de projeto. Atributos: data, item de origem, opção escolhida e justificativa.
-- **Item de estoque** _(se Q3 = por item)_: ganha o atributo "mínimo de segurança" (opcional; vazio usa o padrão global; zero desliga o alerta).
+- **Item de estoque** _(Q3)_: ganha o atributo "mínimo de segurança" (opcional; vazio usa o padrão global; zero desliga o alerta).
 - **Passo operacional**: entrada do roteiro de produção. Atributos: ação, local (console), pré-requisito e verificação.
 
 ## Success Criteria _(mandatory)_
@@ -208,7 +208,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 - **SC-003**: A auditoria das dependências de produção não reporta nenhuma vulnerabilidade alta ou crítica que tenha correção disponível compatível.
 - **SC-004**: 100% dos relatórios e planilhas exportados antes da mudança têm conteúdo equivalente depois dela.
 - **SC-005**: Em qualquer ambiente, zero botões de login social que falham ao clicar.
-- **SC-006**: Zero contas criadas com senha por fora da gestão de usuários (se Q2 = fechar).
+- **SC-006**: Zero contas criadas com senha por fora da gestão de usuários.
 - **SC-007**: As tasks ID-06 e DEPLOY-06 ficam marcadas como concluídas, com a evidência da verificação registrada.
 - **SC-008**: Uma pessoa sem contexto prévio consegue dizer, em menos de 10 minutos, quais passos do roteiro operacional estão feitos.
 
@@ -221,8 +221,10 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 - Os itens operacionais (3, 6, 7, 10 e 13) **não** são executados por esta feature. Ela entrega o roteiro e a parte de código que deixa o sistema pronto para eles (por exemplo, esconder botões sem credencial).
 - A confirmação dos valores numéricos dos limiares com a Defesa Civil fica fora desta feature. Os defaults atuais continuam como provisórios.
 
-## Decisões pendentes
+## Clarifications
 
-- **Q1 (item 1)**: [NEEDS CLARIFICATION: qual opção para a biblioteca de planilhas: (a) versão corrigida pelo CDN do SheetJS, (b) trocar por `exceljs` ou (c) manter e aceitar o risco?]
-- **Q2 (item 2, resíduo)**: [NEEDS CLARIFICATION: fechar a rota pública de auto-cadastro por e-mail e senha, deixando a criação de contas com senha exclusiva da gestão de usuários?]
-- **Q3 (item 8)**: [NEEDS CLARIFICATION: o mínimo de segurança do alerta de estoque crítico passa a ser por item (com fallback global) ou continua global?]
+### Session 2026-10-01
+
+- Q1 (item 1): Qual opção para a biblioteca de planilhas: versão corrigida pelo CDN do SheetJS, trocar por `exceljs` ou manter? → A: **(b) trocar por `exceljs`**. O pacote é publicado no registro público e mantido. A troca diverge de `DESIGN.md` §16, que precisa ser atualizado.
+- Q2 (item 2, resíduo): Fechar a rota pública de auto-cadastro por e-mail e senha? → A: **Sim, fechar**. Contas com senha nascem só pela gestão de usuários (`/admin`). Fecha o resíduo do item 2.
+- Q3 (item 8): O mínimo de segurança do alerta de estoque crítico passa a ser por item? → A: **Sim, por item**, com fallback para o limiar global quando o item não tiver mínimo próprio. Exige um atributo novo no item de estoque.
