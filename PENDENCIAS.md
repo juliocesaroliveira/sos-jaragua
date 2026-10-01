@@ -88,16 +88,11 @@ caminho público — decisão à parte, ainda não tomada.
 
 ## 3. Senha do administrador de bootstrap
 
-**Contexto.** `DB_SCHEMA.md` §14 pede um usuário `administrador` inicial criado
-fora do fluxo público. O seed (`npm run db:seed`) cria esse usuário a partir de
-`ADMIN_EMAIL` / `ADMIN_PASSWORD`.
+**Responsável:** operação (console).
 
-**Estado atual.** No banco de desenvolvimento existe
-`admin@sosjaragua.local` com a senha `TrocarEssaSenha123`, usada para validar os
-fluxos. Credenciais: e-mails usuario1@teste.local … defesa-civil1@teste.local (tabela completa no quickstart.md), senha SosJaragua@2026.
+Definir a credencial real do administrador em produção e garantir que nenhuma conta de desenvolvimento (`admin@sosjaragua.local`, `*@teste.local`) exista no banco de produção.
 
-**Ação necessária.** Definir a credencial real do administrador em produção e
-trocar/remover a de desenvolvimento. Não versionar a senha.
+**Ação necessária:** seguir o [roteiro de produção, passo 2. Banco de produção e administrador](spec/ROTEIRO_PRODUCAO.md#2-banco-de-produção-e-administrador). Sai daqui quando o passo estiver feito e verificado.
 
 ---
 
@@ -124,36 +119,21 @@ redirecionamento para `/login?motivo=expirado` e então marcar ID-06.
 
 ## 6. Sem provedor de e-mail configurado
 
-**Contexto.** `DESIGN.md` §12 define dois canais de notificação: in-plataforma e
-e-mail (Resend). O catálogo de eventos (BRD §6) pressupõe e-mail para
-`triagem_concluida`, `atividade_atribuida`, `alteracao_atividade` e
-`broadcast_urgencia`.
+**Responsável:** operação (console).
 
-**Estado atual.** Os **dois** adapters estão implementados (NOT-03). Sem
-`RESEND_API_KEY` configurada, o canal de e-mail degrada graciosamente: a
-notificação continua sendo gravada e aparece no sino, e `notificacao_envio`
-registra `canal='email', status='falhou'` para reconciliação posterior —
-comportamento já verificado em desenvolvimento.
+Nada está quebrado (sem `RESEND_API_KEY`, o e-mail degrada graciosamente e a notificação aparece no sino), mas hoje nenhum voluntário recebe e-mail. Falta a conta Resend com domínio verificado.
 
-Ou seja: **nada está quebrado**, mas hoje nenhum voluntário recebe e-mail.
-
-**Ação necessária.** Criar a conta Resend, verificar o domínio remetente e
-preencher `RESEND_API_KEY` / `RESEND_FROM`.
+**Ação necessária:** seguir o [roteiro de produção, passo 4. E-mail transacional (Resend)](spec/ROTEIRO_PRODUCAO.md#4-e-mail-transacional-resend). Sai daqui quando o passo estiver feito e verificado.
 
 ---
 
 ## 7. Credenciais de login social ausentes
 
-**Contexto.** `DESIGN.md` §6.1: Google + Facebook no MVP (Instagram adiado).
+**Responsável:** operação (console).
 
-**Estado atual.** Os botões existem na tela de login e o better-auth está
-configurado, mas `GOOGLE_CLIENT_ID/SECRET` e `FACEBOOK_CLIENT_ID/SECRET` estão
-vazios — clicar nos botões falha.
+Faltam as aplicações OAuth do Google e do Facebook. Enquanto isso, os botões **não aparecem**: a feature 020 só mostra o botão de um provedor com credencial completa.
 
-**Ação necessária.** Criar as aplicações OAuth (Google Cloud Console / Meta for
-Developers), cadastrar as URLs de callback
-(`{BETTER_AUTH_URL}/api/auth/callback/{google,facebook}`) e preencher as
-variáveis. Enquanto isso, considerar esconder os botões em produção.
+**Ação necessária:** seguir o [roteiro de produção, passo 3. Aplicações OAuth (Google e Facebook)](spec/ROTEIRO_PRODUCAO.md#3-aplicações-oauth-google-e-facebook). Sai daqui quando o passo estiver feito e verificado.
 
 ---
 
@@ -196,47 +176,21 @@ implementada pela feature 020). Continua pendente com a Defesa Civil só a defin
 
 ## 10. AUD-02 — grants do usuário do Atlas ainda não restritos
 
-**Contexto.** BR-AUD-01 exige que o log de auditoria "não seja apagável".
-`DB_SCHEMA.md` §9 garante isso em duas camadas: (1) o repositório da aplicação
-nunca expõe update/delete sobre `audit_logs` — **implementado**; e (2) o usuário
-do Atlas usado pela aplicação deve ter grant de insert/find, mas **não** de
-update/delete. O RBAC do Postgres não tem jurisdição sobre o Mongo.
+**Responsável:** operação (console).
 
-**Estado atual.** A camada (1) está pronta. A camada (2) **não** — o usuário
-atual (`Vercel-Admin-atlas-sos-jrg`) é administrativo e pode apagar documentos.
-`npm run mongo:setup` imprime o lembrete ao final.
+A camada de código de BR-AUD-01 está pronta (o repositório nunca expõe update/delete em `audit_logs`). Falta a camada de banco: o usuário do Atlas usado pela aplicação ainda é administrativo.
 
-**Ação necessária.** No Atlas: criar um usuário dedicado à aplicação com um
-custom role que conceda apenas `find` e `insert` na coleção `audit_logs`, e
-trocar o `MONGODB_URI` de produção para esse usuário. É um passo de console, não
-de código.
+**Ação necessária:** seguir o [roteiro de produção, passo 5. Usuário restrito do Atlas](spec/ROTEIRO_PRODUCAO.md#5-usuário-restrito-do-atlas). Sai daqui quando o passo estiver feito e verificado.
 
 ---
 
 ## 13. DEPLOY-01 e DEPLOY-02 — dependem de um deploy real na Vercel
 
-**Contexto.** DEPLOY-01 pede as variáveis de `DESIGN.md` §17 configuradas no
-projeto Vercel (produção e preview); DEPLOY-02 pede a validação do cron de
-lembrete de turno rodando em produção.
+**Responsável:** operação (console).
 
-**Estado atual.** Nenhum dos dois foi feito — são ações no painel da Vercel, não
-código. O que existe pronto:
+Variáveis do `.env.example` no projeto Vercel (DEPLOY-01) e validação do cron de lembrete de turno em produção (DEPLOY-02). O código está pronto: `vercel.json` agenda o cron e a rota já foi verificada localmente.
 
-- `.env.example` lista **todas** as variáveis necessárias, incluindo as três de
-  limiar de alerta;
-- `vercel.json` já agenda `GET /api/cron/lembrete-turno` 1x por dia (12:00 UTC =
-  09:00 BRT) — o plano Hobby da Vercel não aceita mais de uma execução diária;
-- a rota do cron foi verificada localmente (401 sem token, 200 com o token, e
-  dedupe correto entre execuções).
-
-**Ação necessária.**
-
-1. Configurar no projeto Vercel todas as variáveis do `.env.example`. Atenção a
-   `CRON_SECRET`: sem ela, a rota do cron recusa **toda** requisição (fecha por
-   padrão, de propósito).
-2. Após o primeiro deploy, conferir no painel de Cron Jobs da Vercel que a
-   execução está retornando 200 e acompanhar o Log Stream na primeira janela em
-   que houver turno começando em ~2h.
+**Ação necessária:** seguir o [roteiro de produção, passo 1. Variáveis no projeto Vercel e 6. Cron em produção](spec/ROTEIRO_PRODUCAO.md#1-variáveis-no-projeto-vercel). Sai daqui quando o passo estiver feito e verificado.
 
 ---
 

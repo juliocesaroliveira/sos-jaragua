@@ -270,7 +270,7 @@ coletado.
 
 **Independent Test**: uma pessoa sem contexto diz o estado de cada passo em menos de 10 minutos (quickstart V7).
 
-- [ ] T049 [US6] Criar `spec/ROTEIRO_PRODUCAO.md`. Cada passo tem **Pré-requisito / Ação / Onde / Como verificar / Feito em (data)**, nesta ordem:
+- [x] T049 [US6] Criar `spec/ROTEIRO_PRODUCAO.md`. Cada passo tem **Pré-requisito / Ação / Onde / Como verificar / Feito em (data)**, nesta ordem:
     1. Variáveis no projeto Vercel (produção e preview), todas do `.env.example`, com destaque para `CRON_SECRET` (sem ela o cron recusa tudo) e `BETTER_AUTH_URL`. Origem: PENDENCIAS §13 / DEPLOY-01.
     2. Administrador de produção: `ADMIN_EMAIL`/`ADMIN_PASSWORD` reais só na Vercel, `npm run db:seed` contra produção, troca imediata da senha e confirmação de que **nenhuma** conta `@teste.local` ou `admin@sosjaragua.local` existe no banco de produção. Origem: §3.
     3. Aplicações OAuth: Google Cloud Console e Meta for Developers, callbacks `{BETTER_AUTH_URL}/api/auth/callback/{google,facebook}`; verificar que o botão aparece e conclui o login. Origem: §7.
@@ -278,7 +278,7 @@ coletado.
     5. Usuário restrito do Atlas: custom role só com `find`/`insert` em `audit_logs`, troca do `MONGODB_URI` de produção e verificação de que um `deleteOne` com esse usuário é recusado. Origem: §10 / AUD-02.
     6. Cron em produção: painel Cron Jobs com execução retornando 200 e Log Stream na primeira janela com turno em ~2h. Origem: §13 / DEPLOY-02.
     7. Limiares com a Defesa Civil: valores de `ALERTA_CADASTROS_PENDENTES`, `ALERTA_ESTOQUE_MINIMO` (padrão global) e `ALERTA_DEFICIT_PERCENTUAL`, e os mínimos por item dos itens mais críticos (água, alimentação, higiene) pela tela de `/estoque`. Origem: §8.
-- [ ] T050 [US6] Em `PENDENCIAS.md`, substituir o corpo das seções 3, 6, 7, 10 e 13 por um resumo de uma linha, mais o link para o passo correspondente de `spec/ROTEIRO_PRODUCAO.md`. Elas continuam no documento até o passo ser feito, conforme a regra do topo do arquivo.
+- [x] T050 [US6] Em `PENDENCIAS.md`, substituir o corpo das seções 3, 6, 7, 10 e 13 por um resumo de uma linha, mais o link para o passo correspondente de `spec/ROTEIRO_PRODUCAO.md`. Elas continuam no documento até o passo ser feito, conforme a regra do topo do arquivo.
 
 **Checkpoint**: tudo o que depende de console tem dono, ordem e critério de "feito".
 
