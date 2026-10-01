@@ -10,7 +10,8 @@ export const EVENTOS_NOTIFICACAO = [
     'broadcast_urgencia',
     'cadastros_acumulados',
     'estoque_critico',
-    'deficit_atendimento'
+    'deficit_atendimento',
+    'inscricao_turno'
 ] as const
 
 export type EventoNotificacao = (typeof EVENTOS_NOTIFICACAO)[number]

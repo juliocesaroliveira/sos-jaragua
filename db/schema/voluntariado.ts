@@ -18,6 +18,8 @@ export const disponibilidadeEnum = pgEnum('disponibilidade', ['integral', 'manha
 export const statusVoluntarioEnum = pgEnum('status_voluntario', ['pendente', 'aprovado', 'rejeitado'])
 export const statusAtividadeEnum = pgEnum('status_atividade', ['aberta', 'encerrada', 'cancelada'])
 export const statusAlocacaoEnum = pgEnum('status_alocacao', ['confirmado', 'cancelado'])
+/** Quem criou a alocação: a gestão pelo painel ou o próprio participante (018-inscricao-atividades). */
+export const origemAlocacaoEnum = pgEnum('origem_alocacao', ['gestao', 'inscricao_propria'])
 
 // -- Tabelas lookup livres (DB_SCHEMA.md §4.3, §5.1) --------------------------
 
@@ -163,10 +165,18 @@ export const alocacao = pgTable(
         turnoId: uuid()
             .notNull()
             .references(() => turno.id, { onDelete: 'cascade' }),
-        voluntarioPerfilId: uuid()
+        /**
+         * Identidade do participante (018-inscricao-atividades, research D1).
+         * É `user` e não `voluntario_perfil` porque a equipe interna se
+         * inscreve mesmo sem cadastro de voluntário.
+         */
+        participanteUserId: text()
             .notNull()
-            .references(() => voluntarioPerfil.id, { onDelete: 'cascade' }),
+            .references(() => user.id, { onDelete: 'cascade' }),
+        /** Preenchido quando o participante tem perfil de voluntário. */
+        voluntarioPerfilId: uuid().references(() => voluntarioPerfil.id, { onDelete: 'cascade' }),
         status: statusAlocacaoEnum().notNull().default('confirmado'),
+        origem: origemAlocacaoEnum().notNull().default('gestao'),
         alocadoPor: text()
             .notNull()
             .references(() => user.id),
@@ -174,8 +184,11 @@ export const alocacao = pgTable(
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
     },
     (t) => [
-        uniqueIndex('alocacao_turno_voluntario_idx').on(t.turnoId, t.voluntarioPerfilId),
-        index('alocacao_voluntario_idx').on(t.voluntarioPerfilId)
+        // Uma linha por pessoa por turno — inclusive quem é staff e também tem
+        // perfil de voluntário (research D1).
+        uniqueIndex('alocacao_turno_participante_idx').on(t.turnoId, t.participanteUserId),
+        index('alocacao_voluntario_idx').on(t.voluntarioPerfilId),
+        index('alocacao_participante_idx').on(t.participanteUserId)
     ]
 )
 
@@ -207,5 +220,6 @@ export const turnoRelations = relations(turno, ({ one, many }) => ({
 
 export const alocacaoRelations = relations(alocacao, ({ one }) => ({
     turno: one(turno, { fields: [alocacao.turnoId], references: [turno.id] }),
+    participante: one(user, { fields: [alocacao.participanteUserId], references: [user.id] }),
     perfil: one(voluntarioPerfil, { fields: [alocacao.voluntarioPerfilId], references: [voluntarioPerfil.id] })
 }))

@@ -1,6 +1,7 @@
 import {
     Boxes,
     CalendarCheck,
+    CalendarPlus,
     ClipboardList,
     FileSpreadsheet,
     HandHeart,
@@ -30,6 +31,7 @@ export const ICONES: Readonly<Record<NomeIcone, LucideIcon>> = {
     House,
     HandHeart,
     CalendarCheck,
+    CalendarPlus,
     LayoutDashboard,
     Users,
     UserCheck,

@@ -61,6 +61,12 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     { prefixo: '/crise', roles: ['membro_defesa_civil', 'administrador'] },
 
     // Área do voluntário
+    // Vitrine de turnos com inscrição própria — todos menos o usuário comum
+    // (018-inscricao-atividades, FR-001/FR-002).
+    {
+        prefixo: '/voluntariado/atividades-abertas',
+        roles: ['voluntario', 'membro_defesa_civil', 'coordenador', 'administrador']
+    },
     {
         prefixo: '/voluntariado/minhas-atividades',
         roles: ['voluntario', 'membro_defesa_civil', 'coordenador', 'administrador']

@@ -105,7 +105,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const MATRIZ: Record<Role, string[]> = {
         usuario: ['/', '/voluntariado/candidatura'],
-        voluntario: ['/', '/voluntariado/candidatura', '/voluntariado/minhas-atividades'],
+        voluntario: ['/', '/voluntariado/candidatura', '/voluntariado/atividades-abertas', '/voluntariado/minhas-atividades'],
         membro_defesa_civil: [
             '/',
             '/dashboard',
@@ -118,6 +118,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/estoque/entrada',
             '/estoque/saida',
             '/relatorios',
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         coordenador: [
@@ -133,6 +134,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/estoque/kits',
             '/estoque/descarte',
             '/convocacao',
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         administrador: [
@@ -151,6 +153,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/estoque/descarte',
             '/convocacao',
             '/relatorios',
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ]
     }
@@ -217,8 +220,9 @@ describe('atalhos — cards de acesso rápido da home', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const ATALHOS: Record<Role, string[]> = {
         usuario: ['/voluntariado/candidatura'],
-        voluntario: ['/voluntariado/candidatura', '/voluntariado/minhas-atividades'],
+        voluntario: ['/voluntariado/candidatura', '/voluntariado/atividades-abertas', '/voluntariado/minhas-atividades'],
         membro_defesa_civil: [
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',
             '/cadastros-pendentes',
@@ -228,6 +232,7 @@ describe('atalhos — cards de acesso rápido da home', () => {
             '/estoque/saida'
         ],
         coordenador: [
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',
             '/cadastros-pendentes',
@@ -236,6 +241,7 @@ describe('atalhos — cards de acesso rápido da home', () => {
             '/convocacao'
         ],
         administrador: [
+            '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',
             '/cadastros-pendentes',

@@ -21,6 +21,8 @@ export interface VoluntarioRepository {
     /** Busca por CPF — chave de reaproveitamento no reenvio (BR-VOL-01). */
     buscarPorCpf(cpf: string): Promise<PerfilVoluntario | null>
     buscarPorId(id: string): Promise<PerfilVoluntario | null>
+    /** Perfil do usuário, se houver — elegibilidade da inscrição própria (FR-011). */
+    buscarPorUserId(userId: string): Promise<PerfilVoluntario | null>
 
     /**
      * Cria ou atualiza o perfil do usuário, sempre deixando

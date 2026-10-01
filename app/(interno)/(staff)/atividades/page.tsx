@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
+import { obterSessao } from '@/src/shared/auth/sessao'
 import { listarAtividades } from '@/src/modules/voluntariado/presentation/queries/atividades'
 import { listarCategoriasAtividade } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { GestaoAtividades } from './gestao-atividades'
@@ -28,6 +29,13 @@ export default function AtividadesPage() {
 }
 
 async function Lista() {
-    const [atividades, categorias] = await Promise.all([listarAtividades(), listarCategoriasAtividade()])
-    return <GestaoAtividades atividades={atividades} categorias={categorias} />
+    const [atividades, categorias, ator] = await Promise.all([
+        listarAtividades(),
+        listarCategoriasAtividade(),
+        obterSessao()
+    ])
+    // Membro da Defesa Civil abre a escala para alocar, mas não cria nem muda
+    // o status de atividades (018, FR-019a). A autorização real está nas actions.
+    const podeGerirAtividade = ator?.role === 'coordenador' || ator?.role === 'administrador'
+    return <GestaoAtividades atividades={atividades} categorias={categorias} podeGerirAtividade={podeGerirAtividade} />
 }

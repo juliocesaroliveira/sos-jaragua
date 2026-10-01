@@ -90,6 +90,15 @@ describe('rolesExigidas', () => {
         expect(rolesExigidas('/estoque/descarte')).toEqual(['coordenador', 'administrador'])
     })
 
+    it('atividades abertas: voluntário e staff entram; usuário comum e visitante não (018, SC-005)', () => {
+        const rota = '/voluntariado/atividades-abertas'
+        for (const role of ['voluntario', 'membro_defesa_civil', 'coordenador', 'administrador'] as const) {
+            expect(podeAcessar(rota, role), role).toBe(true)
+        }
+        expect(podeAcessar(rota, 'usuario')).toBe(false)
+        expect(podeAcessar(rota, undefined)).toBe(false)
+    })
+
     it('área do voluntário aceita voluntário e acima', () => {
         expect(rolesExigidas('/voluntariado/minhas-atividades')).toEqual([
             'voluntario',
