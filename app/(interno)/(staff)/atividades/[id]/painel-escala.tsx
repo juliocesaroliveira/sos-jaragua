@@ -10,7 +10,6 @@ import { Dialog } from '@/src/shared/ui/dialog/dialog'
 import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
 import { IconePapel } from '@/src/shared/ui/icone-papel/icone-papel'
 import { KanbanCard } from '@/src/shared/ui/kanban/kanban-card'
-import { KanbanColumn } from '@/src/shared/ui/kanban/kanban-column'
 import { Select } from '@/src/shared/ui/select/select'
 import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
 import { avisar } from '@/src/shared/ui/toast/toast'
@@ -22,12 +21,11 @@ import { alocarVoluntario, cancelarAlocacao } from '@/src/modules/voluntariado/p
 /**
  * Painel de escala por atividade (VOL-11, DESIGN.md §10.2).
  *
- * Em `md+` os turnos ficam lado a lado com rolagem horizontal; abaixo disso a
- * coluna colapsa para lista vertical — o Kanban não é usável em 375px.
+ * Cada turno é um card próprio numa grade `auto-fill`: os cards ficam lado a
+ * lado, quebram para a linha de baixo quando não cabem e, no celular, ficam um
+ * por linha. `auto-fill` (e não `auto-fit`) mantém as trilhas vazias, para que
+ * uma atividade com um único turno não estique o card na largura toda.
  */
-
-/** Rótulo único para o nome acessível e a dica do botão de alocar (C-04.3). */
-const ROTULO_ALOCAR = 'Alocar voluntário neste turno'
 
 export function PainelEscala({
     atividade,
@@ -97,6 +95,7 @@ export function PainelEscala({
     }
 
     const podeAlocar = atividade.status === 'aberta'
+    const contagemEscalas = atividade.turnos.length === 1 ? '1 escala' : `${atividade.turnos.length} escalas`
 
     return (
         <>
@@ -134,83 +133,101 @@ export function PainelEscala({
             {atividade.turnos.length === 0 ? (
                 <Alert tom="info" titulo="Esta atividade ainda não tem turnos" />
             ) : (
-                <div className="flex flex-col gap-3 md:flex-row md:overflow-x-auto md:pb-2">
-                    <KanbanColumn
-                        titulo="Escala"
-                        subtitulo={atividade.local}
-                        contagem={`${atividade.turnos.length} turno(s)`}
-                    >
-                        {atividade.turnos.map((t) => (
-                            <KanbanCard
-                                key={t.id}
-                                horario={`${formatarHora(t.inicio)} – ${formatarHora(t.fim)} · ${formatarData(t.inicio)}`}
-                                preenchidas={t.preenchidas}
-                                vagas={t.vagas}
-                                acoes={
-                                    podeAlocar && (
-                                        <Tooltip conteudo={ROTULO_ALOCAR}>
-                                            <IconButton
-                                                aria-label={ROTULO_ALOCAR}
-                                                icone={<UserPlus aria-hidden className="size-5" />}
-                                                size="sm"
-                                                onClick={() => {
-                                                    setTurnoAlvo(t)
-                                                    setSelecionado([])
-                                                    setErro(null)
-                                                }}
-                                            />
-                                        </Tooltip>
-                                    )
-                                }
-                                detalhe={
-                                    t.alocados.length > 0 && (
-                                        <ul className="flex flex-col gap-1">
-                                            {t.alocados.map((a) => {
-                                                // Um rótulo só para os dois
-                                                // consumidores (C-04.3). O nome
-                                                // aparece ao lado, mas chega
-                                                // truncado quando é longo — a dica
-                                                // é onde ele cabe inteiro.
-                                                const rotulo = `Remover ${a.nome} do turno`
-                                                return (
-                                                    <li
-                                                        key={a.alocacaoId}
-                                                        className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-surface-muted px-2 text-sm text-foreground"
-                                                    >
-                                                        <span className="flex min-w-0 items-center gap-1.5">
-                                                            <span className="truncate">{a.nome}</span>
-                                                            <IconePapel role={a.role} />
-                                                            {a.origem === 'inscricao_propria' && (
-                                                                <Badge cor="neutral">Inscrição própria</Badge>
-                                                            )}
-                                                        </span>
-                                                        {/*
-                                                          Durante `emAndamento` o
-                                                          botão fica desabilitado e a
-                                                          dica não abre: é estado
-                                                          transitório de segundos, sem
-                                                          nada a explicar (D4).
-                                                        */}
-                                                        <Tooltip conteudo={rotulo} posicao="left">
-                                                            <IconButton
-                                                                aria-label={rotulo}
-                                                                icone={<UserMinus aria-hidden className="size-4" />}
-                                                                size="sm"
-                                                                variant="ghost"
-                                                                loading={emAndamento}
-                                                                onClick={() => remover(a.alocacaoId, a.nome)}
-                                                            />
-                                                        </Tooltip>
-                                                    </li>
-                                                )
-                                            })}
-                                        </ul>
-                                    )
-                                }
-                            />
-                        ))}
-                    </KanbanColumn>
-                </div>
+                <section aria-labelledby="titulo-escalas" className="flex flex-col gap-3">
+                    <header className="flex items-baseline gap-2">
+                        <h2 id="titulo-escalas" className="text-xl font-semibold text-foreground">
+                            Escalas
+                        </h2>
+                        <span className="text-sm text-neutral-500 dark:text-neutral-400">{contagemEscalas}</span>
+                    </header>
+                    {/*
+                      `min(100%, 18rem)` impede que a trilha mínima estoure a
+                      largura em telas de 320px; `items-start` deixa cada card com
+                      a altura do próprio conteúdo.
+                    */}
+                    <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-3">
+                        {atividade.turnos.map((t) => {
+                            // Um rótulo só para o nome acessível e a dica
+                            // (C-04.3). Leva data e horário porque, com vários
+                            // cards na tela, um nome genérico repetido não diz
+                            // ao leitor de tela qual turno o botão afeta.
+                            const rotuloAlocar = `Alocar voluntário no turno de ${formatarData(t.inicio)}, ${formatarHora(t.inicio)} – ${formatarHora(t.fim)}`
+                            return (
+                                <KanbanCard
+                                    key={t.id}
+                                    horario={`${formatarHora(t.inicio)} – ${formatarHora(t.fim)} · ${formatarData(t.inicio)}`}
+                                    preenchidas={t.preenchidas}
+                                    vagas={t.vagas}
+                                    acoes={
+                                        podeAlocar && (
+                                            <Tooltip conteudo={rotuloAlocar}>
+                                                <IconButton
+                                                    aria-label={rotuloAlocar}
+                                                    icone={<UserPlus aria-hidden className="size-5" />}
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setTurnoAlvo(t)
+                                                        setSelecionado([])
+                                                        setErro(null)
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        )
+                                    }
+                                    detalhe={
+                                        t.alocados.length > 0 ? (
+                                            <ul className="flex flex-col gap-1">
+                                                {t.alocados.map((a) => {
+                                                    // Um rótulo só para os dois
+                                                    // consumidores (C-04.3). O nome
+                                                    // aparece ao lado, mas chega
+                                                    // truncado quando é longo — a dica
+                                                    // é onde ele cabe inteiro.
+                                                    const rotulo = `Remover ${a.nome} do turno`
+                                                    return (
+                                                        <li
+                                                            key={a.alocacaoId}
+                                                            className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-surface-muted px-2 text-sm text-foreground"
+                                                        >
+                                                            <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                                                                <span className="truncate">{a.nome}</span>
+                                                                <IconePapel role={a.role} />
+                                                                {a.origem === 'inscricao_propria' && (
+                                                                    <Badge cor="neutral">Inscrição própria</Badge>
+                                                                )}
+                                                            </span>
+                                                            {/*
+                                                              Durante `emAndamento` o
+                                                              botão fica desabilitado e a
+                                                              dica não abre: é estado
+                                                              transitório de segundos, sem
+                                                              nada a explicar (D4).
+                                                            */}
+                                                            <Tooltip conteudo={rotulo} posicao="left">
+                                                                <IconButton
+                                                                    aria-label={rotulo}
+                                                                    icone={<UserMinus aria-hidden className="size-4" />}
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    loading={emAndamento}
+                                                                    onClick={() => remover(a.alocacaoId, a.nome)}
+                                                                />
+                                                            </Tooltip>
+                                                        </li>
+                                                    )
+                                                })}
+                                            </ul>
+                                        ) : (
+                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                                Nenhum voluntário escalado ainda.
+                                            </p>
+                                        )
+                                    }
+                                />
+                            )
+                        })}
+                    </ul>
+                </section>
             )}
 
             <Dialog

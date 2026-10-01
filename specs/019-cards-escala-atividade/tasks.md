@@ -27,7 +27,7 @@ Monolito Next.js: rotas em `app/`, primitivos de UI em `src/shared/ui/`, documen
 
 **Purpose**: confirmar que a base está verde antes de mexer, para que qualquer falha depois seja desta feature.
 
-- [ ] T001 Rodar `npm run lint`, `npx tsc --noEmit` e `npm test` na raiz do repositório e registrar que estão verdes antes de qualquer alteração. Se algo já falhar, anotar no PR como pré-existente.
+- [X] T001 Rodar `npm run lint`, `npx tsc --noEmit` e `npm test` na raiz do repositório e registrar que estão verdes antes de qualquer alteração. Se algo já falhar, anotar no PR como pré-existente.
 
 ---
 
@@ -47,11 +47,11 @@ Monolito Next.js: rotas em `app/`, primitivos de UI em `src/shared/ui/`, documen
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, substituir o wrapper `<div className="flex flex-col gap-3 md:flex-row md:overflow-x-auto md:pb-2">` + `<KanbanColumn titulo="Escala" …>` por uma `<section aria-labelledby="titulo-escalas" className="flex flex-col gap-3">`. A seção contém um `<header className="flex items-baseline gap-2">` com `<h2 id="titulo-escalas" className="text-xl font-semibold text-foreground">Escalas</h2>` e `<span className="text-sm text-neutral-500 dark:text-neutral-400">{contagem}</span>`, seguido de um `<ul>` com os `KanbanCard` (que já renderizam `<li>`). Remover o import de `KanbanColumn` (contrato U-01.7).
-- [ ] T003 [US1] No mesmo arquivo, calcular a contagem com o plural tratado: `const contagemEscalas = atividade.turnos.length === 1 ? '1 escala' : \`${atividade.turnos.length} escalas\``e usá-la no`<span>` de T002 (FR-009, research D4).
-- [ ] T004 [US1] No mesmo arquivo, trocar o `detalhe` de cada `KanbanCard`. Hoje é `t.alocados.length > 0 && (<ul …>)`. Passa a ser um ternário: com alocados, a mesma `<ul className="flex flex-col gap-1">` de hoje (sem alterar os `<li>`, `IconePapel`, `Badge` "Inscrição própria" e botão de remover). Sem alocados, `<p className="text-sm text-neutral-500 dark:text-neutral-400">Nenhum voluntário escalado ainda.</p>` (FR-008, contrato U-01.12).
-- [ ] T005 [US1] No mesmo arquivo, garantir que o card do turno fique legível em largura estreita: o `<span>` do nome continua com `truncate` dentro de `min-w-0`. Conferir que o container do nome tem `min-w-0 flex-1` para o botão de remover não ser empurrado para fora do card (Edge Case de nome longo).
-- [ ] T006 [US1] No mesmo arquivo, manter o `Alert` "Esta atividade ainda não tem turnos" quando `atividade.turnos.length === 0`, sem renderizar a `<section>` (contrato U-01.5).
+- [X] T002 [US1] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, substituir o wrapper `<div className="flex flex-col gap-3 md:flex-row md:overflow-x-auto md:pb-2">` + `<KanbanColumn titulo="Escala" …>` por uma `<section aria-labelledby="titulo-escalas" className="flex flex-col gap-3">`. A seção contém um `<header className="flex items-baseline gap-2">` com `<h2 id="titulo-escalas" className="text-xl font-semibold text-foreground">Escalas</h2>` e `<span className="text-sm text-neutral-500 dark:text-neutral-400">{contagem}</span>`, seguido de um `<ul>` com os `KanbanCard` (que já renderizam `<li>`). Remover o import de `KanbanColumn` (contrato U-01.7).
+- [X] T003 [US1] No mesmo arquivo, calcular a contagem com o plural tratado: `const contagemEscalas = atividade.turnos.length === 1 ? '1 escala' : \`${atividade.turnos.length} escalas\``e usá-la no`<span>` de T002 (FR-009, research D4).
+- [X] T004 [US1] No mesmo arquivo, trocar o `detalhe` de cada `KanbanCard`. Hoje é `t.alocados.length > 0 && (<ul …>)`. Passa a ser um ternário: com alocados, a mesma `<ul className="flex flex-col gap-1">` de hoje (sem alterar os `<li>`, `IconePapel`, `Badge` "Inscrição própria" e botão de remover). Sem alocados, `<p className="text-sm text-neutral-500 dark:text-neutral-400">Nenhum voluntário escalado ainda.</p>` (FR-008, contrato U-01.12).
+- [X] T005 [US1] No mesmo arquivo, garantir que o card do turno fique legível em largura estreita: o `<span>` do nome continua com `truncate` dentro de `min-w-0`. Conferir que o container do nome tem `min-w-0 flex-1` para o botão de remover não ser empurrado para fora do card (Edge Case de nome longo).
+- [X] T006 [US1] No mesmo arquivo, manter o `Alert` "Esta atividade ainda não tem turnos" quando `atividade.turnos.length === 0`, sem renderizar a `<section>` (contrato U-01.5).
 
 **Checkpoint**: US1 está funcional. Os cards aparecem em lista vertical, que é o comportamento padrão de `<ul>`, com conteúdo correto. A grade horizontal vem na US2.
 
@@ -65,8 +65,8 @@ Monolito Next.js: rotas em `app/`, primitivos de UI em `src/shared/ui/`, documen
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, aplicar ao `<ul>` criado em T002 a classe `grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-3`. Usar `auto-fill`, não `auto-fit`, para o card único não esticar, e `min(100%,18rem)` para não estourar em 320px (research D1, contrato U-01.8). Confirmar que não sobrou `overflow-x-auto` nem `md:flex-row` na área de escalas.
-- [ ] T008 [US2] Verificar no navegador (`npm run dev`) as larguras 320, 375, 768, 1280 e 1920px. `document.documentElement.scrollWidth <= window.innerWidth` em todas. 1 card por linha em 320/375 e ≥ 3 em 1280. Card com 6+ voluntários alinhado no topo, sem esticar os vizinhos. Repetir em tema escuro (quickstart passos 5–7 e 13). Se a classe arbitrária do Tailwind v4 não gerar o CSS esperado, trocar por `style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 18rem), 1fr))' }}` e registrar o motivo em comentário.
+- [X] T007 [US2] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, aplicar ao `<ul>` criado em T002 a classe `grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-3`. Usar `auto-fill`, não `auto-fit`, para o card único não esticar, e `min(100%,18rem)` para não estourar em 320px (research D1, contrato U-01.8). Confirmar que não sobrou `overflow-x-auto` nem `md:flex-row` na área de escalas.
+- [X] T008 [US2] Verificar no navegador (`npm run dev`) as larguras 320, 375, 768, 1280 e 1920px. `document.documentElement.scrollWidth <= window.innerWidth` em todas. 1 card por linha em 320/375 e ≥ 3 em 1280. Card com 6+ voluntários alinhado no topo, sem esticar os vizinhos. Repetir em tema escuro (quickstart passos 5–7 e 13). Se a classe arbitrária do Tailwind v4 não gerar o CSS esperado, trocar por `style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 18rem), 1fr))' }}` e registrar o motivo em comentário.
 
 **Checkpoint**: US1 e US2 juntas entregam o pedido visual completo.
 
@@ -80,8 +80,8 @@ Monolito Next.js: rotas em `app/`, primitivos de UI em `src/shared/ui/`, documen
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, remover a constante `ROTULO_ALOCAR` e, dentro do `map` dos turnos, calcular `const rotuloAlocar = \`Alocar voluntário no turno de ${formatarData(t.inicio)}, ${formatarHora(t.inicio)} – ${formatarHora(t.fim)}\``. Usar esse rótulo tanto no `aria-label`do`IconButton` `UserPlus`quanto no`conteudo`do`Tooltip` (um rótulo para os dois consumidores, C-04.3, research D3). Atualizar o comentário que hoje acompanha a constante.
-- [ ] T010 [US3] No mesmo arquivo, confirmar que `acoes` do card só é renderizado quando `podeAlocar` (`atividade.status === 'aberta'`) e que o `Alert` "Atividade não está aberta" e o `Select` de filtro por habilidade permanecem acima da `<section>` de escalas, sem alteração de comportamento (FR-012/FR-013, contrato U-01.3/U-01.4).
+- [X] T009 [US3] Em `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, remover a constante `ROTULO_ALOCAR` e, dentro do `map` dos turnos, calcular `const rotuloAlocar = \`Alocar voluntário no turno de ${formatarData(t.inicio)}, ${formatarHora(t.inicio)} – ${formatarHora(t.fim)}\``. Usar esse rótulo tanto no `aria-label`do`IconButton` `UserPlus`quanto no`conteudo`do`Tooltip` (um rótulo para os dois consumidores, C-04.3, research D3). Atualizar o comentário que hoje acompanha a constante.
+- [X] T010 [US3] No mesmo arquivo, confirmar que `acoes` do card só é renderizado quando `podeAlocar` (`atividade.status === 'aberta'`) e que o `Alert` "Atividade não está aberta" e o `Select` de filtro por habilidade permanecem acima da `<section>` de escalas, sem alteração de comportamento (FR-012/FR-013, contrato U-01.3/U-01.4).
 - [ ] T011 [US3] Validar no navegador o fluxo completo: alocar pelo card (o diálogo mostra o horário do turno, o voluntário aparece naquele card e a ocupação atualiza), remover (toast "Alocação cancelada" e o voluntário sai do card), filtrar por habilidade (nenhum card ou voluntário escalado some) e atividade encerrada (sem botão de alocar). Também navegar por teclado para conferir que o foco percorre os botões de cada card na ordem visual (quickstart passos 8–12).
 
 **Checkpoint**: todas as stories estão funcionais e verificadas.
@@ -90,12 +90,12 @@ Monolito Next.js: rotas em `app/`, primitivos de UI em `src/shared/ui/`, documen
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T012 [P] Atualizar o comentário JSDoc do topo de `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, que hoje fala em "turnos lado a lado com rolagem horizontal… coluna colapsa para lista vertical". O novo texto deve descrever um card por turno em grade `auto-fill` que quebra a linha, com um card por linha no celular (contrato U-02.2).
-- [ ] T013 [P] Atualizar `spec/DESIGN_SYSTEM.md` §4.16 (KanbanCard / KanbanColumn): acrescentar um item dizendo que, no painel de escala de uma atividade, cada `KanbanCard` é exibido sozinho numa grade `repeat(auto-fill, minmax(min(100%, 18rem), 1fr))` com `items-start`, sem `KanbanColumn`, e que a `KanbanColumn` segue para agrupar turnos por atividade (contrato U-02.1, research D6).
-- [ ] T014 [P] (Opcional) Em `app/(interno)/design-system/galeria.tsx`, na seção "Kanban de turnos", adicionar abaixo do exemplo existente um exemplo "Escalas em grade": um `<ul>` com a mesma classe de grade de T007 e 3 `KanbanCard`, sendo um com `detalhe` vazio ("Nenhum voluntário escalado ainda.").
-- [ ] T015 Rodar `npx prettier --write` nos arquivos alterados e depois `npm run lint`, `npx tsc --noEmit`, `npm test` e `npm run build`. Todos devem passar.
+- [X] T012 [P] Atualizar o comentário JSDoc do topo de `app/(interno)/(staff)/atividades/[id]/painel-escala.tsx`, que hoje fala em "turnos lado a lado com rolagem horizontal… coluna colapsa para lista vertical". O novo texto deve descrever um card por turno em grade `auto-fill` que quebra a linha, com um card por linha no celular (contrato U-02.2).
+- [X] T013 [P] Atualizar `spec/DESIGN_SYSTEM.md` §4.16 (KanbanCard / KanbanColumn): acrescentar um item dizendo que, no painel de escala de uma atividade, cada `KanbanCard` é exibido sozinho numa grade `repeat(auto-fill, minmax(min(100%, 18rem), 1fr))` com `items-start`, sem `KanbanColumn`, e que a `KanbanColumn` segue para agrupar turnos por atividade (contrato U-02.1, research D6).
+- [X] T014 [P] (Opcional) Em `app/(interno)/design-system/galeria.tsx`, na seção "Kanban de turnos", adicionar abaixo do exemplo existente um exemplo "Escalas em grade": um `<ul>` com a mesma classe de grade de T007 e 3 `KanbanCard`, sendo um com `detalhe` vazio ("Nenhum voluntário escalado ainda.").
+- [X] T015 Rodar `npx prettier --write` nos arquivos alterados e depois `npm run lint`, `npx tsc --noEmit`, `npm test` e `npm run build`. Todos devem passar.
 - [ ] T016 Executar o roteiro completo de `specs/019-cards-escala-atividade/quickstart.md` (passos 1–13). Opcionalmente, rodar a verificação automatizada de overflow com Playwright (Chromium em `/opt/pw-browsers`).
-- [ ] T017 Commitar com Conventional Commits (ex.: `feat: show each activity shift as its own card in the schedule panel`) e fazer push.
+- [X] T017 Commitar com Conventional Commits (ex.: `feat: show each activity shift as its own card in the schedule panel`) e fazer push.
 
 ---
 
@@ -152,3 +152,15 @@ As duas stories P1 juntas formam o MVP: sozinha, a US1 entrega cards empilhados,
 - Não alterar `src/shared/ui/kanban/kanban-card.tsx` nem `kanban-column.tsx`. A feature reaproveita os dois como estão (research D2).
 - Não alterar `page.tsx`, queries, actions nem nada em `src/modules/`. A mudança é só de apresentação (Princípio I).
 - Todos os textos novos ficam em pt-BR: "Escalas", "N escalas", "Nenhum voluntário escalado ainda." e "Alocar voluntário no turno de …".
+
+## Registro de execução (2026-10-01)
+
+- **T001:** a base tinha 318 testes verdes. Lint e `tsc` já falhavam antes desta feature, sem relação com ela: 8 `no-restricted-imports` nos arquivos de `habilidades`, e os tipos de imagem `@/public/*` ausentes porque falta o `next-env.d.ts`, que é gerado pelo build. Nenhum erro novo nos arquivos alterados.
+- **T008:** como o ambiente de nuvem não tem banco, a validação usou um harness estático com o CSS compilado pelo `next build` e a mesma marcação do painel, medido com Playwright. Resultados:
+    - Não há rolagem horizontal em 320, 375, 768, 1280 e 1920px.
+    - Cards por linha: 1, 1, 2, 4 e 5, respectivamente.
+    - Todos os cards têm a mesma largura e as alturas são independentes (`items-start`).
+    - Um card sozinho em 1920px fica com 303px e não estica.
+    - O botão de remover fica dentro do card mesmo com nome longo.
+- **T015:** `npm test` passou com 318 testes. ESLint e `tsc` não apontam erro nos arquivos alterados. O `next build` compila e passa no TypeScript, mas falha na coleta de dados das páginas por falta de `DATABASE_URL` válido.
+- **Pendentes:** T011 e T016 dependem de banco e sessão reais. É preciso rodar localmente com `.env` os passos 8–13 do `quickstart.md`: alocar, remover, filtrar, atividade encerrada, teclado/leitor de tela e tema escuro.
