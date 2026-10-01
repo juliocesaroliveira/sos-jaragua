@@ -53,8 +53,10 @@ pelo admin).
 exportação. `auth.api.signUpEmail` precisa continuar funcionando no servidor. `npm ci`
 precisa passar em instalação limpa.
 
-**Scale/Scope**: ~10 arquivos de código alterados, 4 novos (regra de estoque mínimo,
-caso de uso, helper de provedores, dialog), 1 migration, 6 documentos.
+**Scale/Scope**: 18 arquivos de código alterados (mais `package.json`, `package-lock.json` e
+`.env.example`), 6 novos (`provedores-sociais.ts`, `limiares-alerta.ts`, `estoque-minimo.ts`,
+`definir-estoque-minimo.ts`, `mensagem-estoque-critico.ts`, `estoque-minimo-dialog.tsx`),
+6 arquivos de teste novos (e `entrada.test.ts` estendido), 1 migration e 6 documentos.
 
 Nenhum NEEDS CLARIFICATION em aberto. As três decisões de produto vieram em
 `spec.md → Clarifications`, e as incógnitas técnicas foram resolvidas em
@@ -145,6 +147,7 @@ app/
 ├── (publico)/login/login-form.tsx          # botões/divisor/aviso condicionais
 └── (interno)/(staff)/estoque/
     ├── page.tsx                            # passa o limiar global
+    ├── entrada/page.tsx                    # passa o limiar global ao formulário
     ├── entrada/entrada-form.tsx            # campo "Estoque mínimo (opcional)" só para item novo
     ├── tabela-estoque.tsx                  # coluna "Mínimo", destaque crítico, ação por linha
     └── estoque-minimo-dialog.tsx           # NOVO: dialog/drawer RHF + Zod
