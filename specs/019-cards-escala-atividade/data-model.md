@@ -8,30 +8,30 @@
 
 ### `AtividadeDetalhada` (retorno de `buscarAtividadeDetalhada`)
 
-| Campo | Uso na página |
-| --- | --- |
-| `id` | Alvo das ações de alocar e remover |
-| `titulo`, `status`, `categoria`, `local` | Cabeçalho da atividade (inalterado) |
-| `status` | `aberta` libera a ação de alocar nos cards (FR-010/FR-012) |
-| `turnos: TurnoDetalhado[]` | Um card por item, na ordem recebida |
+| Campo                                    | Uso na página                                              |
+| ---------------------------------------- | ---------------------------------------------------------- |
+| `id`                                     | Alvo das ações de alocar e remover                         |
+| `titulo`, `status`, `categoria`, `local` | Cabeçalho da atividade (inalterado)                        |
+| `status`                                 | `aberta` libera a ação de alocar nos cards (FR-010/FR-012) |
+| `turnos: TurnoDetalhado[]`               | Um card por item, na ordem recebida                        |
 
 ### `TurnoDetalhado` → um card de escala
 
-| Campo | Uso no card |
-| --- | --- |
-| `id` | `key` do card e alvo da alocação |
-| `inicio`, `fim` | Cabeçalho do card: `HH:mm – HH:mm · dd/MM` (fuso `America/Sao_Paulo`) e rótulo acessível da ação de alocar |
-| `vagas`, `preenchidas` | Ocupação "X de Y" e destaque de déficit (FR-006) |
-| `alocados: AlocadoNoTurno[]` | Lista vertical de voluntários (FR-007). Vazia → mensagem de estado vazio (FR-008) |
+| Campo                        | Uso no card                                                                                                |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `id`                         | `key` do card e alvo da alocação                                                                           |
+| `inicio`, `fim`              | Cabeçalho do card: `HH:mm – HH:mm · dd/MM` (fuso `America/Sao_Paulo`) e rótulo acessível da ação de alocar |
+| `vagas`, `preenchidas`       | Ocupação "X de Y" e destaque de déficit (FR-006)                                                           |
+| `alocados: AlocadoNoTurno[]` | Lista vertical de voluntários (FR-007). Vazia → mensagem de estado vazio (FR-008)                          |
 
 ### `AlocadoNoTurno` → um item da lista do card
 
-| Campo | Uso |
-| --- | --- |
-| `alocacaoId` | `key` e alvo da remoção |
-| `nome` | Nome (truncado visualmente) e rótulo "Remover {nome} do turno" |
-| `role` | `IconePapel` |
-| `origem` | Selo "Inscrição própria" quando `inscricao_propria` |
+| Campo                | Uso                                                              |
+| -------------------- | ---------------------------------------------------------------- |
+| `alocacaoId`         | `key` e alvo da remoção                                          |
+| `nome`               | Nome (truncado visualmente) e rótulo "Remover {nome} do turno"   |
+| `role`               | `IconePapel`                                                     |
+| `origem`             | Selo "Inscrição própria" quando `inscricao_propria`              |
 | `voluntarioPerfilId` | Exclui da lista de disponíveis no diálogo de alocar (inalterado) |
 
 ## Ordenação
@@ -41,7 +41,7 @@
 
 ## Valores derivados (apenas na apresentação)
 
-| Valor | Regra |
-| --- | --- |
-| Contagem de escalas | `turnos.length` → `"1 escala"` ou `"N escalas"` |
-| Rótulo de alocar | `Alocar voluntário no turno de {dd/MM}, {HH:mm} – {HH:mm}` |
+| Valor               | Regra                                                      |
+| ------------------- | ---------------------------------------------------------- |
+| Contagem de escalas | `turnos.length` → `"1 escala"` ou `"N escalas"`            |
+| Rótulo de alocar    | `Alocar voluntário no turno de {dd/MM}, {HH:mm} – {HH:mm}` |

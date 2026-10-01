@@ -38,15 +38,15 @@ Abordagem (research):
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Princípio | Avaliação | Status |
-| --- | --- | --- |
-| I. Clean Architecture por Módulo | A mudança fica só em `app/.../painel-escala.tsx` (apresentação). Nada em `domain`, `application` ou `infrastructure`, e nenhum acesso cruzado entre módulos. | ✅ |
-| II. Tipagem estrita e qualidade | Sem `any`. Segue o ESLint/Prettier existentes. Textos em pt-BR. Commit `feat:`. Usa o termo "escala", alinhado ao pedido e à UI atual. | ✅ |
-| III. Testes em regras de negócio | Não toca `domain`/`application`, então o TDD não se aplica. A validação de apresentação segue o quickstart (D5). | ✅ |
-| IV. Segurança | Sem mudança de rota, de roles ou de Server Action. A autorização continua no layout `(staff)` e nas actions. | ✅ |
-| V. Auditoria | As escritas continuam pelas mesmas actions auditadas (`alocarVoluntario`, `cancelarAlocacao`). | ✅ |
-| VI. Simplicidade | Nenhuma dependência nova. Reaproveita o `KanbanCard`. A decisão de layout é registrada em `DESIGN_SYSTEM.md` §4.16 (D6). | ✅ |
-| Fluxo: responsividade mobile | É o núcleo da feature (FR-003/004, SC-003/004). | ✅ |
+| Princípio                        | Avaliação                                                                                                                                                    | Status |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| I. Clean Architecture por Módulo | A mudança fica só em `app/.../painel-escala.tsx` (apresentação). Nada em `domain`, `application` ou `infrastructure`, e nenhum acesso cruzado entre módulos. | ✅     |
+| II. Tipagem estrita e qualidade  | Sem `any`. Segue o ESLint/Prettier existentes. Textos em pt-BR. Commit `feat:`. Usa o termo "escala", alinhado ao pedido e à UI atual.                       | ✅     |
+| III. Testes em regras de negócio | Não toca `domain`/`application`, então o TDD não se aplica. A validação de apresentação segue o quickstart (D5).                                             | ✅     |
+| IV. Segurança                    | Sem mudança de rota, de roles ou de Server Action. A autorização continua no layout `(staff)` e nas actions.                                                 | ✅     |
+| V. Auditoria                     | As escritas continuam pelas mesmas actions auditadas (`alocarVoluntario`, `cancelarAlocacao`).                                                               | ✅     |
+| VI. Simplicidade                 | Nenhuma dependência nova. Reaproveita o `KanbanCard`. A decisão de layout é registrada em `DESIGN_SYSTEM.md` §4.16 (D6).                                     | ✅     |
+| Fluxo: responsividade mobile     | É o núcleo da feature (FR-003/004, SC-003/004).                                                                                                              | ✅     |
 
 **Pós-design (re-check)**: os artefatos da Fase 1 não introduzem nada novo. O status continua ✅ e não há violações a justificar.
 
