@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
+import { provedoresSociaisConfigurados } from '@/src/shared/auth/provedores-sociais'
 import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { FundoLogin } from './fundo-login'
 import { PainelMarca } from './painel-marca'
@@ -94,7 +95,12 @@ export default async function LoginPage() {
                     <div className="rounded-xl border border-border bg-surface p-6 shadow-lg sm:p-8 md:bg-surface/95 md:supports-[backdrop-filter]:backdrop-blur-xl">
                         {/* `useSearchParams` no formulário exige um limite de Suspense. */}
                         <Suspense fallback={<SkeletonLista linhas={4} />}>
-                            <LoginForm />
+                            {/*
+                              Só os provedores com credencial completa: a lista
+                              é calculada aqui, no servidor, porque as variáveis
+                              não chegam ao cliente (specs/020, FR-010).
+                            */}
+                            <LoginForm provedores={provedoresSociaisConfigurados()} />
                         </Suspense>
                     </div>
                 </div>

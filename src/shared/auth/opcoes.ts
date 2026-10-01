@@ -2,6 +2,7 @@ import type { BetterAuthOptions } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { db } from '@/src/shared/db/postgres'
 import * as schema from '@/db/schema'
+import { provedoresSociaisConfigurados } from './provedores-sociais'
 import { ROLE_PADRAO } from './roles'
 
 /**
@@ -26,10 +27,13 @@ export const JANELA_COOKIE_CACHE_SEGUNDOS = 5 * 60
  * roda em toda navegação. As duas instâncias compartilham segredo, cookies e
  * schema, então os cookies emitidos por uma são válidos na outra.
  *
- * - `emailAndPassword` habilitado como fallback independente de provedor social.
- * - `socialProviders`: Google + Facebook. **Instagram fora do MVP** — a API
- *   atual é voltada a contas business/creator, inviável para login pessoal de
- *   voluntários; documentado como escopo v2.
+ * - `emailAndPassword` habilitado como fallback de **login** independente de
+ *   provedor social. A **criação** de conta por senha é exclusiva do `/admin`:
+ *   a rota pública `/sign-up/email` está fechada em `disabledPaths` (abaixo).
+ * - `socialProviders`: Google + Facebook, cada um registrado só com a
+ *   credencial completa no ambiente (`provedores-sociais.ts`). **Instagram fora
+ *   do MVP** — a API atual é voltada a contas business/creator, inviável para
+ *   login pessoal de voluntários; documentado como escopo v2.
  * - `role`/`ativo` como additionalFields em `user` e `lastActivityAt` em
  *   `session`, refletidos manualmente em `db/schema/identidade.ts`.
  */
@@ -51,6 +55,19 @@ export const opcoesAuth = {
         }
     }),
 
+    /**
+     * Auto-cadastro por senha **fechado** (specs/020-resolver-pendencias, Q2;
+     * DESIGN.md §19). Contas com senha nascem só pelo `/admin`, e o auto-cadastro
+     * público é o login social (PENDENCIAS §2).
+     *
+     * `disabledPaths`, e **não** `emailAndPassword.disableSignUp`: o
+     * `disabledPaths` é checado só no router HTTP (responde 404), então
+     * `auth.api.signUpEmail(...)` chamado no servidor, que é o que o `/admin`
+     * usa (`autenticacao-service.ts`), continua funcionando. O `disableSignUp` é
+     * checado dentro do próprio handler e quebraria o `/admin` (research.md D2).
+     */
+    disabledPaths: ['/sign-up/email'],
+
     emailAndPassword: {
         enabled: true,
         minPasswordLength: 8,
@@ -65,16 +82,7 @@ export const opcoesAuth = {
      * App Review. Custo externo alto para um dado que o candidato informa uma
      * única vez no formulário (research.md D2).
      */
-    socialProviders: {
-        google: {
-            clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? ''
-        },
-        facebook: {
-            clientId: process.env.FACEBOOK_CLIENT_ID ?? '',
-            clientSecret: process.env.FACEBOOK_CLIENT_SECRET ?? ''
-        }
-    },
+    socialProviders: socialProvidersConfigurados(),
 
     /**
      * **Contrato de configuração de vinculação de contas** — os três defaults
@@ -145,3 +153,26 @@ export const opcoesAuth = {
         useSecureCookies: process.env.NODE_ENV === 'production'
     }
 } satisfies BetterAuthOptions
+
+/**
+ * Só os provedores com ID e segredo preenchidos. Registrar um provedor sem
+ * credencial exporia um endpoint OAuth que falharia de qualquer jeito
+ * (specs/020-resolver-pendencias, FR-010).
+ */
+function socialProvidersConfigurados(): NonNullable<BetterAuthOptions['socialProviders']> {
+    const provedores = provedoresSociaisConfigurados()
+    return {
+        ...(provedores.includes('google') && {
+            google: {
+                clientId: process.env.GOOGLE_CLIENT_ID!,
+                clientSecret: process.env.GOOGLE_CLIENT_SECRET!
+            }
+        }),
+        ...(provedores.includes('facebook') && {
+            facebook: {
+                clientId: process.env.FACEBOOK_CLIENT_ID!,
+                clientSecret: process.env.FACEBOOK_CLIENT_SECRET!
+            }
+        })
+    }
+}

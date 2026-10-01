@@ -105,7 +105,12 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const MATRIZ: Record<Role, string[]> = {
         usuario: ['/', '/voluntariado/candidatura'],
-        voluntario: ['/', '/voluntariado/candidatura', '/voluntariado/atividades-abertas', '/voluntariado/minhas-atividades'],
+        voluntario: [
+            '/',
+            '/voluntariado/candidatura',
+            '/voluntariado/atividades-abertas',
+            '/voluntariado/minhas-atividades'
+        ],
         membro_defesa_civil: [
             '/',
             '/dashboard',
@@ -220,7 +225,11 @@ describe('atalhos — cards de acesso rápido da home', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const ATALHOS: Record<Role, string[]> = {
         usuario: ['/voluntariado/candidatura'],
-        voluntario: ['/voluntariado/candidatura', '/voluntariado/atividades-abertas', '/voluntariado/minhas-atividades'],
+        voluntario: [
+            '/voluntariado/candidatura',
+            '/voluntariado/atividades-abertas',
+            '/voluntariado/minhas-atividades'
+        ],
         membro_defesa_civil: [
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',

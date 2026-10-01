@@ -6,6 +6,7 @@ import { ArrowLeft, LogIn, LockOpen } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { email, senha, useFormulario } from '@/src/shared/formulario'
 import { signIn } from '@/src/shared/auth/client'
+import type { ProvedorSocial } from '@/src/shared/auth/provedores-sociais'
 import { AREA_PADRAO } from '@/src/shared/auth/rotas'
 import { Alert } from '@/src/shared/ui/alert/alert'
 import { Button } from '@/src/shared/ui/button/button'
@@ -24,10 +25,19 @@ type DadosFormulario = z.infer<typeof esquema>
 
 /**
  * Dois estados de exibição, sem navegação entre eles (FR-011): `'opcoes'` é o
- * estado inicial (Google/Facebook/usuário e senha); `'credenciais'` é o
- * formulário de e-mail/senha com Voltar/Acessar.
+ * estado inicial (provedores sociais configurados + usuário e senha);
+ * `'credenciais'` é o formulário de e-mail/senha com Voltar/Acessar.
+ *
+ * Sem nenhum provedor social configurado, `'opcoes'` teria um único botão
+ * levando a outra tela: a página abre direto em `'credenciais'`, sem "Voltar"
+ * (specs/020-resolver-pendencias, contracts/entrada-publica.md C-02).
  */
 type ModoLogin = 'opcoes' | 'credenciais'
+
+const NOME_PROVEDOR: Record<ProvedorSocial, string> = {
+    google: 'Google',
+    facebook: 'Facebook'
+}
 
 /**
  * Recusas do login social traduzidas (011-auto-cadastro-provedor, FR-005a e
@@ -52,7 +62,12 @@ const MENSAGEM_POR_ERRO_SOCIAL: Record<string, string> = {
 
 const ERRO_SOCIAL_GENERICO = 'Não foi possível concluir o acesso pelo provedor. Tente novamente ou use e-mail e senha.'
 
-export function LoginForm() {
+/**
+ * `provedores` vem do servidor (`page.tsx`): só os provedores com credencial
+ * completa no ambiente. Um botão sem credencial falharia no clique
+ * (specs/020-resolver-pendencias, FR-010).
+ */
+export function LoginForm({ provedores }: { provedores: ProvedorSocial[] }) {
     const router = useRouter()
     const params = useSearchParams()
     // A home serve a todos os papéis (ela é montada a partir da sessão). Este
@@ -68,7 +83,8 @@ export function LoginForm() {
     const codigoErroSocial = params.get('error')
     const erroSocial = codigoErroSocial ? (MENSAGEM_POR_ERRO_SOCIAL[codigoErroSocial] ?? ERRO_SOCIAL_GENERICO) : null
 
-    const [modo, setModo] = useState<ModoLogin>('opcoes')
+    const temProvedorSocial = provedores.length > 0
+    const [modo, setModo] = useState<ModoLogin>(temProvedorSocial ? 'opcoes' : 'credenciais')
     const [erroServidor, setErroServidor] = useState<string | null>(null)
     const [carregandoSocial, setCarregandoSocial] = useState<'google' | 'facebook' | null>(null)
 
@@ -163,28 +179,36 @@ export function LoginForm() {
               troca e a senha volta mascarada.
             */}
             <div className="grid grid-cols-1 *:col-start-1 *:row-start-1">
-                <div className={cn('flex flex-col gap-3', modo !== 'opcoes' && 'invisible')} inert={modo !== 'opcoes'}>
-                    <Button
-                        variant="secondary"
-                        iconeInicio={<IconeGoogle className="size-5" />}
-                        size="lg"
-                        fullWidth
-                        loading={carregandoSocial === 'google'}
-                        onClick={() => entrarComRedeSocial('google')}
+                {temProvedorSocial && (
+                    <div
+                        className={cn('flex flex-col gap-3', modo !== 'opcoes' && 'invisible')}
+                        inert={modo !== 'opcoes'}
                     >
-                        Acessar com Google
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        iconeInicio={<IconeFacebook className="size-5" />}
-                        size="lg"
-                        fullWidth
-                        loading={carregandoSocial === 'facebook'}
-                        onClick={() => entrarComRedeSocial('facebook')}
-                    >
-                        Acessar com Facebook
-                    </Button>
-                    {/*
+                        {provedores.includes('google') && (
+                            <Button
+                                variant="secondary"
+                                iconeInicio={<IconeGoogle className="size-5" />}
+                                size="lg"
+                                fullWidth
+                                loading={carregandoSocial === 'google'}
+                                onClick={() => entrarComRedeSocial('google')}
+                            >
+                                Acessar com Google
+                            </Button>
+                        )}
+                        {provedores.includes('facebook') && (
+                            <Button
+                                variant="secondary"
+                                iconeInicio={<IconeFacebook className="size-5" />}
+                                size="lg"
+                                fullWidth
+                                loading={carregandoSocial === 'facebook'}
+                                onClick={() => entrarComRedeSocial('facebook')}
+                            >
+                                Acessar com Facebook
+                            </Button>
+                        )}
+                        {/*
                       Separador entre os dois níveis de acesso
                       (014-redesign-tela-login, FR-004). Antes os três botões
                       eram uma pilha uniforme e nada dizia que o terceiro é de
@@ -196,25 +220,25 @@ export function LoginForm() {
                       botões já distinguem as opções, e um "ou" solto entre eles
                       só acrescentaria ruído.
                     */}
-                    <div aria-hidden className="flex items-center gap-3 py-1">
-                        <span className="h-px flex-1 bg-border" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                            ou
-                        </span>
-                        <span className="h-px flex-1 bg-border" />
-                    </div>
+                        <div aria-hidden className="flex items-center gap-3 py-1">
+                            <span className="h-px flex-1 bg-border" />
+                            <span className="text-xs font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                ou
+                            </span>
+                            <span className="h-px flex-1 bg-border" />
+                        </div>
 
-                    <Button
-                        variant="primary"
-                        iconeInicio={<LockOpen className="size-4" />}
-                        size="lg"
-                        fullWidth
-                        onClick={usarUsuarioESenha}
-                    >
-                        Usar usuário e senha
-                    </Button>
+                        <Button
+                            variant="primary"
+                            iconeInicio={<LockOpen className="size-4" />}
+                            size="lg"
+                            fullWidth
+                            onClick={usarUsuarioESenha}
+                        >
+                            Usar usuário e senha
+                        </Button>
 
-                    {/*
+                        {/*
                       FR-010 — transparência antes do redirecionamento: a pessoa
                       precisa saber o que sai da conta dela antes de autorizar,
                       não depois, na tela de consentimento do provedor.
@@ -224,10 +248,12 @@ export function LoginForm() {
                       de `neutral-500`/`neutral-400` sobre a superfície do cartão
                       permanece acima de 4.5:1 nos dois temas (§1.6).
                     */}
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        Ao entrar com Google ou Facebook, recebemos apenas seu nome e e-mail para criar sua conta.
-                    </p>
-                </div>
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Ao entrar com {provedores.map((p) => NOME_PROVEDOR[p]).join(' ou ')}, recebemos apenas seu
+                            nome e e-mail para criar sua conta.
+                        </p>
+                    </div>
+                )}
 
                 <Formulario
                     key={modo}
@@ -254,16 +280,19 @@ export function LoginForm() {
                         {...register('senha')}
                     />
                     <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            iconeInicio={<ArrowLeft className="size-4" />}
-                            size="lg"
-                            fullWidth
-                            onClick={voltar}
-                        >
-                            Voltar
-                        </Button>
+                        {/* Sem provedor social não há tela de opções para voltar. */}
+                        {temProvedorSocial && (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                iconeInicio={<ArrowLeft className="size-4" />}
+                                size="lg"
+                                fullWidth
+                                onClick={voltar}
+                            >
+                                Voltar
+                            </Button>
+                        )}
                         <Button
                             type="submit"
                             iconeInicio={<LogIn className="size-4" />}

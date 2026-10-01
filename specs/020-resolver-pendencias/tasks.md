@@ -123,20 +123,20 @@ coletado.
 
 ### Tests (escrever primeiro e ver falhar)
 
-- [ ] T018 [P] [US3] Criar `src/shared/auth/provedores-sociais.test.ts` para `provedoresSociaisConfigurados(env)`. Casos: os dois completos → `['google','facebook']`; só Google → `['google']`; `GOOGLE_CLIENT_ID` preenchido com segredo vazio ou só com espaços → sem google; nenhum → `[]`; a ordem é sempre google antes de facebook.
-- [ ] T019 [P] [US3] Criar `src/shared/auth/cadastro-publico.integracao.test.ts`, seguindo o padrão de `src/modules/identidade/application/use-cases/criar-usuario.integracao.test.ts`:
+- [x] T018 [P] [US3] Criar `src/shared/auth/provedores-sociais.test.ts` para `provedoresSociaisConfigurados(env)`. Casos: os dois completos → `['google','facebook']`; só Google → `['google']`; `GOOGLE_CLIENT_ID` preenchido com segredo vazio ou só com espaços → sem google; nenhum → `[]`; a ordem é sempre google antes de facebook.
+- [x] T019 [P] [US3] Criar `src/shared/auth/cadastro-publico.integracao.test.ts`, seguindo o padrão de `src/modules/identidade/application/use-cases/criar-usuario.integracao.test.ts`:
     - (a) chamar `auth.handler` com um `new Request` `POST` para `${BETTER_AUTH_URL}/api/auth/sign-up/email`, com headers `content-type: application/json` e `origin: BETTER_AUTH_URL` e corpo `{ name, email: '<único>@teste.local', password }`. A resposta deve ser `404`, e não deve existir linha em `user` com esse e-mail;
     - (b) `auth.api.signUpEmail({ body: {...} })` no servidor **continua** criando a conta (limpar no `afterAll`).
 
 ### Implementation
 
-- [ ] T020 [US3] Criar `src/shared/auth/provedores-sociais.ts` com `export type ProvedorSocial = 'google' | 'facebook'` e `export function provedoresSociaisConfigurados(env: Record<string, string | undefined> = process.env): ProvedorSocial[]`. Um provedor entra só com `<P>_CLIENT_ID` e `<P>_CLIENT_SECRET` não vazios depois de `trim()`. O módulo **não** importa `server-only`, porque o teste é unitário e não há segredo exposto: só nomes de provedores saem dele.
-- [ ] T021 [US3] Em `src/shared/auth/opcoes.ts`:
+- [x] T020 [US3] Criar `src/shared/auth/provedores-sociais.ts` com `export type ProvedorSocial = 'google' | 'facebook'` e `export function provedoresSociaisConfigurados(env: Record<string, string | undefined> = process.env): ProvedorSocial[]`. Um provedor entra só com `<P>_CLIENT_ID` e `<P>_CLIENT_SECRET` não vazios depois de `trim()`. O módulo **não** importa `server-only`, porque o teste é unitário e não há segredo exposto: só nomes de provedores saem dele.
+- [x] T021 [US3] Em `src/shared/auth/opcoes.ts`:
     - (a) acrescentar `disabledPaths: ['/sign-up/email']`, com comentário explicando por que **não** `emailAndPassword.disableSignUp` (research D2: o `disableSignUp` é checado dentro do handler e quebraria `auth.api.signUpEmail` do `/admin`; o `disabledPaths` só barra o router HTTP);
     - (b) montar `socialProviders` só com os provedores de `provedoresSociaisConfigurados()`;
     - (c) atualizar o JSDoc do topo (o "fallback independente de provedor social" agora vale só para **login**, porque a criação de conta por senha é exclusiva do `/admin`).
-- [ ] T022 [US3] Em `app/(publico)/login/page.tsx` (Server Component), chamar `provedoresSociaisConfigurados()` e passar `<LoginForm provedores={...} />`.
-- [ ] T023 [US3] Em `app/(publico)/login/login-form.tsx`, receber `{ provedores }: { provedores: ProvedorSocial[] }`:
+- [x] T022 [US3] Em `app/(publico)/login/page.tsx` (Server Component), chamar `provedoresSociaisConfigurados()` e passar `<LoginForm provedores={...} />`.
+- [x] T023 [US3] Em `app/(publico)/login/login-form.tsx`, receber `{ provedores }: { provedores: ProvedorSocial[] }`:
     - renderizar o botão "Acessar com Google" só se `provedores.includes('google')`, e o mesmo para Facebook;
     - o divisor "ou" e o aviso de privacidade só com `provedores.length > 0`;
     - o aviso cita só os provedores presentes ("Ao entrar com Google…", "Ao entrar com Google ou Facebook…");
@@ -145,6 +145,7 @@ coletado.
     O tratamento de `?error=` e `?motivo=expirado` não muda. Atualizar o comentário de `ModoLogin`.
 
 - [ ] T024 [US3] Rodar `npm test -- provedores-sociais`, `npm run test:integracao -- cadastro-publico criar-usuario`, `npm run lint` e `npx tsc --noEmit`. Executar quickstart V2 e V3, as quatro combinações de `.env.local`.
+    - **Parcial (2026-10-01):** `npm test -- provedores-sociais` verde (8 testes), `lint` e `tsc` verdes. **V3 executado** com `next dev` e Playwright nas quatro combinações de `.env.local`: os dois provedores; só o Google; Google sem segredo (só o Facebook aparece); nenhum (formulário direto, sem "Voltar" e sem "ou"). O aviso cita só os provedores presentes. **V2 parcial:** `POST /api/auth/sign-up/email` responde `404`. **Falta:** `npm run test:integracao -- cadastro-publico criar-usuario` e a criação de conta pelo `/admin`, que exigem o banco de desenvolvimento.
 
 **Checkpoint**: nenhum botão quebrado em nenhum ambiente; zero contas com senha fora do `/admin`.
 
