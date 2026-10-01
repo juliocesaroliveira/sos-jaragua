@@ -43,9 +43,9 @@ coletado.
 
 **Purpose**: Destravar `npm ci` e o CI. Hoje o lockfile está fora de sincronia (research D5).
 
-- [X] T001 Regenerar `package-lock.json` com `npm install` na raiz e confirmar que `npm ci` conclui sem erro (hoje falha com `Missing: esbuild@0.28.2 from lock file`). Commit `chore: sync package-lock with package.json`.
-- [X] T002 Em `package.json`, fixar `next` e `eslint-config-next` em `16.3.8` (os dois andam juntos) e atualizar `sharp` para `^0.35.5`. Rodar `npm install` e depois `npm audit fix` **sem** `--force` (corrige as moderadas de `better-auth` e `vitest` dentro da faixa). **Não** aplicar o fix de `drizzle-kit`, que exige downgrade major. Atualiza `package.json` e `package-lock.json`.
-- [X] T003 Validar T002 com `npm run lint && npx tsc --noEmit && npm test && npm run build`. Se o build quebrar por causa do Next 16.3.8, reverter só `next`/`eslint-config-next` e anotar o motivo para a T052. Conferir com `npm audit --omit=dev` que `next` e `sharp` saíram da lista.
+- [x] T001 Regenerar `package-lock.json` com `npm install` na raiz e confirmar que `npm ci` conclui sem erro (hoje falha com `Missing: esbuild@0.28.2 from lock file`). Commit `chore: sync package-lock with package.json`.
+- [x] T002 Em `package.json`, fixar `next` e `eslint-config-next` em `16.3.8` (os dois andam juntos) e atualizar `sharp` para `^0.35.5`. Rodar `npm install` e depois `npm audit fix` **sem** `--force` (corrige as moderadas de `better-auth` e `vitest` dentro da faixa). **Não** aplicar o fix de `drizzle-kit`, que exige downgrade major. Atualiza `package.json` e `package-lock.json`.
+- [x] T003 Validar T002 com `npm run lint && npx tsc --noEmit && npm test && npm run build`. Se o build quebrar por causa do Next 16.3.8, reverter só `next`/`eslint-config-next` e anotar o motivo para a T052. Conferir com `npm audit --omit=dev` que `next` e `sharp` saíram da lista.
 
 **Checkpoint**: `npm ci` passa. Só sobram no audit `xlsx` (sai na US2) e as moderadas documentadas.
 
@@ -57,9 +57,9 @@ coletado.
 
 **⚠️ CRITICAL**: Nenhuma user story começa antes desta fase.
 
-- [X] T004 Em `spec/DESIGN.md` §19 (tabela "Decisões de Design Consolidadas"), trocar a linha "Biblioteca XLSX" para `exceljs` (2026-10-01, Q1 da feature 020: CVE alto no `xlsx@0.18.5` sem correção no npm) e acrescentar estas linhas: "Auto-cadastro por senha: rota pública `/sign-up/email` fechada (`disabledPaths`); contas com senha só via `/admin`" (Q2); "Estoque mínimo de segurança: por item (`item.estoque_minimo`), vazio herda `ALERTA_ESTOQUE_MINIMO`, `0` desliga o alerta" (Q3); "Campo data/hora (`datetime-local`): formato do navegador, aceito; reavaliar se houver relato de confusão em campo" (PENDENCIAS §5); "Gestão de usuários: tela `/admin` (feature 006)" (PENDENCIAS §9); "Login social: botão só aparece com credencial completa do provedor" (PENDENCIAS §7); "Rede local sem DNS SRV: usar a string não-SRV do Atlas em `.env.local`, documentado no README" (PENDENCIAS §11).
-- [X] T005 Em `spec/DESIGN.md` §16, trocar a linha `xlsx` por `exceljs` (mesmo uso). Em §17, acrescentar `RESEND_FROM`, `ALERTA_CADASTROS_PENDENTES`, `ALERTA_ESTOQUE_MINIMO` e `ALERTA_DEFICIT_PERCENTUAL`, conferindo contra `.env.example`, e marcar os três `ALERTA_*` como **provisórios até confirmação da Defesa Civil** (FR-014). Fazer o mesmo no comentário de cada `ALERTA_*` em `.env.example`. Vem depois da T004 (mesmo arquivo).
-- [X] T006 [P] Emenda PATCH da constituição **exclusivamente via `/speckit-constitution`**, como exige a Governance (sem edição direta do arquivo), em `.specify/memory/constitution.md`: na seção "Stack e Convenções Técnicas", o trecho `**Planilhas**: xlsx (SheetJS)` passa a ser `**Planilhas**: exceljs`. Versão `1.0.0 → 1.0.1`, `Last Amended: 2026-10-01`, e o Sync Impact Report no topo atualizado com a motivação (Q1 da feature 020).
+- [x] T004 Em `spec/DESIGN.md` §19 (tabela "Decisões de Design Consolidadas"), trocar a linha "Biblioteca XLSX" para `exceljs` (2026-10-01, Q1 da feature 020: CVE alto no `xlsx@0.18.5` sem correção no npm) e acrescentar estas linhas: "Auto-cadastro por senha: rota pública `/sign-up/email` fechada (`disabledPaths`); contas com senha só via `/admin`" (Q2); "Estoque mínimo de segurança: por item (`item.estoque_minimo`), vazio herda `ALERTA_ESTOQUE_MINIMO`, `0` desliga o alerta" (Q3); "Campo data/hora (`datetime-local`): formato do navegador, aceito; reavaliar se houver relato de confusão em campo" (PENDENCIAS §5); "Gestão de usuários: tela `/admin` (feature 006)" (PENDENCIAS §9); "Login social: botão só aparece com credencial completa do provedor" (PENDENCIAS §7); "Rede local sem DNS SRV: usar a string não-SRV do Atlas em `.env.local`, documentado no README" (PENDENCIAS §11).
+- [x] T005 Em `spec/DESIGN.md` §16, trocar a linha `xlsx` por `exceljs` (mesmo uso). Em §17, acrescentar `RESEND_FROM`, `ALERTA_CADASTROS_PENDENTES`, `ALERTA_ESTOQUE_MINIMO` e `ALERTA_DEFICIT_PERCENTUAL`, conferindo contra `.env.example`, e marcar os três `ALERTA_*` como **provisórios até confirmação da Defesa Civil** (FR-014). Fazer o mesmo no comentário de cada `ALERTA_*` em `.env.example`. Vem depois da T004 (mesmo arquivo).
+- [x] T006 [P] Emenda PATCH da constituição **exclusivamente via `/speckit-constitution`**, como exige a Governance (sem edição direta do arquivo), em `.specify/memory/constitution.md`: na seção "Stack e Convenções Técnicas", o trecho `**Planilhas**: xlsx (SheetJS)` passa a ser `**Planilhas**: exceljs`. Versão `1.0.0 → 1.0.1`, `Last Amended: 2026-10-01`, e o Sync Impact Report no topo atualizado com a motivação (Q1 da feature 020).
 
 **Checkpoint**: decisões registradas. As stories podem começar.
 
@@ -71,11 +71,11 @@ coletado.
 
 **Independent Test**: para cada item restante, a afirmação do "Estado atual" confere com o repositório. Os itens 5, 9, 11 e 12 não aparecem, e as decisões deles estão no §19 (quickstart V7).
 
-- [X] T007 [US1] Em `PENDENCIAS.md`, remover as seções 9 (gestão de usuários, resolvida pela feature 006) e 12 (degradação da auditoria, já coberta por teste). A decisão do §9 já foi registrada pela T004.
-- [X] T008 [US1] Em `PENDENCIAS.md`, remover a seção 5 (`datetime-local`). A decisão (opção a) já foi registrada pela T004.
-- [X] T009 [US1] Em `README.md`, que hoje é o boilerplate "Example app using MongoDB", acrescentar no topo a seção "## Desenvolvimento local", com o conteúdo do PENDENCIAS §11: resolvedores que recusam DNS SRV (`ECONNREFUSED`), a opção de trocar o DNS para 8.8.8.8/1.1.1.1, e a alternativa de usar em `.env.local` a connection string **não-SRV** do Atlas (mesma credencial, três hosts do shard). Depois, remover a seção 11 de `PENDENCIAS.md`. Não reescrever o resto do README (fora de escopo).
-- [X] T010 [US1] Em `PENDENCIAS.md`, corrigir as afirmações desatualizadas: §1 diz que "nenhum código de exportação foi escrito ainda", mas `src/modules/contingencia/infrastructure/planilha.ts` já existe. Registrar que a decisão foi (b) `exceljs` e apontar para `specs/020-resolver-pendencias`. §14 diz que a área `/admin` não existe, mas ela existe. Atualizar o "Estado atual" do §2, informando que o resíduo (rota pública de sign-up) está sendo fechado pela feature 020, e do §8, informando que o limiar passa a ser por item pela feature 020 e que só os valores dependem da Defesa Civil.
-- [X] T011 [US1] Em `PENDENCIAS.md`, acrescentar a seção "Vulnerabilidades de dependência" com a tabela de `specs/020-resolver-pendencias/research.md` D5 (pacote, severidade, aplicabilidade à produção: o RCE do Next só afeta servidores Windows, então não atinge a Vercel) e o estado depois das T001–T003. Se tudo de alto/crítico foi corrigido, deixar só a nota das moderadas aceitas (`drizzle-kit`, `uuid` via `exceljs`).
+- [x] T007 [US1] Em `PENDENCIAS.md`, remover as seções 9 (gestão de usuários, resolvida pela feature 006) e 12 (degradação da auditoria, já coberta por teste). A decisão do §9 já foi registrada pela T004.
+- [x] T008 [US1] Em `PENDENCIAS.md`, remover a seção 5 (`datetime-local`). A decisão (opção a) já foi registrada pela T004.
+- [x] T009 [US1] Em `README.md`, que hoje é o boilerplate "Example app using MongoDB", acrescentar no topo a seção "## Desenvolvimento local", com o conteúdo do PENDENCIAS §11: resolvedores que recusam DNS SRV (`ECONNREFUSED`), a opção de trocar o DNS para 8.8.8.8/1.1.1.1, e a alternativa de usar em `.env.local` a connection string **não-SRV** do Atlas (mesma credencial, três hosts do shard). Depois, remover a seção 11 de `PENDENCIAS.md`. Não reescrever o resto do README (fora de escopo).
+- [x] T010 [US1] Em `PENDENCIAS.md`, corrigir as afirmações desatualizadas: §1 diz que "nenhum código de exportação foi escrito ainda", mas `src/modules/contingencia/infrastructure/planilha.ts` já existe. Registrar que a decisão foi (b) `exceljs` e apontar para `specs/020-resolver-pendencias`. §14 diz que a área `/admin` não existe, mas ela existe. Atualizar o "Estado atual" do §2, informando que o resíduo (rota pública de sign-up) está sendo fechado pela feature 020, e do §8, informando que o limiar passa a ser por item pela feature 020 e que só os valores dependem da Defesa Civil.
+- [x] T011 [US1] Em `PENDENCIAS.md`, acrescentar a seção "Vulnerabilidades de dependência" com a tabela de `specs/020-resolver-pendencias/research.md` D5 (pacote, severidade, aplicabilidade à produção: o RCE do Next só afeta servidores Windows, então não atinge a Vercel) e o estado depois das T001–T003. Se tudo de alto/crítico foi corrigido, deixar só a nota das moderadas aceitas (`drizzle-kit`, `uuid` via `exceljs`).
 
 **Checkpoint**: o documento não induz mais a erro. A reescrita final (≤ 7 itens) fica na T051, depois das demais stories.
 
@@ -89,15 +89,15 @@ coletado.
 
 ### Tests (escrever primeiro e ver falhar)
 
-- [ ] T012 [US2] Criar `src/modules/contingencia/infrastructure/planilha.test.ts`. `server-only` já é resolvido pelo alias de `vitest.config.ts` (`test/stubs/server-only.ts`), então não precisa de mock. Testes:
+- [x] T012 [US2] Criar `src/modules/contingencia/infrastructure/planilha.test.ts`. `server-only` já é resolvido pelo alias de `vitest.config.ts` (`test/stubs/server-only.ts`), então não precisa de mock. Testes:
     - (a) `await gerarXlsx([...])`: reler o buffer com `new ExcelJS.Workbook().xlsx.load(buf)` e conferir os invariantes 1–7 do contrato. São eles: abas na ordem; nome com `[]:*?/\` sanitizado e cortado em 31; linha 1 = cabeçalhos; número continua número; `null` vira célula vazia; largura `largura ?? max(12, cabecalho.length + 2)`; view congelada com `ySplit: 1`; aba sem linhas só com cabeçalho; "Água / ação / ç" preservados.
     - (b) `gerarCsv`: BOM, `;`, `\r\n`, decimal com vírgula, escape de `"`, `;` e quebra de linha (regressão; deve passar já antes da troca).
     - (c) `nomeDeArquivo` com data fixa.
 
 ### Implementation
 
-- [ ] T013 [US2] `npm uninstall xlsx && npm install exceljs@4.4.0` (atualiza `package.json` e `package-lock.json`).
-- [ ] T014 [US2] Reescrever `gerarXlsx` em `src/modules/contingencia/infrastructure/planilha.ts` com `exceljs`, que passa a ser `export async function gerarXlsx<T>(abas: Aba<T>[]): Promise<Buffer>`:
+- [x] T013 [US2] `npm uninstall xlsx && npm install exceljs@4.4.0` (atualiza `package.json` e `package-lock.json`).
+- [x] T014 [US2] Reescrever `gerarXlsx` em `src/modules/contingencia/infrastructure/planilha.ts` com `exceljs`, que passa a ser `export async function gerarXlsx<T>(abas: Aba<T>[]): Promise<Buffer>`:
     - `new ExcelJS.Workbook()`;
     - por aba, `addWorksheet(limitarNomeAba(aba.nome), { views: [{ state: 'frozen', xSplit: 0, ySplit: 1 }] })`;
     - `worksheet.columns = aba.colunas.map(c => ({ header: c.cabecalho, width: c.largura ?? Math.max(12, c.cabecalho.length + 2) }))`;
@@ -106,9 +106,10 @@ coletado.
 
     Manter `limitarNomeAba`, que agora é obrigatório porque o exceljs **lança erro** com caracteres proibidos. Atualizar o comentário do topo ("XLSX vem do exceljs") e o comentário do congelamento (agora funciona de fato). `gerarCsv` e `nomeDeArquivo` não mudam.
 
-- [ ] T015 [P] [US2] Em `app/api/relatorios/export/route.ts`, trocar `const buffer = gerarXlsx([aba])` por `await gerarXlsx([aba])`.
-- [ ] T016 [P] [US2] Em `app/api/contingencia/export/route.ts`, acrescentar `await` na chamada de `gerarXlsx`.
+- [x] T015 [P] [US2] Em `app/api/relatorios/export/route.ts`, trocar `const buffer = gerarXlsx([aba])` por `await gerarXlsx([aba])`.
+- [x] T016 [P] [US2] Em `app/api/contingencia/export/route.ts`, acrescentar `await` na chamada de `gerarXlsx`.
 - [ ] T017 [US2] Rodar `npm test -- planilha` (verde), `npx tsc --noEmit`, `npm ls xlsx` (vazio) e `npm audit --omit=dev` (sem `xlsx`). Executar quickstart V1, comparando os arquivos exportados antes e depois, e medir o tempo de resposta de `/api/relatorios/export?tipo=inventario&formato=xlsx` no DevTools (meta do plano: < 2s). Anotar o valor no commit.
+    - **Parcial (2026-10-01):** `npm test -- planilha` verde (13 testes), `tsc` verde, `npm ls xlsx` vazio, `npm audit --omit=dev` sem `xlsx` e sem nenhuma alta/crítica (o `brace-expansion` alto, transitivo via `exceljs → archiver → readdir-glob → minimatch`, foi atualizado com `npm update brace-expansion`). Tempo de `gerarXlsx` com inventário sintético de 1.000 itens e 5 colunas: 47–130 ms. **Falta:** baixar os arquivos reais antes/depois (quickstart V1), o que exige o banco de desenvolvimento.
 
 **Checkpoint**: exportações iguais, CVE do `xlsx` eliminado. Desbloqueia REL-01/REL-02/CON-01.
 

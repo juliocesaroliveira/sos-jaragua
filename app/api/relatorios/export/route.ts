@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
         })
     }
 
-    const buffer = gerarXlsx([aba])
+    const buffer = await gerarXlsx([aba])
 
     return new NextResponse(new Uint8Array(buffer), {
         headers: {

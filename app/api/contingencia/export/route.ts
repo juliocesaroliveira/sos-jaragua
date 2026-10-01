@@ -27,7 +27,7 @@ export async function GET() {
     }
 
     const abas = await montarPacoteContingencia()
-    const buffer = gerarXlsx(abas)
+    const buffer = await gerarXlsx(abas)
 
     return new NextResponse(new Uint8Array(buffer), {
         headers: {
