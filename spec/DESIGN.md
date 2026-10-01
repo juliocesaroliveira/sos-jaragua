@@ -657,13 +657,13 @@ condicional que possa ser esquecido em um novo relatório).
 
 ## 16. Dependências a Adicionar
 
-| Pacote        | Uso                                                       |
-| ------------- | --------------------------------------------------------- |
-| `drizzle-orm` | ORM sobre Neon Postgres                                   |
-| `drizzle-kit` | Migrations/introspecção                                   |
-| `better-auth` | Autenticação/sessão/roles                                 |
-| `xlsx`        | Geração de CSV/XLSX (relatórios + pacote de contingência) |
-| `resend`      | Envio de e-mail transacional                              |
+| Pacote        | Uso                                                                                          |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `drizzle-orm` | ORM sobre Neon Postgres                                                                      |
+| `drizzle-kit` | Migrations/introspecção                                                                      |
+| `better-auth` | Autenticação/sessão/roles                                                                    |
+| `exceljs`     | Geração de XLSX (relatórios + pacote de contingência); o CSV é gerado à mão em `planilha.ts` |
+| `resend`      | Envio de e-mail transacional                                                                 |
 
 (`@neondatabase/serverless`, `mongodb`, `@tanstack/react-query`, `@ark-ui/react`,
 `react-hook-form`, `@hookform/resolvers`, `zod` já estão instalados.)
@@ -672,18 +672,22 @@ condicional que possa ser esquecido em um novo relatório).
 
 ## 17. Variáveis de Ambiente
 
-| Variável                                        | Uso                                                                   |
-| ----------------------------------------------- | --------------------------------------------------------------------- |
-| `DATABASE_URL`                                  | Conexão pooled (runtime da aplicação)                                 |
-| `DATABASE_URL_UNPOOLED`                         | Conexão direta (migrations `drizzle-kit`, operações de sessão)        |
-| `MONGODB_URI`                                   | Conexão com o cluster de auditoria (já existe)                        |
-| `BETTER_AUTH_SECRET`                            | Chave de assinatura de sessão                                         |
-| `BETTER_AUTH_URL`                               | URL base para callbacks OAuth                                         |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`     | Login social Google                                                   |
-| `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | Login social Facebook                                                 |
-| `RESEND_API_KEY`                                | Envio de e-mail transacional                                          |
-| `CRON_SECRET`                                   | Autenticação do Vercel Cron nas rotas `/api/cron/*`                   |
-| `STAFF_INACTIVITY_TIMEOUT_MINUTES`              | Timeout de inatividade para Coordenador/Membro (default sugerido: 15) |
+| Variável                                        | Uso                                                                                                                              |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                  | Conexão pooled (runtime da aplicação)                                                                                            |
+| `DATABASE_URL_UNPOOLED`                         | Conexão direta (migrations `drizzle-kit`, operações de sessão)                                                                   |
+| `MONGODB_URI`                                   | Conexão com o cluster de auditoria (já existe)                                                                                   |
+| `BETTER_AUTH_SECRET`                            | Chave de assinatura de sessão                                                                                                    |
+| `BETTER_AUTH_URL`                               | URL base para callbacks OAuth                                                                                                    |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`     | Login social Google                                                                                                              |
+| `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | Login social Facebook                                                                                                            |
+| `RESEND_API_KEY`                                | Envio de e-mail transacional                                                                                                     |
+| `RESEND_FROM`                                   | Remetente dos e-mails transacionais (domínio verificado no Resend)                                                               |
+| `CRON_SECRET`                                   | Autenticação do Vercel Cron nas rotas `/api/cron/*`                                                                              |
+| `STAFF_INACTIVITY_TIMEOUT_MINUTES`              | Timeout de inatividade para Coordenador/Membro (default sugerido: 15)                                                            |
+| `ALERTA_CADASTROS_PENDENTES`                    | Nº de candidaturas pendentes que dispara `cadastros_acumulados` (default 10). **Provisório até confirmação da Defesa Civil**     |
+| `ALERTA_ESTOQUE_MINIMO`                         | Mínimo de segurança **padrão**, usado pelos itens sem mínimo próprio (default 5). **Provisório até confirmação da Defesa Civil** |
+| `ALERTA_DEFICIT_PERCENTUAL`                     | % de déficit de capacidade que dispara `deficit_atendimento` (default 80). **Provisório até confirmação da Defesa Civil**        |
 
 ---
 
@@ -704,21 +708,27 @@ atômica).
 Resumo das decisões que fecham pontos originalmente ambíguos no BRD/NFR — todas confirmadas
 com o usuário, sem pendências para a implementação:
 
-| Ponto                               | Decisão                                                                            |
-| ----------------------------------- | ---------------------------------------------------------------------------------- |
-| ORM                                 | Drizzle (não Prisma)                                                               |
-| Biblioteca de autenticação          | better-auth (não NextAuth.js)                                                      |
-| Login social                        | Google + Facebook no MVP; Instagram adiado para v2                                 |
-| Modelo de estoque                   | Ledger de movimentos + saldo materializado (não rastreamento por lote/FEFO)        |
-| "Destinação (Kit)" na Entrada       | Apenas informativo, sem reserva rígida de saldo                                    |
-| Notificações push                   | Somente in-app + e-mail no MVP (sem Web Push/VAPID)                                |
-| Falha na escrita de auditoria       | Degrada graciosamente (operação original prossegue)                                |
-| Categoria de Atividade / Habilidade | Tabelas lookup livres e extensíveis (sem enum fixo)                                |
-| Provedor de e-mail                  | Resend                                                                             |
-| Biblioteca XLSX                     | `xlsx` (SheetJS)                                                                   |
-| Reenvio de candidatura rejeitada    | Permitido, reaproveitando a mesma linha                                            |
-| Timeout de inatividade (staff)      | Mecanismo customizado `lastActivityAt`, escopado a Coordenador/Membro Defesa Civil |
-| Criptografia de dados sensíveis     | At-rest nativa do Neon Postgres + TLS em trânsito (sem pgcrypto)                   |
+| Ponto                               | Decisão                                                                                                                                                                                                                            |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ORM                                 | Drizzle (não Prisma)                                                                                                                                                                                                               |
+| Biblioteca de autenticação          | better-auth (não NextAuth.js)                                                                                                                                                                                                      |
+| Login social                        | Google + Facebook no MVP; Instagram adiado para v2                                                                                                                                                                                 |
+| Modelo de estoque                   | Ledger de movimentos + saldo materializado (não rastreamento por lote/FEFO)                                                                                                                                                        |
+| "Destinação (Kit)" na Entrada       | Apenas informativo, sem reserva rígida de saldo                                                                                                                                                                                    |
+| Notificações push                   | Somente in-app + e-mail no MVP (sem Web Push/VAPID)                                                                                                                                                                                |
+| Falha na escrita de auditoria       | Degrada graciosamente (operação original prossegue)                                                                                                                                                                                |
+| Categoria de Atividade / Habilidade | Tabelas lookup livres e extensíveis (sem enum fixo)                                                                                                                                                                                |
+| Provedor de e-mail                  | Resend                                                                                                                                                                                                                             |
+| Biblioteca XLSX                     | `exceljs` (2026-10-01, feature 020 Q1: `xlsx@0.18.5` tem CVE alto sem correção no npm)                                                                                                                                             |
+| Reenvio de candidatura rejeitada    | Permitido, reaproveitando a mesma linha                                                                                                                                                                                            |
+| Timeout de inatividade (staff)      | Mecanismo customizado `lastActivityAt`, escopado a Coordenador/Membro Defesa Civil                                                                                                                                                 |
+| Criptografia de dados sensíveis     | At-rest nativa do Neon Postgres + TLS em trânsito (sem pgcrypto)                                                                                                                                                                   |
+| Auto-cadastro por senha             | Rota pública `/sign-up/email` fechada (`disabledPaths`); contas com senha só via `/admin` (feature 020 Q2)                                                                                                                         |
+| Estoque mínimo de segurança         | Por item (`item.estoque_minimo`): vazio herda `ALERTA_ESTOQUE_MINIMO`, `0` desliga o alerta; definido por `membro_defesa_civil`, `coordenador` e `administrador` na Entrada (item novo) e na tabela de estoque (feature 020 Q3/I1) |
+| Campo data/hora (`datetime-local`)  | Formato do navegador, aceito; reavaliar se houver relato de confusão em campo (PENDENCIAS §5)                                                                                                                                      |
+| Gestão de usuários                  | Tela `/admin` (feature 006) (PENDENCIAS §9)                                                                                                                                                                                        |
+| Botões de login social              | Só aparecem com a credencial completa do provedor (ID e segredo) (PENDENCIAS §7)                                                                                                                                                   |
+| Rede local sem DNS SRV              | Usar a string não-SRV do Atlas em `.env.local`, documentado no README (PENDENCIAS §11)                                                                                                                                             |
 
 ---
 
