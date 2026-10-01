@@ -434,6 +434,48 @@ export function Galeria() {
                     </KanbanColumn>
                 </div>
             </Secao>
+
+            <Secao titulo="Escalas em grade">
+                <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))] items-start gap-3">
+                    <KanbanCard
+                        horario="08:00 – 12:00 · 06/10"
+                        preenchidas={2}
+                        vagas={2}
+                        detalhe={
+                            <ul className="flex flex-col gap-1">
+                                <li className="flex min-h-11 items-center rounded-lg bg-surface-muted px-2 text-sm text-foreground">
+                                    Ana Souza
+                                </li>
+                                <li className="flex min-h-11 items-center rounded-lg bg-surface-muted px-2 text-sm text-foreground">
+                                    Bruno Lima
+                                </li>
+                            </ul>
+                        }
+                    />
+                    <KanbanCard
+                        horario="12:00 – 16:00 · 06/10"
+                        preenchidas={0}
+                        vagas={3}
+                        detalhe={
+                            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                Nenhum voluntário escalado ainda.
+                            </p>
+                        }
+                    />
+                    <KanbanCard
+                        horario="08:00 – 12:00 · 07/10"
+                        preenchidas={1}
+                        vagas={1}
+                        detalhe={
+                            <ul className="flex flex-col gap-1">
+                                <li className="flex min-h-11 items-center rounded-lg bg-surface-muted px-2 text-sm text-foreground">
+                                    Carla Mendes
+                                </li>
+                            </ul>
+                        }
+                    />
+                </ul>
+            </Secao>
         </div>
     )
 }

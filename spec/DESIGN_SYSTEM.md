@@ -566,6 +566,12 @@ rounded-lg`. Usado em listagens/dashboard durante carregamento (Suspense boundar
   destaque de déficit definido em §3 quando `preenchidas < vagas`.
 - Em `md-`: colunas empilhadas verticalmente (lista); em `md+`: colunas lado a lado com
   scroll horizontal ou grid fixo, conforme espaço.
+- **Painel de escala de uma atividade** (019-cards-escala-atividade): sem `KanbanColumn`.
+  Cada `KanbanCard` fica sozinho numa grade
+  `repeat(auto-fill, minmax(min(100%, 18rem), 1fr))` com `items-start`. Os cards ficam lado a
+  lado com a mesma largura, quebram de linha quando não cabem e, no celular, ficam um por
+  linha. `auto-fill` (e não `auto-fit`) evita que um turno único estique na largura toda. A
+  `KanbanColumn` segue para agrupar turnos por atividade.
 
 ---
 
