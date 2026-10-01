@@ -121,7 +121,9 @@ A coordenação recebe o alerta de estoque crítico quando um item cai abaixo do
 
 1. **Given** o item A com mínimo 20, **When** o saldo de A cai para 19, **Then** o alerta de estoque crítico cita A.
 2. **Given** um item sem mínimo definido, **When** o saldo cai, **Then** vale o limiar padrão global.
-3. **Given** uma pessoa da gestão de estoque, **When** ela cadastra ou edita um item, **Then** ela pode informar o mínimo de segurança desse item.
+3. **Given** uma pessoa da operação de estoque (`membro_defesa_civil`, `coordenador` ou `administrador`), **When** ela cadastra um item novo na Entrada, **Then** ela pode informar o mínimo de segurança dele (opcional).
+4. **Given** a mesma pessoa, **When** ela edita um item já existente na tela de estoque, **Then** ela pode definir, alterar ou limpar o mínimo de segurança dele.
+5. **Given** uma pessoa sem acesso à operação de estoque (`voluntario`, `usuario`), **When** ela tenta definir o mínimo, **Then** a ação é recusada e nada é gravado.
 
 ---
 
@@ -146,7 +148,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 - **Provedor social configurado pela metade** (só o ID, sem o segredo): conta como não configurado, e o botão não aparece.
 - **Fechar a rota pública de cadastro por senha (Q2) sem quebrar a gestão de usuários**: a criação de contas pelo administrador não pode depender da rota pública.
 - **Item com mínimo de segurança zero ou vazio (Q3)**: zero desliga o alerta para o item; vazio usa o padrão global.
-- **Atualizar o framework web para corrigir a vulnerabilidade crítica**: uma major nova pode trazer mudança incompatível. A atualização só entra se a suíte de testes e o build passarem; se não passar, fica registrada como pendência.
+- **Atualizar o framework web para corrigir a vulnerabilidade crítica**: a atualização (mesmo de patch) pode trazer mudança incompatível. A atualização só entra se a suíte de testes e o build passarem; se não passar, fica registrada como pendência.
 - **Usuário de teste com credencial versionada no `PENDENCIAS.md`**: as credenciais de desenvolvimento não podem existir no banco de produção. O roteiro operacional inclui conferir isso.
 
 ## Requirements _(mandatory)_
@@ -165,7 +167,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 **Biblioteca de planilhas (item 1)**
 
 - **FR-007**: A exportação de planilhas MUST deixar de usar uma versão com vulnerabilidade conhecida, substituindo a biblioteca atual por `exceljs` (Q1). A escolha de biblioteca de planilhas registrada na spec de projeto (`DESIGN.md` §16) MUST ser atualizada para refletir a troca.
-- **FR-008**: As planilhas e CSVs exportados MUST manter o conteúdo atual: abas, cabeçalhos, valores, larguras de coluna, separador `;` e acentuação legível no Excel em pt-BR.
+- **FR-008**: As planilhas e CSVs exportados MUST manter todo o conteúdo atual: abas, cabeçalhos, valores, larguras de coluna, separador `;` e acentuação legível no Excel em pt-BR. Colunas novas só entram por acréscimo, sem alterar nem remover as existentes.
 - **FR-009**: A instalação das dependências MUST funcionar em ambiente limpo (CI e deploy) sem passo manual.
 
 **Entrada pública (itens 2 e 7)**
@@ -176,7 +178,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 **Alertas (item 8)**
 
 - **FR-012**: O alerta de estoque crítico MUST usar o mínimo de segurança definido para cada item, com fallback para o limiar global quando o item não tiver mínimo próprio.
-- **FR-013**: A gestão de estoque MUST permitir definir e editar o mínimo de segurança de cada item.
+- **FR-013**: Quem opera o estoque (`membro_defesa_civil`, `coordenador` e `administrador`, os mesmos papéis que registram Entrada e Saída) MUST poder informar o mínimo de segurança ao cadastrar um item novo na Entrada e definir, alterar ou limpar o mínimo de um item existente. Os demais papéis não podem.
 - **FR-014**: Os valores padrão dos três limiares MUST ficar documentados como provisórios até serem confirmados pela Defesa Civil. A confirmação é passo do roteiro operacional (FR-018).
 
 **Verificação (itens 4 e 14)**
@@ -206,7 +208,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 - **SC-001**: 100% dos itens que ficarem no `PENDENCIAS.md` têm "Estado atual" confirmado contra o repositório na data da atualização. Zero afirmações desatualizadas, contra 3 conhecidas hoje (itens 1, 9 e 14).
 - **SC-002**: O documento cai de 14 itens para no máximo 7. Todos os restantes são operacionais ou aguardam terceiros.
 - **SC-003**: A auditoria das dependências de produção não reporta nenhuma vulnerabilidade alta ou crítica que tenha correção disponível compatível.
-- **SC-004**: 100% dos relatórios e planilhas exportados antes da mudança têm conteúdo equivalente depois dela.
+- **SC-004**: 100% dos relatórios e planilhas exportados antes da mudança têm, depois dela, todas as colunas e valores anteriores. A única diferença admitida é a coluna nova "Estoque mínimo" no inventário.
 - **SC-005**: Em qualquer ambiente, zero botões de login social que falham ao clicar.
 - **SC-006**: Zero contas criadas com senha por fora da gestão de usuários.
 - **SC-007**: As tasks ID-06 e DEPLOY-06 ficam marcadas como concluídas, com a evidência da verificação registrada.
@@ -228,3 +230,7 @@ O responsável pelo deploy tem um roteiro único, em ordem, com os passos de con
 - Q1 (item 1): Qual opção para a biblioteca de planilhas: versão corrigida pelo CDN do SheetJS, trocar por `exceljs` ou manter? → A: **(b) trocar por `exceljs`**. O pacote é publicado no registro público e mantido. A troca diverge de `DESIGN.md` §16, que precisa ser atualizado.
 - Q2 (item 2, resíduo): Fechar a rota pública de auto-cadastro por e-mail e senha? → A: **Sim, fechar**. Contas com senha nascem só pela gestão de usuários (`/admin`). Fecha o resíduo do item 2.
 - Q3 (item 8): O mínimo de segurança do alerta de estoque crítico passa a ser por item? → A: **Sim, por item**, com fallback para o limiar global quando o item não tiver mínimo próprio. Exige um atributo novo no item de estoque.
+
+### Session 2026-10-01 (análise)
+
+- I1: Quem pode definir o mínimo de segurança, e onde? → A: **`membro_defesa_civil`, `coordenador` e `administrador`** (os papéis de operação de estoque), tanto **ao cadastrar o item na Entrada** quanto **ao editar pela tabela de estoque**.

@@ -10,7 +10,25 @@ export function itensCriticos<T extends { saldo: number; estoqueMinimo: number |
     itens: T[],
     limiarGlobal: number
 ): (T & { limiar: number })[]
+
+/** Mensagem de erro em pt-BR, ou `null` quando válido. Usada pela Entrada e pela edição. */
+export function validarEstoqueMinimo(valor: number | null): string | null
 ```
+
+`validarEstoqueMinimo`: `null` é válido. Negativo → "Informe um número maior ou igual a
+zero.". Não finito → "Informe um número válido.". Mais de 3 casas decimais → "Use no
+máximo 3 casas decimais.". Acima de `99_999_999_999.999` → "Valor muito alto.".
+
+## Configuração: `src/shared/config/limiares-alerta.ts`
+
+```ts
+export function limiarCadastrosPendentes(): number // ALERTA_CADASTROS_PENDENTES, > 0, default 10
+export function limiarEstoqueMinimoGlobal(): number // ALERTA_ESTOQUE_MINIMO, >= 0, default 5
+export function limiarDeficitPercentual(): number // ALERTA_DEFICIT_PERCENTUAL, > 0, default 80
+```
+
+Fica em `shared` (e não em `estoque/infrastructure`) porque é lida por
+`notificacoes/application` e por `app/(staff)/estoque`. Ver research D4 e análise C1.
 
 | `estoqueMinimo` | `limiarDoItem` | crítico quando    |
 | --------------- | -------------- | ----------------- |
@@ -29,12 +47,12 @@ export async function definirEstoqueMinimo(entrada: {
 }): Promise<ResultadoAction<{ itemId: string; estoqueMinimo: number | null }>>
 ```
 
-| Situação                                                                | Resultado                                                                                                                                                                                                             |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sem sessão / role fora de `ROLES_COORDENACAO` (`exigir`, já no arquivo) | `erroAction('nao_autorizado', 'Somente coordenação pode definir o estoque mínimo.')`, sem escrita                                                                                                                     |
-| `itemId` inválido ou inexistente                                        | `{ ok: false, erro: { codigo: 'item_nao_encontrado', mensagem: 'Item não encontrado.' } }`                                                                                                                            |
-| `estoqueMinimo` negativo, não finito ou > 3 casas decimais              | `erroAction('validacao', 'Revise os campos do formulário.')`, como nas demais actions do arquivo. O formulário valida o mesmo esquema Zod no cliente antes de enviar.                                                 |
-| Válido                                                                  | grava, audita (`withAudit`), `updateTag(CACHE_TAGS.estoqueListagem)` (o saldo não muda, então `invalidarSaldo()` não é necessário), agenda `agendarAlertasDeEstoque({ estoqueCritico: true })`, `{ ok: true, valor }` |
+| Situação                                                             | Resultado                                                                                                                                                                                                             |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sem sessão / role fora de `ROLES_OPERACAO` (`exigir`, já no arquivo) | `erroAction('nao_autorizado', 'Você não tem permissão para definir o estoque mínimo.')`, sem escrita                                                                                                                  |
+| `itemId` inválido ou inexistente                                     | `{ ok: false, erro: { codigo: 'item_nao_encontrado', mensagem: 'Item não encontrado.' } }`                                                                                                                            |
+| `estoqueMinimo` negativo, não finito ou > 3 casas decimais           | `erroAction('validacao', 'Revise os campos do formulário.')`, como nas demais actions do arquivo. O formulário valida o mesmo esquema Zod no cliente antes de enviar.                                                 |
+| Válido                                                               | grava, audita (`withAudit`), `updateTag(CACHE_TAGS.estoqueListagem)` (o saldo não muda, então `invalidarSaldo()` não é necessário), agenda `agendarAlertasDeEstoque({ estoqueCritico: true })`, `{ ok: true, valor }` |
 
 Camadas, conforme o Princípio I: a action faz parse com Zod e checa role, e chama
 `DefinirEstoqueMinimoUseCase` (`application/use-cases/definir-estoque-minimo.ts`), que usa
@@ -49,12 +67,33 @@ O use case devolve `Result` e a action usa `serializar`, no mesmo padrão de `re
 - Linha com `saldo <= limiar efetivo` ganha destaque de estado crítico (token de alerta do
   DESIGN_SYSTEM, com texto, não só cor).
 - Ação por linha **"Definir estoque mínimo"** (ícone + tooltip, padrão da feature 015),
-  visível só para `coordenador`/`administrador`. Abre dialog (desktop) ou drawer (mobile)
+  visível para todos que acessam `/estoque` (`membro_defesa_civil`, `coordenador`,
+  `administrador`, idênticos a `ROLES_OPERACAO`), então não há prop de permissão na
+  tabela. A action continua checando a role (defesa em profundidade). Abre dialog (desktop) ou drawer (mobile)
   com um campo numérico opcional (RHF + Zod, padrão da feature 016). Campo vazio = usar o
   padrão. Ajuda: "Deixe em branco para usar o padrão (N). Use 0 para não receber alerta
   deste item."
-- O limiar global vem do servidor (mesma leitura de `ALERTA_ESTOQUE_MINIMO`) para exibir
+- O limiar global vem do servidor (`limiarEstoqueMinimoGlobal()`) para exibir
   "Padrão (N)".
+
+## Entrada: item novo com mínimo
+
+`src/modules/estoque/presentation/actions/estoque.ts` → `esquemaEntrada.novoItem` ganha
+`estoqueMinimo: z.number().min(0).nullable().optional()`. O domínio
+(`DadosEntrada.novoItem.estoqueMinimo?: number | null`) é validado em `validarEntrada` com
+`validarEstoqueMinimo`; o erro vai para `campos.estoqueMinimo`. O repositório grava no
+mesmo `INSERT` do item, dentro da transação da entrada.
+
+| Situação                  | Resultado                                                         |
+| ------------------------- | ----------------------------------------------------------------- |
+| Item novo, campo vazio    | item criado com `estoque_minimo = NULL` (comportamento atual)     |
+| Item novo, `20`           | item criado com `estoque_minimo = 20`                             |
+| Item novo, `-1`           | `ValidacaoError` com `campos.estoqueMinimo`, nada gravado         |
+| Item existente (`itemId`) | campo não aparece no formulário; `novoItem` é ignorado, como hoje |
+
+Formulário (`app/(interno)/(staff)/estoque/entrada/entrada-form.tsx`): o campo "Estoque
+mínimo (opcional)" aparece só no ramo `ehItemNovo`, junto de categoria e unidade, com a
+mesma ajuda do dialog.
 
 ## Alerta `estoque_critico` (mensagem)
 

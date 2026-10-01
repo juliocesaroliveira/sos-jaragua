@@ -76,13 +76,17 @@ Reiniciar o `next dev` a cada troca de `.env.local`. Teste unitário:
 5. Definir **Cobertor = 0** e zerar o saldo dele. **Esperado**: Cobertor não aparece em
    nenhum alerta.
 6. Item sem mínimo com saldo 4 (global 5). **Esperado**: entra no alerta (fallback).
-7. Como `defesa-civil1@teste.local` (`membro_defesa_civil`), em `/estoque`: a coluna aparece, a ação "Definir estoque
-   mínimo" **não**. Chamar a action direto (DevTools): `nao_autorizado`.
+7. Como `defesa-civil1@teste.local` (`membro_defesa_civil`), em `/estoque`: a coluna e a
+   ação "Definir estoque mínimo" aparecem. Definir **Feijão = 15** e conferir que grava.
+   Depois, em `/estoque/entrada`, cadastrar um **item novo** "Sabonete" com mínimo `30`:
+   o campo só aparece para item novo, e a tabela mostra "30 un". Ao escolher um item
+   existente no autocomplete, o campo some.
+   Como `voluntario1@teste.local`, chamar a action direto (DevTools): `nao_autorizado`.
 8. Tentar `-1` no formulário. **Esperado**: erro de validação em pt-BR, nada gravado.
 9. Conferir em `audit_logs` um `update` com `tabela: 'item'` e o antes/depois do mínimo.
 
-Testes: `npm test -- estoque-minimo` (regra pura) e `npm test -- definir-estoque-minimo`
-(caso de uso).
+Testes: `npm test -- estoque-minimo` (regra pura), `npm test -- entrada` (mínimo no item
+novo) e `npm test -- definir-estoque-minimo` (caso de uso).
 
 > Para repetir o alerta dentro da janela de 12h, apagar as notificações `estoque_critico`
 > de teste ou testar com outro item. A idempotência é proposital.

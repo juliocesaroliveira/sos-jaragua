@@ -15,7 +15,8 @@ que já está resolvido sai do documento. Os itens com código são:
    A chamada de servidor que o `/admin` usa continua funcionando. Os botões de
    Google/Facebook só aparecem com a credencial completa.
 3. **Estoque mínimo por item (Q3)**: coluna anulável `item.estoque_minimo`, regra pura com
-   fallback global e edição pela tabela de `/estoque` (coordenação).
+   fallback global, informado ao cadastrar o item na Entrada e editável pela tabela de
+   `/estoque` (`membro_defesa_civil`, `coordenador`, `administrador`).
 4. **Dependências (achado)**: `next`/`eslint-config-next` → 16.3.8 (CVE crítico),
    `sharp` → 0.35.5 (alto), moderadas dentro da faixa e o lockfile ressincronizado (hoje
    `npm ci` falha).
@@ -64,16 +65,16 @@ sondagem do exceljs.
 
 _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
-| Princípio / regra                                      | Avaliação                                                                                                                                                                                                                                                                                                                               | Status         |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| I. Clean Architecture por módulo                       | A regra de estoque mínimo fica em `estoque/domain` (pura). O caso de uso fica em `estoque/application`, com port novo no repositório. A action é fina (Zod + role + 1 use case). `planilha.ts` continua em `infrastructure`.                                                                                                            | ✅             |
-| I. Acesso entre módulos só via ports                   | `notificacoes` já consome `estoque/presentation/queries` (padrão existente). Passa também a importar a função pura `itensCriticos` de `estoque/domain`, que não acessa tabela nem repositório.                                                                                                                                          | ✅             |
-| II. Tipagem estrita, lint, Conventional Commits, pt-BR | Sem `any`. Os textos novos (coluna, dialog, alerta, erros) estão em pt-BR.                                                                                                                                                                                                                                                              | ✅             |
-| III. TDD em `domain`/`application`                     | Teste antes da implementação para `estoque-minimo.ts` e `definir-estoque-minimo.ts`. Integração para a rota de sign-up fechada. `planilha` e `provedores-sociais` ganham teste unitário (sem rede).                                                                                                                                     | ✅             |
-| IV. Segurança e defesa em profundidade                 | **Fortalece**: fecha uma rota de criação de conta não prevista na decisão de 2026-08-16 e para de registrar provedores OAuth sem credencial. A escrita do mínimo checa role na action. O banco tem `CHECK >= 0`.                                                                                                                        | ✅             |
-| V. Auditoria não bloqueante via `withAudit`            | `definirEstoqueMinimo` passa por `withAudit` (escrita em Estoque).                                                                                                                                                                                                                                                                      | ✅             |
-| VI. Simplicidade operacional                           | Sem serviço novo. Uma coluna anulável, sem tabela nova. As decisões ficam registradas em `DESIGN.md` §19 **antes** do código (primeira fase das tasks).                                                                                                                                                                                 | ✅             |
-| Stack: "**Planilhas**: `xlsx` (SheetJS)"               | **Divergência**: Q1 troca por `exceljs`. A constituição exige que nova dependência na mesma capacidade tenha "decisão documentada, não substituição silenciosa". A decisão está em spec Q1 + research D1 e exige **emenda PATCH 1.0.0 → 1.0.1** (troca de pacote, nenhum princípio muda) via `/speckit-constitution`, na mesma entrega. | ⚠️ Justificada |
+| Princípio / regra                                      | Avaliação                                                                                                                                                                                                                                                                                                                                                                                                                    | Status         |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| I. Clean Architecture por módulo                       | A regra de estoque mínimo fica em `estoque/domain` (pura). O caso de uso fica em `estoque/application`, com port novo no repositório. A action é fina (Zod + role + 1 use case). `planilha.ts` continua em `infrastructure`.                                                                                                                                                                                                 | ✅             |
+| I. Acesso entre módulos só via ports                   | `notificacoes` já consome `estoque/presentation/queries` (padrão existente). Passa também a importar a função pura `itensCriticos` de `estoque/domain`, que não acessa tabela nem repositório. O limiar global fica em `src/shared/config/limiares-alerta.ts` (configuração transversal), e **não** em `estoque/infrastructure`: senão `notificacoes/application` dependeria de infraestrutura de outro módulo (análise C1). | ✅             |
+| II. Tipagem estrita, lint, Conventional Commits, pt-BR | Sem `any`. Os textos novos (coluna, dialog, alerta, erros) estão em pt-BR.                                                                                                                                                                                                                                                                                                                                                   | ✅             |
+| III. TDD em `domain`/`application`                     | Teste antes da implementação para `estoque-minimo.ts` (incluindo `validarEstoqueMinimo`), `validarEntrada` com mínimo e `definir-estoque-minimo.ts`. Integração para a rota de sign-up fechada. `planilha` e `provedores-sociais` ganham teste unitário (sem rede).                                                                                                                                                          | ✅             |
+| IV. Segurança e defesa em profundidade                 | **Fortalece**: fecha uma rota de criação de conta não prevista na decisão de 2026-08-16 e para de registrar provedores OAuth sem credencial. A escrita do mínimo checa role (`ROLES_OPERACAO`) na action, tanto na Entrada quanto na edição, mesmo com a tabela só acessível a esses papéis. O banco tem `CHECK >= 0`.                                                                                                       | ✅             |
+| V. Auditoria não bloqueante via `withAudit`            | `DefinirEstoqueMinimoUseCase` passa por `withAudit` (escrita em Estoque). O mínimo informado na Entrada entra no `dadosNovos` da entrada, que já é auditada.                                                                                                                                                                                                                                                                 | ✅             |
+| VI. Simplicidade operacional                           | Sem serviço novo. Uma coluna anulável, sem tabela nova. As decisões ficam registradas em `DESIGN.md` §19 **antes** do código (primeira fase das tasks).                                                                                                                                                                                                                                                                      | ✅             |
+| Stack: "**Planilhas**: `xlsx` (SheetJS)"               | **Divergência**: Q1 troca por `exceljs`. A constituição exige que nova dependência na mesma capacidade tenha "decisão documentada, não substituição silenciosa". A decisão está em spec Q1 + research D1 e exige **emenda PATCH 1.0.0 → 1.0.1** (troca de pacote, nenhum princípio muda) via `/speckit-constitution`, na mesma entrega.                                                                                      | ⚠️ Justificada |
 
 **Resultado do gate**: PASSA, com uma divergência justificada e registrada em Complexity
 Tracking. Ela é resolvida pela emenda da constituição, que é uma task obrigatória da
@@ -121,12 +122,16 @@ src/modules/contingencia/infrastructure/
 └── planilha.test.ts                        # NOVO: invariantes 1–7
 src/modules/contingencia/application/relatorios.ts   # coluna "Estoque mínimo" no inventário
 
+src/shared/config/
+└── limiares-alerta.ts                      # NOVO: os três ALERTA_* (saem de alertas-coordenador.ts)
+
 src/modules/estoque/
-├── domain/estoque-minimo.ts (+ .test.ts)   # NOVO: limiarDoItem, itensCriticos
+├── domain/estoque-minimo.ts (+ .test.ts)   # NOVO: limiarDoItem, itensCriticos, validarEstoqueMinimo
+├── domain/entrada.ts (+ entrada.test.ts)   # novoItem.estoqueMinimo validado em validarEntrada
 ├── application/ports/estoque-repository.ts # + definirEstoqueMinimo (e buscarPorId, se faltar)
 ├── application/use-cases/definir-estoque-minimo.ts (+ .test.ts)  # NOVO
-├── infrastructure/drizzle/estoque-repository.ts  # implementação
-├── presentation/actions/estoque.ts         # definirEstoqueMinimo (withAudit, ROLES_COORDENACAO)
+├── infrastructure/drizzle/estoque-repository.ts  # definirEstoqueMinimo; INSERT do item novo com estoqueMinimo
+├── presentation/actions/estoque.ts         # definirEstoqueMinimo (ROLES_OPERACAO); esquemaEntrada.novoItem.estoqueMinimo
 └── presentation/queries/estoque.ts         # ItemComSaldo.estoqueMinimo (listarEstoque + inventarioParaExportacao)
 
 src/modules/notificacoes/application/use-cases/alertas-coordenador.ts  # usa itensCriticos; mensagem por item
@@ -137,7 +142,8 @@ app/
 ├── (publico)/login/page.tsx                # passa provedores ao LoginForm
 ├── (publico)/login/login-form.tsx          # botões/divisor/aviso condicionais
 └── (interno)/(staff)/estoque/
-    ├── page.tsx                            # passa limiar global + pode-editar
+    ├── page.tsx                            # passa o limiar global
+    ├── entrada/entrada-form.tsx            # campo "Estoque mínimo (opcional)" só para item novo
     ├── tabela-estoque.tsx                  # coluna "Mínimo", destaque crítico, ação por linha
     └── estoque-minimo-dialog.tsx           # NOVO: dialog/drawer RHF + Zod
 

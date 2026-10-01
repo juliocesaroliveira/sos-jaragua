@@ -29,22 +29,23 @@ Markdown, não dados persistidos.
 
 ### Semântica do valor
 
-| `estoque_minimo` | Limiar efetivo                                | Alerta dispara quando |
-| ---------------- | --------------------------------------------- | --------------------- |
-| `NULL`           | `ALERTA_ESTOQUE_MINIMO` (global, default `5`) | `saldo <= global`     |
-| `0`              | nenhum: alerta **desligado** para o item      | nunca                 |
-| `n > 0`          | `n`                                           | `saldo <= n`          |
+| `estoque_minimo` | Limiar efetivo                                                                                | Alerta dispara quando |
+| ---------------- | --------------------------------------------------------------------------------------------- | --------------------- |
+| `NULL`           | `ALERTA_ESTOQUE_MINIMO` (global, default `5`, lido em `src/shared/config/limiares-alerta.ts`) | `saldo <= global`     |
+| `0`              | nenhum: alerta **desligado** para o item                                                      | nunca                 |
+| `n > 0`          | `n`                                                                                           | `saldo <= n`          |
 
 A regra vive em `src/modules/estoque/domain/estoque-minimo.ts` (função pura, com teste
 unitário) e é a única fonte dessa tabela.
 
-### Validação (Server Action / caso de uso)
+### Validação (domínio, usada pela Entrada e pela edição)
 
 - Vazio → `NULL` ("usar o padrão").
 - Número `>= 0`, com até 3 casas decimais e no máximo `99_999_999_999.999` (limite de
   `numeric(14,3)`).
 - Item inexistente → erro "Item não encontrado".
-- Só `coordenador` e `administrador` podem escrever.
+- Podem escrever `membro_defesa_civil`, `coordenador` e `administrador` (`ROLES_OPERACAO`): na Entrada, ao criar item novo, e pela tabela de `/estoque`.
+- A regra fica num lugar só: `validarEstoqueMinimo` em `src/modules/estoque/domain/estoque-minimo.ts`, usada por `validarEntrada` e por `DefinirEstoqueMinimoUseCase`.
 
 ### Leitura
 

@@ -121,29 +121,44 @@ informativo e só aparece para quem já está autenticado. Fica como está.
   `null` (alerta desligado) quando `minimoItem === 0`, `minimoItem` quando definido, e
   `limiarGlobal` quando `null`. Também `itensCriticos(itens, limiarGlobal)`, que filtra com
   `saldo <= limiar`. É o mesmo operador de hoje: "atingiu o mínimo" inclui a igualdade.
+  O mesmo arquivo tem `validarEstoqueMinimo(valor): string | null` (mensagem de erro em
+  pt-BR ou `null`), usado pela Entrada **e** pela edição, para as duas regras nunca
+  divergirem.
+- Limiar global: `src/shared/config/limiares-alerta.ts`, que lê os três `ALERTA_*` do
+  ambiente (`limiarCadastrosPendentes`, `limiarEstoqueMinimoGlobal`,
+  `limiarDeficitPercentual`). Fica em `shared` porque é configuração transversal, lida por
+  `notificacoes/application` (alerta) e por `app/(staff)/estoque` (exibir "Padrão (N)").
+  Colocá-la em `estoque/infrastructure` faria `notificacoes/application` depender de
+  infraestrutura de outro módulo, o que viola o Princípio I (análise C1).
 - `inventarioParaExportacao()` passa a selecionar `estoqueMinimo`, e
   `avaliarEstoqueCritico` usa `itensCriticos`. A mensagem passa a citar o mínimo de cada
   item, em vez de um número global: "Arroz (mín. 20 kg) atingiu o estoque mínimo de segurança".
+- Cadastro: na Entrada, quando o item é **novo** (`novoItem`), aparece o campo opcional
+  "Estoque mínimo". Ele vai em `novoItem.estoqueMinimo`, é validado em `validarEntrada` com
+  `validarEstoqueMinimo` e é gravado no mesmo `INSERT` do item, dentro da transação da
+  entrada já auditada. Para item existente, o campo não aparece: a mudança é feita pela
+  tabela.
 - Edição: ação "Definir estoque mínimo" por linha na tabela de `/estoque`, abrindo um
   dialog/drawer com campo numérico opcional. Server Action `definirEstoqueMinimo` →
   caso de uso `DefinirEstoqueMinimoUseCase` → `EstoqueRepository.definirEstoqueMinimo`,
   envolvida em `withAudit` (escrita em Estoque, Princípio V). Depois da escrita,
   `agendarAlertasDeEstoque({ estoqueCritico: true })`, porque baixar ou subir um mínimo
   pode criar ou encerrar a condição.
-- Permissão: `coordenador` e `administrador`, as mesmas roles de `/estoque/kits` e
-  `/estoque/descarte`, que também são configuração de estoque. `membro_defesa_civil` vê o
-  valor na tabela, mas não edita. A checagem fica na Server Action. A rota `/estoque` não
-  muda de roles.
+- Permissão (decidida na análise, I1): `ROLES_OPERACAO`, ou seja `membro_defesa_civil`,
+  `coordenador` e `administrador`. São os mesmos papéis que registram Entrada e Saída e que
+  já acessam `/estoque`. Valem tanto na Entrada quanto na edição. A checagem fica na Server
+  Action. A rota `/estoque` não muda de roles.
 
 **Rationale**: o item não tem tela própria de edição. Os itens nascem na Entrada, pelo
-autocomplete com dedup. A tabela de estoque é onde a coordenação já olha o saldo, então é
-o lugar natural para o mínimo. O fallback global preserva o comportamento atual para todo
+autocomplete com dedup. Por isso o mínimo pode ser informado ali, no nascimento, e
+ajustado depois na tabela de estoque, onde a operação já olha o saldo. O fallback global preserva o comportamento atual para todo
 item existente: a migration não faz backfill, todos ficam `NULL` e usam o global.
 
 **Alternatives considered**:
 
-- Campo na tela de Entrada: só cobriria itens novos e misturaria cadastro de movimento com
-  configuração.
+- Só na tabela, ou só coordenação: a primeira versão do plano previa isso. Foi revista na
+  análise (I1): quem cadastra o item na ponta é o `membro_defesa_civil`, e ele conhece o
+  item melhor no momento do cadastro.
 - Tabela separada `item_estoque_minimo`: normalização sem ganho, porque o atributo é 1:1
   com o item.
 - `NOT NULL DEFAULT 5`: perderia a distinção entre "herda o global" e "definido como 5", e
