@@ -7,6 +7,7 @@ import { chaveEstoque } from '@/src/shared/query'
 import { estadoHidratado } from '@/src/shared/query/hidratacao'
 import { CATEGORIAS_ITEM, type CategoriaItem } from '@/src/modules/estoque/domain/item'
 import { listarEstoque } from '@/src/modules/estoque/presentation/queries/estoque'
+import { limiarEstoqueMinimoGlobal } from '@/src/shared/config/limiares-alerta'
 import { TabelaEstoque } from './tabela-estoque'
 
 export const metadata: Metadata = {
@@ -46,7 +47,8 @@ async function Conteudo({ searchParams }: Props) {
 
     return (
         <HydrationBoundary state={estadoHidratado([{ chave: chaveEstoque(consulta), dados: pagina }])}>
-            <TabelaEstoque categoria={categoria} />
+            {/* Para exibir "Padrão (N)" no mínimo dos itens que herdam o global (feature 020). */}
+            <TabelaEstoque categoria={categoria} limiarGlobal={limiarEstoqueMinimoGlobal()} />
         </HydrationBoundary>
     )
 }

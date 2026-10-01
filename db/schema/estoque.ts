@@ -1,5 +1,17 @@
 import { relations, sql } from 'drizzle-orm'
-import { boolean, date, index, numeric, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import {
+    boolean,
+    check,
+    date,
+    index,
+    numeric,
+    pgEnum,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid
+} from 'drizzle-orm/pg-core'
 import { user } from './identidade'
 
 /**
@@ -42,9 +54,16 @@ export const item = pgTable(
         nome: text().notNull(),
         categoria: categoriaItemEnum().notNull(),
         unidadeMedida: unidadeMedidaEnum().notNull(),
+        /**
+         * Mínimo de segurança do item, na unidade do item (feature 020, Q3).
+         * `NULL` herda `ALERTA_ESTOQUE_MINIMO`; `0` desliga o alerta para o
+         * item. A semântica fica em `estoque/domain/estoque-minimo.ts`.
+         */
+        estoqueMinimo: quantidade(),
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
     },
     (t) => [
+        check('item_estoque_minimo_nao_negativo', sql`${t.estoqueMinimo} IS NULL OR ${t.estoqueMinimo} >= 0`),
         // Índice trigram para o autocomplete-dedup da Entrada (BR-EST-01).
         // A extensão `pg_trgm` é criada por um statement manual na migration.
         index('item_nome_trgm_idx').using('gin', sql`${t.nome} gin_trgm_ops`),

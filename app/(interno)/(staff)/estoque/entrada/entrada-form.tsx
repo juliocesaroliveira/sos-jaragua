@@ -21,6 +21,7 @@ import { Select } from '@/src/shared/ui/select/select'
 import { Switch } from '@/src/shared/ui/switch/switch'
 import { avisar } from '@/src/shared/ui/toast/toast'
 import {
+    ABREVIACAO_UNIDADE,
     CATEGORIAS_ITEM,
     CONDICOES_ITEM,
     ROTULO_CATEGORIA_ITEM,
@@ -31,6 +32,7 @@ import {
     type UnidadeMedida
 } from '@/src/modules/estoque/domain/item'
 import { validadeEstaVencida } from '@/src/modules/estoque/domain/entrada'
+import { apoioEstoqueMinimo, campoEstoqueMinimo, paraEstoqueMinimo } from '../campo-estoque-minimo'
 import { buscarItens, registrarEntrada } from '@/src/modules/estoque/presentation/actions/estoque'
 
 /**
@@ -57,7 +59,9 @@ const esquemaBase = z.object({
     quantidade: quantidadePositiva(),
     perecivel: z.boolean(),
     dataValidade: z.string().optional(),
-    kitDestinoId: z.string().optional()
+    kitDestinoId: z.string().optional(),
+    /** Só para item novo (feature 020, I1). Vazio herda o padrão global. */
+    estoqueMinimo: campoEstoqueMinimo()
 })
 
 /**
@@ -95,10 +99,11 @@ const VALORES_INICIAIS: DadosFormulario = {
     quantidade: '',
     perecivel: false,
     dataValidade: undefined,
-    kitDestinoId: undefined
+    kitDestinoId: undefined,
+    estoqueMinimo: ''
 }
 
-export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) {
+export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: string }[]; limiarGlobal: number }) {
     const [sugestoes, setSugestoes] = useState<ItemEncontrado[]>([])
     const [buscando, setBuscando] = useState(false)
     const [itemSelecionado, setItemSelecionado] = useState<ItemEncontrado | null>(null)
@@ -117,6 +122,7 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
 
     const nomeDigitado = watch('item')
     const perecivel = watch('perecivel')
+    const unidadeMedida = watch('unidadeMedida')
 
     /** Item novo = digitou um nome que não corresponde a nenhuma sugestão escolhida. */
     const ehItemNovo = itemSelecionado === null && nomeDigitado.trim().length > 0
@@ -152,7 +158,8 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
                 ? {
                       nome: dados.item.trim(),
                       categoria: dados.categoria,
-                      unidadeMedida: dados.unidadeMedida
+                      unidadeMedida: dados.unidadeMedida,
+                      estoqueMinimo: paraEstoqueMinimo(dados.estoqueMinimo)
                   }
                 : null,
             quantidade: Number(dados.quantidade),
@@ -213,6 +220,9 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
                                 field.onChange(escolhido.nome)
                                 setValue('categoria', escolhido.categoria)
                                 setValue('unidadeMedida', escolhido.unidadeMedida)
+                                // O mínimo de item existente se muda pela tabela de estoque.
+                                setValue('estoqueMinimo', '')
+                                clearErrors('estoqueMinimo')
                             }
                         }}
                         erro={errors.item?.message}
@@ -262,6 +272,30 @@ export function EntradaForm({ kits }: { kits: { id: string; nome: string }[] }) 
                         />
                     )}
                 />
+                {/*
+                  Só para item novo (feature 020, I1): o mínimo de um item
+                  existente se muda pela tabela de estoque, não a cada entrada.
+                */}
+                {ehItemNovo && (
+                    <div className="sm:col-span-2">
+                        <Controller
+                            control={control}
+                            name="estoqueMinimo"
+                            render={({ field }) => (
+                                <NumberInput
+                                    ref={field.ref}
+                                    id="estoqueMinimo"
+                                    label={`Estoque mínimo (opcional, em ${ABREVIACAO_UNIDADE[unidadeMedida]})`}
+                                    apoio={apoioEstoqueMinimo(limiarGlobal, ABREVIACAO_UNIDADE[unidadeMedida])}
+                                    min={0}
+                                    value={field.value ?? ''}
+                                    onValueChange={field.onChange}
+                                    erro={errors.estoqueMinimo?.message}
+                                />
+                            )}
+                        />
+                    </div>
+                )}
                 <Controller
                     control={control}
                     name="condicao"

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
+import { limiarEstoqueMinimoGlobal } from '@/src/shared/config/limiares-alerta'
 import { EntradaForm } from './entrada-form'
 
 export const metadata: Metadata = {
@@ -28,5 +29,11 @@ export default function EntradaPage() {
 
 async function Formulario() {
     const kits = await listarKitsComReceita(true)
-    return <EntradaForm kits={kits.map((k) => ({ id: k.id, nome: k.nome }))} />
+    return (
+        <EntradaForm
+            kits={kits.map((k) => ({ id: k.id, nome: k.nome }))}
+            // Para o texto de apoio do mínimo do item novo (feature 020).
+            limiarGlobal={limiarEstoqueMinimoGlobal()}
+        />
+    )
 }

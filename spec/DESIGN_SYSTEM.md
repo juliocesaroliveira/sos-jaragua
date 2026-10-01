@@ -238,6 +238,7 @@ ad-hoc por tela.
 | `notificacao_envio.status`                        | `falhou`     | `danger`                                                                         |
 | Turno com déficit (Kanban, `preenchidas < vagas`) | —            | fundo `danger-50`/borda `danger-400` (claro), `danger-950`/`danger-700` (escuro) |
 | Alerta "Estoque Crítico"                          | —            | banner `warning`                                                                 |
+| Item com saldo ≤ mínimo (tabela de estoque)       | —            | badge `warning` "Abaixo do mínimo" (`COR_ESTOQUE_ITEM`)                         |
 | Alerta "Déficit de Atendimento"                   | —            | banner `danger`                                                                  |
 | Alerta "Cadastros Acumulados"                     | —            | banner `info`                                                                    |
 

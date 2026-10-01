@@ -18,7 +18,19 @@ const COLUNAS_ITEM = {
     id: item.id,
     nome: item.nome,
     categoria: item.categoria,
-    unidadeMedida: item.unidadeMedida
+    unidadeMedida: item.unidadeMedida,
+    estoqueMinimo: item.estoqueMinimo
+}
+
+type LinhaItem = Omit<Item, 'estoqueMinimo'> & { estoqueMinimo: string | null }
+
+/**
+ * `numeric` volta do driver como `string`; o domínio trabalha com `number`.
+ * `COLUNAS_ITEM` é um mapa de `select`, então a conversão é feita aqui, depois
+ * da leitura, e não no mapa.
+ */
+function paraItem(linha: LinhaItem): Item {
+    return { ...linha, estoqueMinimo: linha.estoqueMinimo === null ? null : paraNumero(linha.estoqueMinimo) }
 }
 
 // -- Item (BR-EST-01) ---------------------------------------------------------
@@ -26,13 +38,14 @@ const COLUNAS_ITEM = {
 export const itemRepository: ItemRepository = {
     async buscarPorId(id) {
         const [linha] = await db.select(COLUNAS_ITEM).from(item).where(eq(item.id, id)).limit(1)
-        return (linha as Item) ?? null
+        return linha ? paraItem(linha as LinhaItem) : null
     },
 
     async buscarPorNome(termo, limite = 10) {
         const busca = termo.trim()
         if (busca.length === 0) {
-            return db.select(COLUNAS_ITEM).from(item).orderBy(asc(item.nome)).limit(limite) as Promise<Item[]>
+            const linhas = await db.select(COLUNAS_ITEM).from(item).orderBy(asc(item.nome)).limit(limite)
+            return (linhas as LinhaItem[]).map(paraItem)
         }
 
         // `%` (similaridade trigram) usa o índice GIN de `item.nome`; o
@@ -45,7 +58,7 @@ export const itemRepository: ItemRepository = {
             .orderBy(desc(sql`similarity(${item.nome}, ${busca})`), asc(item.nome))
             .limit(limite)
 
-        return linhas as Item[]
+        return (linhas as LinhaItem[]).map(paraItem)
     },
 
     async criar(dados) {
@@ -53,7 +66,14 @@ export const itemRepository: ItemRepository = {
         // Todo item nasce com uma linha de saldo: assim toda leitura de saldo é
         // um join simples, sem `coalesce` espalhado por cada consulta.
         await db.insert(saldoEstoque).values({ itemId: linha.id, quantidadeAtual: '0' }).onConflictDoNothing()
-        return linha as Item
+        return paraItem(linha as LinhaItem)
+    },
+
+    async definirEstoqueMinimo(id, estoqueMinimo) {
+        await db
+            .update(item)
+            .set({ estoqueMinimo: estoqueMinimo === null ? null : paraNumeric(estoqueMinimo) })
+            .where(eq(item.id, id))
     }
 }
 
@@ -66,7 +86,15 @@ export const entradaRepository: EntradaRepository = {
 
             if (!itemId) {
                 if (!dados.novoItem) throw new Error('Entrada sem item nem novoItem.')
-                const [criado] = await tx.insert(item).values(dados.novoItem).returning({ id: item.id })
+                const { estoqueMinimo, ...novoItem } = dados.novoItem
+                const [criado] = await tx
+                    .insert(item)
+                    .values({
+                        ...novoItem,
+                        // Ausente ou `null`: herda o padrão global (feature 020).
+                        estoqueMinimo: estoqueMinimo == null ? null : paraNumeric(estoqueMinimo)
+                    })
+                    .returning({ id: item.id })
                 itemId = criado.id
                 await tx.insert(saldoEstoque).values({ itemId, quantidadeAtual: '0' }).onConflictDoNothing()
             }

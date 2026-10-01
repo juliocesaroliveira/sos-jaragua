@@ -67,6 +67,11 @@ export const COR_STATUS_ENVIO = {
     falhou: 'danger'
 } as const satisfies Record<string, CorBadge>
 
+/** Mesma cor do alerta "Estoque Crítico" (§3), que este estado antecipa na tabela. */
+export const COR_ESTOQUE_ITEM = {
+    abaixo_do_minimo: 'warning'
+} as const satisfies Record<string, CorBadge>
+
 // -- Rótulos em pt-BR (NFR §2.2) ---------------------------------------------
 
 export const ROTULO_STATUS_VOLUNTARIO = {

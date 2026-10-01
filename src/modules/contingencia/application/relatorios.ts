@@ -36,7 +36,9 @@ export const COLUNAS_INVENTARIO: Coluna<ItemComSaldo>[] = [
     { cabecalho: 'Item', valor: (i) => i.nome, largura: 34 },
     { cabecalho: 'Categoria', valor: (i) => ROTULO_CATEGORIA_ITEM[i.categoria as CategoriaItem], largura: 22 },
     { cabecalho: 'Unidade', valor: (i) => ROTULO_UNIDADE_MEDIDA[i.unidadeMedida as UnidadeMedida], largura: 12 },
-    { cabecalho: 'Saldo atual', valor: (i) => i.saldo, largura: 14 }
+    { cabecalho: 'Saldo atual', valor: (i) => i.saldo, largura: 14 },
+    // Vazio quando o item herda o padrão global (feature 020, Q3).
+    { cabecalho: 'Estoque mínimo', valor: (i) => i.estoqueMinimo, largura: 16 }
 ]
 
 export const COLUNAS_SAIDAS: Coluna<LinhaSaidaPlana>[] = [

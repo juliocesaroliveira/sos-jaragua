@@ -22,10 +22,12 @@ import {
 import { RegistrarEntradaUseCase } from '../../application/use-cases/registrar-entrada'
 import { RegistrarSaidaUseCase } from '../../application/use-cases/registrar-saida'
 import { RegistrarDescarteUseCase } from '../../application/use-cases/registrar-descarte'
+import { DefinirEstoqueMinimoUseCase } from '../../application/use-cases/definir-estoque-minimo'
 
 /**
  * Matriz de permissões do BRD §2 / DESIGN.md §6.2:
- * - entrada e saída: Membro Defesa Civil, Coordenador, Administrador;
+ * - entrada, saída e estoque mínimo do item: Membro Defesa Civil, Coordenador,
+ *   Administrador (o mínimo, pela decisão I1 da feature 020);
  * - descarte e receita de kit: só Coordenador e Administrador.
  */
 const ROLES_OPERACAO: readonly Role[] = ['membro_defesa_civil', 'coordenador', 'administrador']
@@ -64,7 +66,9 @@ const esquemaEntrada = z.object({
         .object({
             nome: z.string().min(1),
             categoria: z.enum(CATEGORIAS_ITEM),
-            unidadeMedida: z.enum(UNIDADES_MEDIDA)
+            unidadeMedida: z.enum(UNIDADES_MEDIDA),
+            // Validação completa (casas decimais, limite) fica no domínio.
+            estoqueMinimo: z.number().min(0).nullable().optional()
         })
         .nullable()
         .optional(),
@@ -97,6 +101,8 @@ export async function registrarEntrada(
         invalidarSaldo()
         // Item novo entra no catálogo do autocomplete imediatamente.
         updateTag(CACHE_TAGS.estoqueItens)
+        // Item novo pode nascer já abaixo do mínimo informado (feature 020).
+        if (parse.data.novoItem && !parse.data.itemId) agendarAlertasDeEstoque({ estoqueCritico: true })
     }
 
     return serializar(resultado)
@@ -184,6 +190,38 @@ export async function registrarDescarte(
 
     if (resultado.ok) {
         invalidarSaldo()
+        agendarAlertasDeEstoque({ estoqueCritico: true })
+    }
+
+    return serializar(resultado)
+}
+
+// -- Estoque mínimo do item (feature 020, Q3 / I1) ---------------------------
+
+const esquemaEstoqueMinimo = z.object({
+    itemId: z.uuid(),
+    // Validação completa (casas decimais, limite) fica no domínio.
+    estoqueMinimo: z.number().min(0).nullable()
+})
+
+export type EntradaFormularioEstoqueMinimo = z.infer<typeof esquemaEstoqueMinimo>
+
+export async function definirEstoqueMinimo(
+    entrada: EntradaFormularioEstoqueMinimo
+): Promise<ResultadoAction<{ itemId: string; estoqueMinimo: number | null }>> {
+    const ator = await exigir(ROLES_OPERACAO)
+    if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para definir o estoque mínimo.')
+
+    const parse = esquemaEstoqueMinimo.safeParse(entrada)
+    if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
+
+    const useCase = new DefinirEstoqueMinimoUseCase(itemRepository)
+    const resultado = await comAtorDaSessao(ator, () => useCase.executar(parse.data))
+
+    if (resultado.ok) {
+        // O saldo não muda, só a listagem (coluna "Mínimo").
+        updateTag(CACHE_TAGS.estoqueListagem)
+        // Subir ou baixar o mínimo pode criar ou encerrar a condição de alerta.
         agendarAlertasDeEstoque({ estoqueCritico: true })
     }
 

@@ -101,3 +101,44 @@ describe('validarEntrada — item e quantidade', () => {
         expect(Object.keys(campos).sort()).toEqual(['dataValidade', 'item', 'quantidade'])
     })
 })
+
+/**
+ * Mínimo de segurança informado ao cadastrar um item novo na Entrada
+ * (specs/020-resolver-pendencias, I1 / FR-013).
+ */
+describe('validarEntrada — estoque mínimo do item novo', () => {
+    const NOVO = {
+        ...BASE,
+        itemId: null,
+        novoItem: { nome: 'Sabonete', categoria: 'higiene' as const, unidadeMedida: 'unidade' as const }
+    }
+
+    it('aceita item novo sem mínimo (herda o padrão)', () => {
+        expect(validarEntrada(NOVO, HOJE).ok).toBe(true)
+    })
+
+    it('aceita e preserva o mínimo informado', () => {
+        const r = validarEntrada({ ...NOVO, novoItem: { ...NOVO.novoItem, estoqueMinimo: 20 } }, HOJE)
+        expect(r.ok).toBe(true)
+        if (!r.ok) return
+        expect(r.valor.novoItem?.estoqueMinimo).toBe(20)
+    })
+
+    it('recusa mínimo negativo no campo estoqueMinimo', () => {
+        const r = validarEntrada({ ...NOVO, novoItem: { ...NOVO.novoItem, estoqueMinimo: -1 } }, HOJE)
+        expect(r.ok).toBe(false)
+        if (r.ok) return
+        const campos = r.erro.detalhes?.campos as Record<string, string>
+        expect(campos.estoqueMinimo).toBe('Informe um número maior ou igual a zero.')
+    })
+
+    it('ignora o novoItem quando a entrada é de um item existente', () => {
+        // Como hoje: com `itemId`, o `novoItem` não é usado, então um valor
+        // inválido nele não bloqueia a entrada.
+        const r = validarEntrada(
+            { ...NOVO, itemId: BASE.itemId, novoItem: { ...NOVO.novoItem, estoqueMinimo: -1 } },
+            HOJE
+        )
+        expect(r.ok).toBe(true)
+    })
+})

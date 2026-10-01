@@ -1,0 +1,2 @@
+ALTER TABLE "item" ADD COLUMN "estoque_minimo" numeric(14, 3);--> statement-breakpoint
+ALTER TABLE "item" ADD CONSTRAINT "item_estoque_minimo_nao_negativo" CHECK ("item"."estoque_minimo" IS NULL OR "item"."estoque_minimo" >= 0);

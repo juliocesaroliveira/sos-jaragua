@@ -3,11 +3,19 @@ import { and, eq, gte, inArray } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 import { notificacao } from '@/db/schema/notificacoes'
+import {
+    limiarCadastrosPendentes,
+    limiarDeficitPercentual,
+    limiarEstoqueMinimoGlobal
+} from '@/src/shared/config/limiares-alerta'
+import { itensCriticos, type UnidadeMedida } from '@/src/modules/estoque/domain'
 import { notificacaoService } from '../../infrastructure'
+import { mensagemEstoqueCritico } from '../../domain/mensagem-estoque-critico'
 import type { EventoNotificacao } from '../ports/notificacao-service'
 
 /**
- * Alertas para coordenadores (BRD §6, NOT-08).
+ * Alertas para coordenadores (BRD §6, NOT-08). Os limiares vêm de
+ * `src/shared/config/limiares-alerta.ts`.
  *
  * Avaliados **depois das escritas que podem disparar a condição** (via
  * `after()`, em `presentation/alertas.ts`), com o cron diário como rede de
@@ -20,26 +28,6 @@ import type { EventoNotificacao } from '../ports/notificacao-service'
  * criaria uma linha nova e o sino viraria ruído.
  */
 const JANELA_REEMISSAO_HORAS = 12
-
-/**
- * Limiares provisórios — **pendentes de definição com a Defesa Civil**
- * (ver PENDENCIAS.md §8). São lidos de variável de ambiente para poderem ser
- * ajustados sem deploy enquanto a decisão não vem.
- */
-function limiarCadastrosPendentes(): number {
-    const bruto = Number(process.env.ALERTA_CADASTROS_PENDENTES)
-    return Number.isFinite(bruto) && bruto > 0 ? bruto : 10
-}
-
-function limiarEstoqueMinimo(): number {
-    const bruto = Number(process.env.ALERTA_ESTOQUE_MINIMO)
-    return Number.isFinite(bruto) && bruto >= 0 ? bruto : 5
-}
-
-function limiarDeficitPercentual(): number {
-    const bruto = Number(process.env.ALERTA_DEFICIT_PERCENTUAL)
-    return Number.isFinite(bruto) && bruto > 0 ? bruto : 80
-}
 
 /**
  * Coordenadores e administradores ativos — destinatários dos três alertas.
@@ -134,29 +122,18 @@ export async function avaliarDeficitAtendimento(
 /**
  * "O item [Nome] atingiu o estoque mínimo de segurança."
  *
- * O "mínimo de segurança" é hoje um limiar **global** por variável de ambiente:
- * o schema não tem um mínimo por item, e criar essa coluna é decisão de produto
- * ainda aberta (PENDENCIAS.md §8).
+ * O mínimo é **por item** (`item.estoque_minimo`), com o padrão global
+ * `ALERTA_ESTOQUE_MINIMO` para os itens sem mínimo próprio (feature 020, Q3).
+ * Esta função só compõe: `itensCriticos` (regra, `estoque/domain`) →
+ * `mensagemEstoqueCritico` (texto, `notificacoes/domain`) → `emitir`. As duas
+ * primeiras são puras e têm teste unitário.
  */
 export async function avaliarEstoqueCritico(
-    itens: { nome: string; saldo: number }[],
+    itens: { nome: string; saldo: number; estoqueMinimo: number | null; unidadeMedida: UnidadeMedida }[],
     destinatarios?: string[]
 ): Promise<void> {
-    const limiar = limiarEstoqueMinimo()
-    const criticos = itens.filter((i) => i.saldo <= limiar)
-    if (criticos.length === 0) return
+    const alerta = mensagemEstoqueCritico(itensCriticos(itens, limiarEstoqueMinimoGlobal()))
+    if (!alerta) return
 
-    const nomes = criticos.slice(0, 5).map((i) => i.nome)
-    const resto = criticos.length - nomes.length
-    const listados = `${nomes.join(', ')}${resto > 0 ? ` e mais ${resto} ${resto === 1 ? 'item' : 'itens'}` : ''}`
-    // Concordância: um único item "atingiu", vários "atingiram".
-    const verbo = criticos.length === 1 ? 'atingiu' : 'atingiram'
-
-    await emitir(
-        'estoque_critico',
-        'Estoque crítico',
-        `${listados} ${verbo} o estoque mínimo de segurança (${limiar}).`,
-        { limiar, itens: criticos.map((i) => i.nome) },
-        destinatarios
-    )
+    await emitir('estoque_critico', alerta.titulo, alerta.mensagem, alerta.contexto, destinatarios)
 }

@@ -162,20 +162,21 @@ coletado.
 ### Schema
 
 - [ ] T025 [US5] Em `db/schema/estoque.ts`, acrescentar `estoqueMinimo: quantidade()` (anulável, sem default) na tabela `item`. No array de extras, acrescentar um `check('item_estoque_minimo_nao_negativo', ...)` cuja condição SQL é `estoque_minimo IS NULL OR estoque_minimo >= 0`, montada com o template `sql` do Drizzle sobre `t.estoqueMinimo`, e importar `check` de `drizzle-orm/pg-core`. Rodar `npm run db:generate` para gerar `db/migrations/0005_*.sql` e conferir que o SQL tem `ADD COLUMN "estoque_minimo" numeric(14, 3)` e `ADD CONSTRAINT … CHECK`, sem backfill. Aplicar com `npm run db:migrate` no banco de desenvolvimento.
+    - **Parcial (2026-10-01):** schema e `db/migrations/0005_mean_misty_knight.sql` gerados (`ADD COLUMN "estoque_minimo" numeric(14, 3)` + `ADD CONSTRAINT item_estoque_minimo_nao_negativo CHECK`, sem backfill e sem nenhuma alteração além dessas). **Falta:** `npm run db:migrate` no banco de desenvolvimento.
 
 ### Tests (escrever primeiro e ver falhar)
 
-- [ ] T026 [P] [US5] Criar `src/modules/estoque/domain/estoque-minimo.test.ts`:
+- [x] T026 [P] [US5] Criar `src/modules/estoque/domain/estoque-minimo.test.ts`:
     - `limiarDoItem(null, 5) === 5`; `limiarDoItem(0, 5) === null`; `limiarDoItem(20, 5) === 20`;
     - `itensCriticos` com saldo igual ao limiar → crítico (`<=`); saldo acima → fora; mínimo 0 e saldo 0 → fora; `null` com saldo 4 e global 5 → crítico, com `limiar: 5`;
     - preserva os campos extras do item;
     - `validarEstoqueMinimo`: `null` e `0` válidos (devolve `null`); `-1`, `NaN`, `Infinity`, `1.2345` e `100_000_000_000` devolvem a mensagem em pt-BR do contrato.
-- [ ] T027 [P] [US5] Em `src/modules/estoque/domain/entrada.test.ts`, acrescentar o bloco `describe('validarEntrada — estoque mínimo do item novo')`: `novoItem` sem `estoqueMinimo` é válido; com `20` é válido e preservado no `ok`; com `-1` dá `ValidacaoError` com `campos.estoqueMinimo`; com `itemId` (item existente) o valor de `novoItem` é ignorado, como já acontece hoje com `novoItem`.
-- [ ] T028 [P] [US5] Criar `src/modules/estoque/application/use-cases/definir-estoque-minimo.test.ts`, com repositório em memória implementando `ItemRepository` e `withAudit` mockado como passthrough, igual a `registrar-saida.test.ts` (`vi.mock('@/src/modules/auditoria', () => ({ withAudit: (_o, fn) => fn() }))`):
-    - item inexistente → `falha` com código `item_nao_encontrado`;
+- [x] T027 [P] [US5] Em `src/modules/estoque/domain/entrada.test.ts`, acrescentar o bloco `describe('validarEntrada — estoque mínimo do item novo')`: `novoItem` sem `estoqueMinimo` é válido; com `20` é válido e preservado no `ok`; com `-1` dá `ValidacaoError` com `campos.estoqueMinimo`; com `itemId` (item existente) o valor de `novoItem` é ignorado, como já acontece hoje com `novoItem`.
+- [x] T028 [P] [US5] Criar `src/modules/estoque/application/use-cases/definir-estoque-minimo.test.ts`, com repositório em memória implementando `ItemRepository` e `withAudit` mockado como passthrough, igual a `registrar-saida.test.ts` (`vi.mock('@/src/modules/auditoria', () => ({ withAudit: (_o, fn) => fn() }))`):
+    - item inexistente → `falha` com código `nao_encontrado` (`NaoEncontradoError` do kernel);
     - negativo, `NaN`/`Infinity`, mais de 3 casas decimais ou acima de `99_999_999_999.999` → `ValidacaoError` com `campos.estoqueMinimo` em pt-BR;
     - `null` → grava `null`; `20` → grava `20`; devolve `{ itemId, estoqueMinimo }`.
-- [ ] T029 [P] [US5] Criar `src/modules/notificacoes/domain/mensagem-estoque-critico.test.ts` para `mensagemEstoqueCritico(criticos)`, conforme contracts/estoque-minimo.md, seção "Alerta `estoque_critico`":
+- [x] T029 [P] [US5] Criar `src/modules/notificacoes/domain/mensagem-estoque-critico.test.ts` para `mensagemEstoqueCritico(criticos)`, conforme contracts/estoque-minimo.md, seção "Alerta `estoque_critico`":
     - lista vazia → `null`;
     - 1 item → `titulo` "Estoque crítico" e mensagem exata `"Arroz (mín. 20 kg) atingiu o estoque mínimo de segurança."`;
     - 2 itens → nomes separados por `", "` e verbo "atingiram";
@@ -185,35 +186,35 @@ coletado.
 
 ### Implementation
 
-- [ ] T030 [P] [US5] Criar `src/modules/estoque/domain/estoque-minimo.ts` com `limiarDoItem(estoqueMinimo: number | null, limiarGlobal: number): number | null`, `itensCriticos<T extends { saldo: number; estoqueMinimo: number | null }>(itens: T[], limiarGlobal: number): (T & { limiar: number })[]` e `validarEstoqueMinimo(valor: number | null): string | null`, seguindo a tabela de semântica do data-model e as mensagens de contracts/estoque-minimo.md. Exportar pelo `src/modules/estoque/domain/index.ts`. A T026 deve ficar verde.
-- [ ] T031 [P] [US5] Criar `src/shared/config/limiares-alerta.ts` (diretório novo, configuração transversal; ver research D4 e análise C1) com `limiarCadastrosPendentes()`, `limiarEstoqueMinimoGlobal()` e `limiarDeficitPercentual()`. **Mover** para lá as três funções privadas de `src/modules/notificacoes/application/use-cases/alertas-coordenador.ts`, com a mesma leitura de env e os mesmos defaults (10, 5, 80), e importar dali no `alertas-coordenador.ts`. **Não** colocar em `estoque/infrastructure`: `notificacoes/application` não pode depender de infraestrutura de outro módulo (Princípio I).
-- [ ] T032 [US5] Em `src/modules/estoque/application/ports/estoque-repository.ts`: `Item` ganha `estoqueMinimo: number | null`; `ItemRepository` ganha `definirEstoqueMinimo(id: string, estoqueMinimo: number | null): Promise<void>`; o `novoItem` de `EntradaRepository.registrar` ganha `estoqueMinimo?: number | null`. Em `src/modules/estoque/infrastructure/drizzle/estoque-repository.ts`:
+- [x] T030 [P] [US5] Criar `src/modules/estoque/domain/estoque-minimo.ts` com `limiarDoItem(estoqueMinimo: number | null, limiarGlobal: number): number | null`, `itensCriticos<T extends { saldo: number; estoqueMinimo: number | null }>(itens: T[], limiarGlobal: number): (T & { limiar: number })[]` e `validarEstoqueMinimo(valor: number | null): string | null`, seguindo a tabela de semântica do data-model e as mensagens de contracts/estoque-minimo.md. Exportar pelo `src/modules/estoque/domain/index.ts`. A T026 deve ficar verde.
+- [x] T031 [P] [US5] Criar `src/shared/config/limiares-alerta.ts` (diretório novo, configuração transversal; ver research D4 e análise C1) com `limiarCadastrosPendentes()`, `limiarEstoqueMinimoGlobal()` e `limiarDeficitPercentual()`. **Mover** para lá as três funções privadas de `src/modules/notificacoes/application/use-cases/alertas-coordenador.ts`, com a mesma leitura de env e os mesmos defaults (10, 5, 80), e importar dali no `alertas-coordenador.ts`. **Não** colocar em `estoque/infrastructure`: `notificacoes/application` não pode depender de infraestrutura de outro módulo (Princípio I).
+- [x] T032 [US5] Em `src/modules/estoque/application/ports/estoque-repository.ts`: `Item` ganha `estoqueMinimo: number | null`; `ItemRepository` ganha `definirEstoqueMinimo(id: string, estoqueMinimo: number | null): Promise<void>`; o `novoItem` de `EntradaRepository.registrar` ganha `estoqueMinimo?: number | null`. Em `src/modules/estoque/infrastructure/drizzle/estoque-repository.ts`:
     - `COLUNAS_ITEM` passa a incluir `estoqueMinimo: item.estoqueMinimo`. Como ele é um mapa de `select` e o banco devolve `numeric` como `string | null`, criar o helper `paraItem(linha)` que converte com `paraNumero` quando não nulo, e aplicá-lo nos retornos de `buscarPorId`, `buscarPorNome` e `criar` (hoje fazem só `as Item`);
     - `itemRepository.definirEstoqueMinimo` faz `update(item).set({ estoqueMinimo: valor === null ? null : String(valor) }).where(eq(item.id, id))`;
     - o `insert(item).values(dados.novoItem)` de `entradaRepository.registrar` converte `estoqueMinimo` para `string | null` (ausente vira `null`).
 
     O `ItemComSaldo` do port (`Item & { saldo }`) herda o campo: ajustar `saidaRepository` e os demais pontos que montam `ItemComSaldo`/`Item` e quebrarem no `npx tsc --noEmit`.
 
-- [ ] T033 [US5] Criar `src/modules/estoque/application/use-cases/definir-estoque-minimo.ts` com `DefinirEstoqueMinimoUseCase implements UseCase<{ itemId: string; estoqueMinimo: number | null }, { itemId: string; estoqueMinimo: number | null }>`, no padrão de `RegistrarDescarteUseCase`:
+- [x] T033 [US5] Criar `src/modules/estoque/application/use-cases/definir-estoque-minimo.ts` com `DefinirEstoqueMinimoUseCase implements UseCase<{ itemId: string; estoqueMinimo: number | null }, { itemId: string; estoqueMinimo: number | null }>`, no padrão de `RegistrarDescarteUseCase`:
     - validação com `validarEstoqueMinimo` (T030) → `ValidacaoError('Revise os campos destacados.', { campos: { estoqueMinimo: mensagem } })`;
-    - `buscarPorId` → `DomainError('item_nao_encontrado', 'Item não encontrado.')`;
+    - `buscarPorId` → `NaoEncontradoError('Item não encontrado.')` (código `nao_encontrado`, convenção do kernel);
     - `withAudit({ entidade: 'Doacao', acao: 'update', tabela: 'item', dadosAnteriores: async () => ({ estoqueMinimo: anterior.estoqueMinimo }), extrair: () => ({ entidadeId: itemId, dadosNovos: { estoqueMinimo } }) }, () => repo.definirEstoqueMinimo(...))`.
 
     T028 deve ficar verde.
 
-- [ ] T034 [US5] Em `src/modules/estoque/presentation/actions/estoque.ts`, acrescentar a Server Action `definirEstoqueMinimo(entrada: { itemId: string; estoqueMinimo: number | null })`:
+- [x] T034 [US5] Em `src/modules/estoque/presentation/actions/estoque.ts`, acrescentar a Server Action `definirEstoqueMinimo(entrada: { itemId: string; estoqueMinimo: number | null })`:
     - esquema Zod `{ itemId: z.uuid(), estoqueMinimo: z.number().min(0).nullable() }`;
     - `exigir(ROLES_OPERACAO)` (`membro_defesa_civil`, `coordenador`, `administrador`; decisão I1) → `erroAction('nao_autorizado', 'Você não tem permissão para definir o estoque mínimo.')`. Atualizar o JSDoc da matriz de permissões no topo do arquivo;
     - `comAtorDaSessao` + use case;
     - em sucesso, `updateTag(CACHE_TAGS.estoqueListagem)` e `agendarAlertasDeEstoque({ estoqueCritico: true })`;
     - `serializar`.
-- [ ] T035 [US5] Mínimo no cadastro de item novo (Entrada):
+- [x] T035 [US5] Mínimo no cadastro de item novo (Entrada):
     - `src/modules/estoque/domain/entrada.ts`: `DadosEntrada.novoItem` ganha `estoqueMinimo?: number | null`. Em `validarEntrada`, quando não há `itemId` e há `novoItem`, aplicar `validarEstoqueMinimo(novoItem.estoqueMinimo ?? null)` e pôr o erro em `campos.estoqueMinimo`. A T027 deve ficar verde;
     - `src/modules/estoque/presentation/actions/estoque.ts`: em `esquemaEntrada.novoItem`, acrescentar `estoqueMinimo: z.number().min(0).nullable().optional()`. A permissão continua `ROLES_OPERACAO`, que já é a da Entrada;
     - em `registrarEntrada`, quando o resultado é `ok` e havia `novoItem`, também `agendarAlertasDeEstoque({ estoqueCritico: true })`. O item nasce com saldo da entrada, que pode já estar abaixo do mínimo informado.
-- [ ] T036 [US5] Em `src/modules/estoque/presentation/queries/estoque.ts`, `ItemComSaldo` ganha `estoqueMinimo: number | null`. Selecionar `item.estoqueMinimo` em `listarEstoque` **e** em `inventarioParaExportacao`, convertendo com `paraNumero` quando não nulo.
-- [ ] T037 [P] [US5] Criar `src/modules/notificacoes/domain/mensagem-estoque-critico.ts` com `export type ItemCritico` e `export function mensagemEstoqueCritico(criticos: ItemCritico[])`, exatamente como no contrato. A função é pura: importa só `formatarQuantidade` e `ABREVIACAO_UNIDADE` de `@/src/modules/estoque/domain` (funções puras, sem tabela nem repositório) e não importa `db`, `server-only` nem `process.env`. A T029 deve ficar verde.
-- [ ] T038 [US5] Em `src/modules/notificacoes/application/use-cases/alertas-coordenador.ts`, reescrever `avaliarEstoqueCritico(itens: { nome: string; saldo: number; estoqueMinimo: number | null; unidadeMedida: UnidadeMedida }[], destinatarios?)`:
+- [x] T036 [US5] Em `src/modules/estoque/presentation/queries/estoque.ts`, `ItemComSaldo` ganha `estoqueMinimo: number | null`. Selecionar `item.estoqueMinimo` em `listarEstoque` **e** em `inventarioParaExportacao`, convertendo com `paraNumero` quando não nulo.
+- [x] T037 [P] [US5] Criar `src/modules/notificacoes/domain/mensagem-estoque-critico.ts` com `export type ItemCritico` e `export function mensagemEstoqueCritico(criticos: ItemCritico[])`, exatamente como no contrato. A função é pura: importa só `formatarQuantidade` e `ABREVIACAO_UNIDADE` de `@/src/modules/estoque/domain` (funções puras, sem tabela nem repositório) e não importa `db`, `server-only` nem `process.env`. A T029 deve ficar verde.
+- [x] T038 [US5] Em `src/modules/notificacoes/application/use-cases/alertas-coordenador.ts`, reescrever `avaliarEstoqueCritico(itens: { nome: string; saldo: number; estoqueMinimo: number | null; unidadeMedida: UnidadeMedida }[], destinatarios?)`:
     - usar `itensCriticos(itens, limiarEstoqueMinimoGlobal())`;
     - passar o resultado para `mensagemEstoqueCritico` (T037); se vier `null`, retornar sem emitir; senão, chamar `emitir('estoque_critico', titulo, mensagem, contexto, destinatarios)`;
     - **nenhuma** montagem de texto fica nesta função: ela só compõe `itensCriticos` → `mensagemEstoqueCritico` → `emitir`;
@@ -221,21 +222,22 @@ coletado.
 
     `src/modules/notificacoes/presentation/alertas.ts` já passa o resultado de `inventarioParaExportacao()` e continua compatível.
 
-- [ ] T039 [P] [US5] Em `src/modules/contingencia/application/relatorios.ts`, acrescentar à aba de inventário a coluna `{ cabecalho: 'Estoque mínimo', valor: (i) => i.estoqueMinimo, largura: 16 }` depois de "Saldo atual". `null` sai como célula vazia.
-- [ ] T040 [US5] Criar `app/(interno)/(staff)/estoque/estoque-minimo-dialog.tsx` ('use client'), no padrão de `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`: dialog no desktop, drawer no mobile, RHF + Zod com o mesmo esquema da action.
+- [x] T039 [P] [US5] Em `src/modules/contingencia/application/relatorios.ts`, acrescentar à aba de inventário a coluna `{ cabecalho: 'Estoque mínimo', valor: (i) => i.estoqueMinimo, largura: 16 }` depois de "Saldo atual". `null` sai como célula vazia.
+- [x] T040 [US5] Criar `app/(interno)/(staff)/estoque/estoque-minimo-dialog.tsx` ('use client'), no padrão de `app/(interno)/(staff)/admin/usuario-form-dialog.tsx`: dialog no desktop, drawer no mobile, RHF + Zod com o mesmo esquema da action.
     - Campo numérico opcional "Estoque mínimo ({unidade})", com ajuda "Deixe em branco para usar o padrão ({global}). Use 0 para não receber alerta deste item.". Vazio envia `null`.
     - Submete com `definirEstoqueMinimo`. Em sucesso, toast (feature 010) e invalidação de `chaveEstoque` via TanStack Query; em erro, mostra a mensagem do `ResultadoAction`.
-- [ ] T041 [US5] Em `app/(interno)/(staff)/estoque/page.tsx`, passar para `<TabelaEstoque>` a prop `limiarGlobal={limiarEstoqueMinimoGlobal()}` (de `src/shared/config/limiares-alerta.ts`). Não há prop de permissão: todo papel que acessa `/estoque` (`membro_defesa_civil`, `coordenador`, `administrador`) é `ROLES_OPERACAO` e pode definir o mínimo.
-- [ ] T042 [US5] Em `app/(interno)/(staff)/estoque/tabela-estoque.tsx`:
+- [x] T041 [US5] Em `app/(interno)/(staff)/estoque/page.tsx`, passar para `<TabelaEstoque>` a prop `limiarGlobal={limiarEstoqueMinimoGlobal()}` (de `src/shared/config/limiares-alerta.ts`). Não há prop de permissão: todo papel que acessa `/estoque` (`membro_defesa_civil`, `coordenador`, `administrador`) é `ROLES_OPERACAO` e pode definir o mínimo.
+- [x] T042 [US5] Em `app/(interno)/(staff)/estoque/tabela-estoque.tsx`:
     - coluna "Mínimo": `Padrão ({global} {unid})` quando `null`, `Sem alerta` quando `0`, senão `{formatarQuantidade(n)} {unid}`;
     - na coluna "Saldo", destaque de estado crítico quando `limiarDoItem(...) !== null && saldo <= limiar`, com o mesmo `text-danger-*` já usado, mais um texto/ícone acessível "Abaixo do mínimo" (não só cor);
     - coluna de ação com ícone + tooltip "Definir estoque mínimo", sempre visível nesta tela, abrindo o `EstoqueMinimoDialog` da T040.
 
     Atualizar as dependências do `useMemo`.
 
-- [ ] T043 [US5] Em `app/(interno)/(staff)/estoque/entrada/entrada-form.tsx`, acrescentar o campo numérico opcional "Estoque mínimo (opcional)" **só no ramo `ehItemNovo`**, junto de categoria e unidade. A ajuda é a mesma do dialog: "Deixe em branco para usar o padrão (N). Use 0 para não receber alerta deste item.". O esquema do formulário (RHF + Zod) ganha o campo opcional, e o envio monta `novoItem.estoqueMinimo` (vazio vira `null`). Mostrar `errors.estoqueMinimo`. Ao escolher um item existente no autocomplete, limpar o campo. O limiar global chega por prop de `app/(interno)/(staff)/estoque/entrada/page.tsx`, via `limiarEstoqueMinimoGlobal()`.
+- [x] T043 [US5] Em `app/(interno)/(staff)/estoque/entrada/entrada-form.tsx`, acrescentar o campo numérico opcional "Estoque mínimo (opcional)" **só no ramo `ehItemNovo`**, junto de categoria e unidade. A ajuda é a mesma do dialog: "Deixe em branco para usar o padrão (N). Use 0 para não receber alerta deste item.". O esquema do formulário (RHF + Zod) ganha o campo opcional, e o envio monta `novoItem.estoqueMinimo` (vazio vira `null`). Mostrar `errors.estoqueMinimo`. Ao escolher um item existente no autocomplete, limpar o campo. O limiar global chega por prop de `app/(interno)/(staff)/estoque/entrada/page.tsx`, via `limiarEstoqueMinimoGlobal()`.
 
 - [ ] T044 [US5] Rodar `npm test -- estoque-minimo entrada definir-estoque-minimo mensagem-estoque-critico`, `npm run lint`, `npx tsc --noEmit` e `npm run build`. Executar quickstart V4 (passos 1–9), com o mobile em 375px incluso.
+    - **Parcial (2026-10-01):** `npm test` verde (375 testes; 29 arquivos), `tsc` verde, `lint` verde nos arquivos da feature (os 8 erros restantes são anteriores, nos arquivos de habilidades da feature 017). Decisão de UI: o badge "Abaixo do mínimo" usa `warning`, a cor do alerta "Estoque Crítico" no DESIGN_SYSTEM §3 (linha nova na tabela e `COR_ESTOQUE_ITEM` em `badge.tsx`). **Falta:** `npm run build` completo e o quickstart V4, que exigem banco e sessão.
 
 **Checkpoint**: alerta por item funcionando, com o fallback global preservando o comportamento dos itens existentes.
 

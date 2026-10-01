@@ -14,6 +14,17 @@ export type ItemComSaldo = {
     categoria: CategoriaItem
     unidadeMedida: UnidadeMedida
     saldo: number
+    /** `null` herda o padrão global; `0` desliga o alerta (feature 020, Q3). */
+    estoqueMinimo: number | null
+}
+
+/** `numeric` volta do driver como `string`; a tela e o alerta trabalham com `number`. */
+function comNumeros<T extends { saldo: string | null; estoqueMinimo: string | null }>(linha: T) {
+    return {
+        ...linha,
+        saldo: paraNumero(linha.saldo ?? '0'),
+        estoqueMinimo: linha.estoqueMinimo === null ? null : paraNumero(linha.estoqueMinimo)
+    }
 }
 
 /**
@@ -37,13 +48,14 @@ export async function listarItens(): Promise<ItemComSaldo[]> {
             nome: item.nome,
             categoria: item.categoria,
             unidadeMedida: item.unidadeMedida,
-            saldo: saldoEstoque.quantidadeAtual
+            saldo: saldoEstoque.quantidadeAtual,
+            estoqueMinimo: item.estoqueMinimo
         })
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
         .orderBy(asc(item.nome))
 
-    return linhas.map((l) => ({ ...l, saldo: paraNumero(l.saldo ?? '0') })) as ItemComSaldo[]
+    return linhas.map(comNumeros) as ItemComSaldo[]
 }
 
 export type FiltrosEstoque = ParametrosPaginacao & {
@@ -80,7 +92,8 @@ async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSa
                 nome: item.nome,
                 categoria: item.categoria,
                 unidadeMedida: item.unidadeMedida,
-                saldo: saldoEstoque.quantidadeAtual
+                saldo: saldoEstoque.quantidadeAtual,
+                estoqueMinimo: item.estoqueMinimo
             })
             .from(item)
             .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
@@ -92,7 +105,7 @@ async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSa
     ])
 
     return {
-        rows: linhas.map((l) => ({ ...l, saldo: paraNumero(l.saldo ?? '0') })) as ItemComSaldo[],
+        rows: linhas.map(comNumeros) as ItemComSaldo[],
         totalCount: total?.total ?? 0
     }
 }
@@ -303,11 +316,12 @@ export async function inventarioParaExportacao(): Promise<ItemComSaldo[]> {
             nome: item.nome,
             categoria: item.categoria,
             unidadeMedida: item.unidadeMedida,
-            saldo: saldoEstoque.quantidadeAtual
+            saldo: saldoEstoque.quantidadeAtual,
+            estoqueMinimo: item.estoqueMinimo
         })
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
         .orderBy(asc(item.nome))
 
-    return linhas.map((l) => ({ ...l, saldo: paraNumero(l.saldo ?? '0') })) as ItemComSaldo[]
+    return linhas.map(comNumeros) as ItemComSaldo[]
 }

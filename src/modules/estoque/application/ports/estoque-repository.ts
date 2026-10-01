@@ -8,6 +8,11 @@ export type Item = {
     nome: string
     categoria: CategoriaItem
     unidadeMedida: UnidadeMedida
+    /**
+     * Mínimo de segurança do item (feature 020, Q3). `null` herda o padrão
+     * global; `0` desliga o alerta. Ver `domain/estoque-minimo.ts`.
+     */
+    estoqueMinimo: number | null
 }
 
 /** Item com o dado necessário para compor a mensagem de déficit (BR-EST-04). */
@@ -18,6 +23,8 @@ export interface ItemRepository {
     /** Autocomplete por similaridade (índice trigram) — BR-EST-01. */
     buscarPorNome(termo: string, limite?: number): Promise<Item[]>
     criar(dados: { nome: string; categoria: CategoriaItem; unidadeMedida: UnidadeMedida }): Promise<Item>
+    /** `null` volta a herdar o padrão global (feature 020, Q3). */
+    definirEstoqueMinimo(id: string, estoqueMinimo: number | null): Promise<void>
 }
 
 export interface EntradaRepository {
@@ -27,7 +34,13 @@ export interface EntradaRepository {
      */
     registrar(entrada: {
         itemId?: string | null
-        novoItem?: { nome: string; categoria: CategoriaItem; unidadeMedida: UnidadeMedida } | null
+        novoItem?: {
+            nome: string
+            categoria: CategoriaItem
+            unidadeMedida: UnidadeMedida
+            /** Mínimo de segurança informado no cadastro (feature 020, I1). */
+            estoqueMinimo?: number | null
+        } | null
         quantidade: number
         condicao: CondicaoItem
         perecivel: boolean

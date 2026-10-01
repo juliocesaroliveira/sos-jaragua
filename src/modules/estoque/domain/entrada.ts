@@ -1,5 +1,6 @@
 import { DomainError, ValidacaoError, falha, ok, type Result } from '@/src/shared/kernel'
 import type { CategoriaItem, CondicaoItem, UnidadeMedida } from './item'
+import { validarEstoqueMinimo } from './estoque-minimo'
 import { ehQuantidadePositiva } from './quantidade'
 
 /**
@@ -8,7 +9,16 @@ import { ehQuantidadePositiva } from './quantidade'
 export type DadosEntrada = {
     /** Item existente; quando ausente, `novoItem` descreve o item a criar. */
     itemId?: string | null
-    novoItem?: { nome: string; categoria: CategoriaItem; unidadeMedida: UnidadeMedida } | null
+    novoItem?: {
+        nome: string
+        categoria: CategoriaItem
+        unidadeMedida: UnidadeMedida
+        /**
+         * Mínimo de segurança informado no cadastro do item (feature 020, I1).
+         * Ausente ou `null` herda o padrão global.
+         */
+        estoqueMinimo?: number | null
+    } | null
     quantidade: number
     condicao: CondicaoItem
     perecivel: boolean
@@ -29,6 +39,13 @@ export function validarEntrada(dados: DadosEntrada, hoje: Date = new Date()): Re
 
     if (!dados.itemId && !dados.novoItem?.nome?.trim()) {
         campos.item = 'Informe o item.'
+    }
+
+    // Só para item novo: com `itemId`, o `novoItem` não é usado, e o mínimo de
+    // um item existente se muda pela tabela de estoque.
+    if (!dados.itemId && dados.novoItem) {
+        const erroMinimo = validarEstoqueMinimo(dados.novoItem.estoqueMinimo ?? null)
+        if (erroMinimo) campos.estoqueMinimo = erroMinimo
     }
 
     if (!ehQuantidadePositiva(dados.quantidade)) {
