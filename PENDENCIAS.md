@@ -17,9 +17,13 @@ decisões arquiteturais) e remova a entrada daqui.
 (prototype pollution / ReDoS). O SheetJS parou de publicar no npm: as versões
 corrigidas saem apenas pelo CDN próprio (`https://cdn.sheetjs.com`).
 
-**Estado atual.** `xlsx@0.18.5` instalado do npm. `npm audit` acusa 1
-vulnerabilidade alta. Nenhum código de exportação foi escrito ainda — a decisão
-ainda não custa retrabalho.
+**Estado atual (2026-10-01).** `xlsx@0.18.5` ainda instalado do npm, e o código de
+exportação **já existe**: `src/modules/contingencia/infrastructure/planilha.ts`, usado
+pelos relatórios e pelo pacote de contingência.
+
+**Decidido: opção (b) `exceljs`**, contra a recomendação abaixo (decisão Q1 de
+`specs/020-resolver-pendencias`, registrada no `DESIGN.md` §19 e na constituição 1.0.1).
+A troca está sendo feita pela feature 020.
 
 **Opções.**
 
@@ -70,6 +74,10 @@ dos dois, não existe caminho de auto-cadastro — a entrada depende de um
 administrador criar a conta manualmente. Em cenário de crise, com mobilização
 súbita de voluntários novos, esse gargalo é uma pessoa.
 
+**Resíduo em fechamento (2026-10-01)**: a feature 020 (`specs/020-resolver-pendencias`,
+decisão Q2) fecha a rota pública com `disabledPaths`, mantendo a criação de contas pelo
+`/admin`. O texto abaixo descreve o estado anterior.
+
 **Também não fechado por esta remoção**: o endpoint `POST /api/auth/sign-up/email`
 do better-auth continua ativo, porque `auth.api.signUpEmail` é o que `/admin` usa
 para criar contas. Ou seja, a capacidade de auto-cadastro por senha ainda existe
@@ -111,25 +119,6 @@ esperar a janela de inatividade.
 **Ação necessária.** Criar um usuário `coordenador` de teste, reduzir
 `STAFF_INACTIVITY_TIMEOUT_MINUTES` temporariamente (ex.: `1`), confirmar o
 redirecionamento para `/login?motivo=expirado` e então marcar ID-06.
-
----
-
-## 5. Formato do campo `datetime-local` segue o locale do navegador
-
-**Contexto.** DEPLOY-05 exige interface toda em pt-BR. O campo "Início do
-primeiro turno" usa `<input type="datetime-local">`, cujo formato de exibição é
-definido pelo **locale do sistema/navegador**, não pelo HTML — em um navegador
-en-US ele aparece como `mm/dd/yyyy`.
-
-**Estado atual.** Campo nativo, sem controle de formato. Em navegador pt-BR
-exibe `dd/mm/aaaa` corretamente.
-
-**Opções.**
-
-- a) Aceitar — o público-alvo usa navegador em pt-BR.
-- b) Trocar por `DatePicker` (Ark, já em pt-BR) + um seletor de hora separado.
-
-**Recomendação.** (a) por ora; (b) se aparecer relato de confusão em campo.
 
 ---
 
@@ -198,19 +187,10 @@ ativa a cada 12h) e vão só pelo canal in-app. O que continua indefinido são o
 
 **Não bloqueia mais NOT-08**, mas o limiar global é a limitação conhecida.
 
----
-
-## 9. Não há gestão de usuários/permissões (`/admin`)
-
-**Contexto.** BRD §2 dá ao Administrador "Gestão de usuários e permissões", e
-`DESIGN.md` §6.2 reserva o prefixo `/(staff)/admin/*` para isso.
-
-**Estado atual.** A rota está protegida no mapa de roles do `proxy.ts`, mas
-**não existe tela**. Hoje só é possível promover alguém a
-`membro_defesa_civil`/`coordenador` por SQL direto no banco.
-
-**Ação necessária.** Confirmar se a gestão de usuários entra no MVP. Não há task
-correspondente no `TASKS.md` — se entrar, precisa ser adicionada.
+**Atualização (2026-10-01).** A pergunta "por item ou global" foi decidida: **por item**,
+com fallback para o limiar global (decisão Q3 de `specs/020-resolver-pendencias`,
+implementada pela feature 020). Continua pendente com a Defesa Civil só a definição dos
+**valores**: os três defaults acima e os mínimos dos itens mais críticos.
 
 ---
 
@@ -230,41 +210,6 @@ atual (`Vercel-Admin-atlas-sos-jrg`) é administrativo e pode apagar documentos.
 custom role que conceda apenas `find` e `insert` na coleção `audit_logs`, e
 trocar o `MONGODB_URI` de produção para esse usuário. É um passo de console, não
 de código.
-
----
-
-## 11. Resolução DNS SRV bloqueada na rede de desenvolvimento
-
-**Contexto.** `MONGODB_URI` usa o formato `mongodb+srv://`, que exige consulta
-DNS do tipo SRV.
-
-**Estado atual.** O resolvedor DNS desta máquina **recusa** consultas SRV
-(`ECONNREFUSED`), embora o registro exista e resolva normalmente por um DNS
-público (8.8.8.8). Consequência: em desenvolvimento local a auditoria falha e
-degrada graciosamente — as operações de negócio funcionam, mas nada é gravado em
-`audit_logs`.
-
-Não afeta produção (a Vercel resolve SRV normalmente).
-
-**Ação necessária.** Para desenvolver com auditoria funcionando, uma das opções:
-
-- trocar o DNS da máquina/roteador para um que responda SRV (8.8.8.8, 1.1.1.1);
-- ou usar em `.env.local` a connection string **não-SRV** do Atlas (a mesma
-  credencial, com os três hosts do shard explícitos) — equivalente, e é assim
-  que a verificação desta seção foi feita.
-
----
-
-## 12. ~~Degradação graciosa da auditoria~~ — RESOLVIDO
-
-Coberto por teste automatizado na Seção 11
-(`src/modules/auditoria/auditoria.test.ts`): o escritor é injetado e falha de
-verdade, provando que a operação de negócio prossegue. O teste cobre falha na
-escrita do log, falha na leitura de `dadosAnteriores`, falha em `extrair` e —
-importante — que um erro da **própria operação** continua subindo, para a
-auditoria não virar um `try/catch` geral que engole falhas de negócio.
-
-Pode ser removido deste arquivo.
 
 ---
 
@@ -308,9 +253,33 @@ contra o BRD §2).
 
 **Não verificados com usuário próprio:** `coordenador`, `voluntario` e `usuario`.
 Pelo código, `coordenador` tem exatamente as permissões testadas com
-`administrador` menos a área `/admin` (que não existe — ver §9); `voluntario` e
+`administrador` menos a área `/admin` (que existe desde a feature 006 e é exclusiva de
+`administrador`); `voluntario` e
 `usuario` só alcançam `/voluntariado/*` e a candidatura pública.
 
 **Ação necessária.** Criar um usuário de cada role restante e repetir o roteiro,
 principalmente para confirmar que o timeout de inatividade (§4) se aplica a
 `coordenador` e **não** a `voluntario`.
+
+---
+
+## Vulnerabilidades de dependência
+
+**Contexto.** Na validação de 2026-10-01 (`specs/020-resolver-pendencias`, research D5),
+`npm audit --omit=dev` acusava, além do `xlsx` (§1):
+
+| Pacote        | Severidade | Aplicabilidade à produção                                            | Situação                                     |
+| ------------- | ---------- | -------------------------------------------------------------------- | -------------------------------------------- |
+| `next`        | crítica    | RCE só em servidores **Windows**; a Vercel roda Linux, não se aplica | Corrigido: `16.3.0 → 16.3.8`                 |
+| `sharp`       | alta       | libheif; imagens são estáticas do próprio projeto                    | Corrigido: `^0.35.3 → ^0.35.5`               |
+| `vitest`      | moderada   | ferramenta de teste, sem caminho em runtime                          | Corrigido: `^4.1.10 → ^4.1.11`               |
+| `better-auth` | moderada   | apontado só por declarar `vitest` como peer                          | Corrigido junto com o `vitest`               |
+| `drizzle-kit` | moderada   | ferramenta de dev (`esbuild` antigo via `@esbuild-kit/*`)            | **Aceito**: a correção exige downgrade major |
+
+**Estado atual.** Não há vulnerabilidade alta ou crítica com correção disponível, exceto o
+`xlsx` (§1), em substituição. As moderadas do `drizzle-kit` ficam aceitas: não chegam ao
+runtime da aplicação.
+
+**Também corrigido**: o `package-lock.json` estava fora de sincronia com o `package.json`
+(`npm ci` falhava com `Missing: esbuild@0.28.2 from lock file`). Ele foi regenerado e
+validado com `npm ci` no npm 10 e no npm 11.

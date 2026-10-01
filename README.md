@@ -1,3 +1,22 @@
+## Desenvolvimento local
+
+### MongoDB Atlas em rede que bloqueia DNS SRV
+
+`MONGODB_URI` usa o formato `mongodb+srv://`, que exige uma consulta DNS do tipo **SRV**.
+Alguns resolvedores de rede local (roteadores domésticos, redes corporativas) **recusam**
+essa consulta (`ECONNREFUSED`), embora o registro exista e resolva normalmente por um DNS
+público. O sintoma em desenvolvimento é a auditoria falhar e degradar graciosamente: as
+operações de negócio funcionam, mas nada é gravado em `audit_logs`.
+
+Não afeta produção: a Vercel resolve SRV normalmente.
+
+Para desenvolver com a auditoria funcionando, use uma das opções:
+
+- trocar o DNS da máquina ou do roteador por um que responda SRV (`8.8.8.8`, `1.1.1.1`);
+- ou usar em `.env.local` a connection string **não-SRV** do Atlas. É a mesma credencial,
+  com os três hosts do shard explícitos (`mongodb://host1,host2,host3/?replicaSet=...&tls=true`),
+  copiada em _Connect → Drivers_ no painel do Atlas escolhendo uma versão antiga do driver.
+
 ## Example app using MongoDB
 
 [MongoDB](https://www.mongodb.com/) is a general purpose, document-based, distributed database built for modern application developers and for the cloud era. This example will show you how to connect to and use MongoDB as your backend for your Next.js app.
