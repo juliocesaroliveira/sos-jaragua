@@ -97,8 +97,38 @@ mesma ajuda do dialog.
 
 ## Alerta `estoque_critico` (mensagem)
 
-- Um item: `"Arroz (mín. 20 kg) atingiu o estoque mínimo de segurança."`
-- Vários: `"Arroz (mín. 20 kg), Cobertor (mín. 10 un) e mais 3 itens atingiram o estoque mínimo de segurança."`
+A montagem é uma função pura de domínio, testada sem banco (Princípio III):
+
+```ts
+// src/modules/notificacoes/domain/mensagem-estoque-critico.ts
+export type ItemCritico = { nome: string; saldo: number; limiar: number; unidadeMedida: UnidadeMedida }
+
+export function mensagemEstoqueCritico(criticos: ItemCritico[]): {
+    titulo: string
+    mensagem: string
+    contexto: { itens: { nome: string; saldo: number; limiar: number }[] }
+} | null
+```
+
+- Lista vazia → `null` (nada a emitir).
+- `titulo`: `"Estoque crítico"`.
+- Cada nome sai como `"{nome} (mín. {formatarQuantidade(limiar)} {ABREVIACAO_UNIDADE[unidadeMedida]})"`.
+- Até **5** nomes, na ordem recebida, separados por `", "`. Acima de 5: `" e mais N item"`
+  (N = 1) ou `" e mais N itens"` (N > 1).
+- Verbo: `"atingiu"` com 1 item crítico no total, `"atingiram"` com mais de um.
+- `mensagem`: `"{lista} {verbo} o estoque mínimo de segurança."`
+- `contexto.itens` traz **todos** os itens críticos, não só os 5 exibidos.
+
+Exemplos:
+
+- 1 item: `"Arroz (mín. 20 kg) atingiu o estoque mínimo de segurança."`
+- 2 itens: `"Arroz (mín. 20 kg), Cobertor (mín. 10 un) atingiram o estoque mínimo de segurança."`
+- 7 itens: `"A (mín. 1 un), B (mín. 1 un), C (mín. 1 un), D (mín. 1 un), E (mín. 1 un) e mais 2 itens atingiram o estoque mínimo de segurança."`
+- Decimal: `"Feijão (mín. 2,5 kg) atingiu…"`
+
+`avaliarEstoqueCritico` (application) só compõe: `itensCriticos` → `mensagemEstoqueCritico`
+→ `emitir`.
+
 - `contexto`: `{ itens: [{ nome, saldo, limiar }] }`. Antes era `{ limiar, itens: string[] }`.
   Nenhum componente lê o `contexto` (verificado: só é persistido em
   `notificacao-plataforma.ts`), então não há consumidor do formato antigo.
