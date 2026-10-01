@@ -2,22 +2,22 @@
 
 Passos que **nenhum código resolve**: dependem de console externo (Vercel, Neon,
 MongoDB Atlas, Resend, Google Cloud, Meta for Developers) ou de uma decisão da Defesa
-Civil. Vieram do `PENDENCIAS.md` (itens 3, 6, 7, 8, 10 e 13) e da feature
-`specs/020-resolver-pendencias` (FR-018).
+Civil. Correspondem aos itens 1 a 6 do `PENDENCIAS.md` (numeração da revisão de
+2026-10-01) e foram reunidos pela feature `specs/020-resolver-pendencias` (FR-018).
 
 **Como usar.** Siga na ordem: cada passo depende dos anteriores. Quando um passo estiver
 feito **e verificado**, preencha "Feito em" e remova o item correspondente do
 `PENDENCIAS.md`. Um passo sem verificação não está feito.
 
-| #   | Passo                                 | Origem                     | Feito em |
-| --- | ------------------------------------- | -------------------------- | -------- |
-| 1   | Variáveis no projeto Vercel           | PENDENCIAS §13 / DEPLOY-01 | —        |
-| 2   | Banco de produção e administrador     | PENDENCIAS §3              | —        |
-| 3   | Aplicações OAuth (Google e Facebook)  | PENDENCIAS §7              | —        |
-| 4   | E-mail transacional (Resend)          | PENDENCIAS §6              | —        |
-| 5   | Usuário restrito do Atlas             | PENDENCIAS §10 / AUD-02    | —        |
-| 6   | Cron em produção                      | PENDENCIAS §13 / DEPLOY-02 | —        |
-| 7   | Limiares de alerta com a Defesa Civil | PENDENCIAS §8              | —        |
+| #   | Passo                                 | Origem                    | Feito em |
+| --- | ------------------------------------- | ------------------------- | -------- |
+| 1   | Variáveis no projeto Vercel           | PENDENCIAS §5 / DEPLOY-01 | —        |
+| 2   | Banco de produção e administrador     | PENDENCIAS §1             | —        |
+| 3   | Aplicações OAuth (Google e Facebook)  | PENDENCIAS §2             | —        |
+| 4   | E-mail transacional (Resend)          | PENDENCIAS §3             | —        |
+| 5   | Usuário restrito do Atlas             | PENDENCIAS §4 / AUD-02    | —        |
+| 6   | Cron em produção                      | PENDENCIAS §5 / DEPLOY-02 | —        |
+| 7   | Limiares de alerta com a Defesa Civil | PENDENCIAS §6             | —        |
 
 ---
 

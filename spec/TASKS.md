@@ -307,8 +307,12 @@ kit_receita_item.quantidade)` entre todos os componentes (BR-INT-02, DESIGN.md
 - [x] REL-01 Implementar `GET /api/relatorios/export?tipo=inventario&formato=csv|xlsx`
       a partir de `saldo_estoque` + `item`, usando `xlsx` (SheetJS), protegido pela role
       de `(staff)/relatorios` (DESIGN.md §14).
+      _2026-10-01 (feature 020): o bloqueio do PENDENCIAS §1 foi resolvido; a geração de
+      XLSX passou de `xlsx` (SheetJS, CVE alto) para `exceljs` (DESIGN.md §19)._
 - [x] REL-02 Implementar `GET /api/relatorios/export?tipo=saidas&formato=csv|xlsx` a
       partir de `saida`/`saida_item` (DESIGN.md §14).
+      _2026-10-01 (feature 020): o bloqueio do PENDENCIAS §1 foi resolvido; a geração de
+      XLSX passou de `xlsx` (SheetJS, CVE alto) para `exceljs` (DESIGN.md §19)._
 - [x] REL-03 Página `(staff)/relatorios/page.tsx` com `Tabs` (DS-11) separando
       Inventário Atual e Histórico de Saídas, com botões de exportação CSV/XLSX.
 
@@ -320,6 +324,8 @@ kit_receita_item.quantidade)` entre todos os componentes (BR-INT-02, DESIGN.md
       (1) saldo exato de `saldo_estoque`+`item` no momento do download, (2) formulário em
       branco para Entradas, (3) formulário em branco para Saídas, (4) formulário em
       branco para gestão de turnos de voluntários (DESIGN.md §15).
+      _2026-10-01 (feature 020): o bloqueio do PENDENCIAS §1 foi resolvido; a geração de
+      XLSX passou de `xlsx` (SheetJS, CVE alto) para `exceljs` (DESIGN.md §19)._
 - [x] CON-02 Botão "Gerar Pacote de Contingência" (link simples `<a href=...>`, nunca
       cacheado) acessível a Coordenador/Administrador (DESIGN.md §15).
 

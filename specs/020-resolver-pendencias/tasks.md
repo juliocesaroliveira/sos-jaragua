@@ -286,16 +286,20 @@ coletado.
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T051 Revisão final de `PENDENCIAS.md` (SC-001, SC-002), seguindo quickstart V7:
+- [x] T051 Revisão final de `PENDENCIAS.md` (SC-001, SC-002), seguindo quickstart V7:
     - no máximo 7 itens, todos operacionais ou aguardando terceiros;
     - cada "Estado atual" conferido de novo contra o repositório;
     - remover por inteiro o §1 (resolvido pela US2) e o §2 (já marcado RESOLVIDO; o resíduo foi fechado pela US3), com as decisões já registradas no `DESIGN.md` §19 pela T004; §8 reduzido a "valores pendentes com a Defesa Civil" (roteiro passo 7); §4 e §14 removidos se a US4 fechou ID-06/DEPLOY-06;
     - cada seção restante ganha a linha **Responsável:** `código`, `operação` ou `negócio` (FR-001);
     - renumerar as seções e atualizar o parágrafo de introdução.
-- [ ] T052 [P] Se a T003 reverteu o Next ou sobrou alguma vulnerabilidade alta ou crítica sem correção compatível, registrar no `PENDENCIAS.md` (FR-005/FR-017) o motivo e a versão que destrava. Senão, garantir que a seção de vulnerabilidades da T011 só cita as moderadas aceitas.
-- [ ] T053 [P] Em `spec/TASKS.md`, anotar em REL-01, REL-02 e CON-01 que o bloqueio do PENDENCIAS §1 foi resolvido (exceljs, feature 020), sem mudar o `[x]`/`[ ]` delas.
+    - **Feito (2026-10-01):** `PENDENCIAS.md` reescrito com **7 itens** (SC-002), cada um com **Responsável** (operação, negócio ou código-verificação). Saíram os §1 e §2 (resolvidos pela US2 e US3). O risco aceito do §2 (sem Google/Facebook, a entrada depende de admin) foi para o `DESIGN.md` §19. O ID-06 e o DEPLOY-06 foram reunidos com as verificações desta feature que dependem de banco no item 7 ("Verificações que exigem o banco de desenvolvimento"), por terem o mesmo bloqueio.
+- [x] T052 [P] Se a T003 reverteu o Next ou sobrou alguma vulnerabilidade alta ou crítica sem correção compatível, registrar no `PENDENCIAS.md` (FR-005/FR-017) o motivo e a versão que destrava. Senão, garantir que a seção de vulnerabilidades da T011 só cita as moderadas aceitas.
+    - **Feito (2026-10-01):** nenhuma alta/crítica restou (o Next não foi revertido). As moderadas aceitas (`drizzle-kit`, `uuid` via `exceljs`) ficaram registradas como decisão no `DESIGN.md` §19, em vez de uma seção no `PENDENCIAS.md`: não há ação pendente sobre elas.
+- [x] T053 [P] Em `spec/TASKS.md`, anotar em REL-01, REL-02 e CON-01 que o bloqueio do PENDENCIAS §1 foi resolvido (exceljs, feature 020), sem mudar o `[x]`/`[ ]` delas.
 - [ ] T054 Rodar a bateria completa: `npm ci`, `npm run lint`, `npx prettier --check .`, `npx tsc --noEmit`, `npm run test:tudo`, `npm run build` e `npm audit --omit=dev` (sem high/critical; SC-003). Corrigir o que falhar.
+    - **Parcial (2026-10-01):** `npm ci` (npm 10 e 11) ✓; `tsc` ✓; `npm test` ✓ (375 testes); `npm audit --omit=dev` ✓ (só 7 moderadas aceitas); `lint` com 8 erros **anteriores**, todos nos arquivos de habilidades da feature 017, nenhum desta feature; `prettier --check` limpo nos arquivos da feature, exceto `spec/DESIGN_SYSTEM.md`, que já não estava formatado e recebeu só a linha nova, sem reformatação. `next build` compila e passa no TypeScript, mas a pré-renderização consulta o banco. **Falta:** `npm run test:integracao` e o `next build` completo, ambos com o banco de desenvolvimento (PENDENCIAS §7).
 - [ ] T055 Executar quickstart V0–V7 de ponta a ponta e marcar os critérios SC-001 a SC-008 da spec. Pendências encontradas voltam para o `PENDENCIAS.md`.
+    - **Parcial (2026-10-01):** V3 executado (Playwright, quatro combinações de provedores); V2 parcial (`POST /api/auth/sign-up/email` → 404); V7 conferido (PENDENCIAS com 7 itens e estado conferido; DESIGN §16/§17/§19; constituição 1.0.1; README; roteiro). SC-001, SC-002, SC-003, SC-005 e SC-008 atendidos no que depende do repositório. **Falta (exige banco):** V0 (build), V1, V2 completo, V4, V5 e V6, e com eles SC-004, SC-006 e SC-007. Registrado no PENDENCIAS §7.
 
 ---
 
