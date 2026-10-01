@@ -29,7 +29,7 @@
         "drizzle-orm": "^0.45.2",
         "lucide-react": "^1.31.0",
         "mongodb": "^6.19.0",
-        "next": "16.3.0",
+        "next": "16.3.8",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",
         "react-hook-form": "^7.85.0",
@@ -46,13 +46,13 @@
         "@types/react-dom": "^19.1.1",
         "drizzle-kit": "^0.31.10",
         "eslint": "^9.39.5",
-        "eslint-config-next": "16.3.0",
+        "eslint-config-next": "16.3.8",
         "prettier": "^3.9.6",
-        "sharp": "^0.35.3",
+        "sharp": "^0.35.5",
         "tailwindcss": "^4.1.12",
         "tsx": "^4.23.11",
         "typescript": "^5.9.2",
-        "vitest": "^4.1.10"
+        "vitest": "^4.1.11"
     },
     "prettier": {
         "semi": false,
