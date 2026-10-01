@@ -508,9 +508,22 @@ async function garantirEscalaDeTeste(
         .returning({ id: turno.id })
 
     for (const voluntarioPerfilId of args.perfisAprovados) {
+        const [perfil] = await db
+            .select({ userId: voluntarioPerfil.userId })
+            .from(voluntarioPerfil)
+            .where(eq(voluntarioPerfil.id, voluntarioPerfilId))
+            .limit(1)
+        if (!perfil) continue
+
         await db
             .insert(alocacao)
-            .values({ turnoId: novoTurno!.id, voluntarioPerfilId, alocadoPor: args.criadoPor })
+            .values({
+                turnoId: novoTurno!.id,
+                participanteUserId: perfil.userId,
+                voluntarioPerfilId,
+                alocadoPor: args.criadoPor,
+                origem: 'gestao'
+            })
             .onConflictDoNothing()
     }
 

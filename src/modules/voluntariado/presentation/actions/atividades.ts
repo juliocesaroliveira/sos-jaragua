@@ -18,16 +18,25 @@ import { AlocarVoluntarioUseCase, CancelarAlocacaoUseCase } from '../../applicat
 import { gerarTurnosConsecutivos } from '../../domain/turno'
 
 /**
- * Criar atividade, alocar e cancelar são atribuições de Coordenador
- * (BRD §2); Membro Defesa Civil não cria escala.
+ * Criar, editar e mudar o status de atividades são atribuições da
+ * coordenação (BRD §2).
  */
-const ROLES_GESTAO: readonly Role[] = ['coordenador', 'administrador']
+const ROLES_GESTAO_ATIVIDADE: readonly Role[] = ['coordenador', 'administrador']
 
-async function exigirGestao() {
+/**
+ * Alocar e remover pessoas da escala também cabe ao membro da Defesa Civil
+ * (018-inscricao-atividades, FR-019a) — mas não criar a atividade.
+ */
+const ROLES_ESCALA: readonly Role[] = ['membro_defesa_civil', 'coordenador', 'administrador']
+
+async function exigirRole(roles: readonly Role[]) {
     const ator = await obterSessao()
-    if (!ator || !ROLES_GESTAO.includes(ator.role)) return null
+    if (!ator || !roles.includes(ator.role)) return null
     return ator
 }
+
+const exigirGestao = () => exigirRole(ROLES_GESTAO_ATIVIDADE)
+const exigirEscala = () => exigirRole(ROLES_ESCALA)
 
 const esquemaCriar = z.object({
     titulo: z.string().min(1),
@@ -134,8 +143,8 @@ const esquemaAlocar = z.object({
 export async function alocarVoluntario(
     entrada: z.infer<typeof esquemaAlocar>
 ): Promise<ResultadoAction<{ alocacaoId: string }>> {
-    const ator = await exigirGestao()
-    if (!ator) return erroAction('nao_autorizado', 'Somente coordenação pode alocar voluntários.')
+    const ator = await exigirEscala()
+    if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para alterar a escala.')
 
     const parse = esquemaAlocar.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Dados de alocação inválidos.')
@@ -162,8 +171,8 @@ const esquemaCancelarAlocacao = z.object({ atividadeId: z.uuid(), alocacaoId: z.
 export async function cancelarAlocacao(
     entrada: z.infer<typeof esquemaCancelarAlocacao>
 ): Promise<ResultadoAction<{ alocacaoId: string }>> {
-    const ator = await exigirGestao()
-    if (!ator) return erroAction('nao_autorizado', 'Somente coordenação pode cancelar alocações.')
+    const ator = await exigirEscala()
+    if (!ator) return erroAction('nao_autorizado', 'Você não tem permissão para alterar a escala.')
 
     const parse = esquemaCancelarAlocacao.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Alocação inválida.')

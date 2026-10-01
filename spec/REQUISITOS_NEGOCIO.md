@@ -54,7 +54,8 @@ O **SOS Jaraguá** é uma plataforma web para gestão de crises pela Defesa Civi
 
 - **Cadastro de Atividade:** O Coordenador cria uma necessidade informando Título, Categoria (ex: _Separação de itens, Montagem de kits, Apoio logístico_), Local e Quantidade de Vagas.
 - **BR-VOL-04 (Escalas):** A atividade deve ser fragmentada em **Turnos de 4 horas** (ex: 08:00-12:00, 12:00-16:00).
-- **BR-VOL-05 (Alocação):** O Coordenador seleciona um voluntário da base (podendo filtrar por Habilidades) e o vincula a um turno específico de uma atividade.
+- **BR-VOL-05 (Alocação):** O Coordenador ou o Membro da Defesa Civil seleciona um voluntário da base (podendo filtrar por Habilidades) e o vincula a um turno específico de uma atividade. Criar, editar e mudar o status de atividades continua restrito à coordenação.
+- **BR-VOL-05a (Inscrição própria — specs/018-inscricao-atividades):** Voluntários aprovados e a equipe interna (Membro da Defesa Civil, Coordenador, Administrador — mesmo sem cadastro de voluntário) se inscrevem sozinhos em turnos de atividades abertas, na tela "Atividades abertas". A inscrição é confirmada na hora, nunca excede as vagas do turno, é recusada em caso de conflito de horário, e a desistência pela tela vale até 30 minutos antes do início. Quem criou a atividade é avisado na plataforma.
 - **Painel Visual (Kanban/Lista):** A interface deve exibir colunas/listas por Atividade, mostrando as vagas preenchidas vs. vagas abertas em cada turno, destacando em vermelho (gargalo) turnos deficitários.
 
 ---

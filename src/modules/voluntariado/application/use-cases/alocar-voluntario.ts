@@ -72,11 +72,25 @@ export class AlocarVoluntarioUseCase implements UseCase<EntradaAlocarVoluntario,
                 extrair: (resultado) => ({
                     entidadeId: resultado?.alocacaoId ?? turnoId,
                     dadosNovos: resultado
-                        ? { alocacaoId: resultado.alocacaoId, turnoId, voluntarioPerfilId, alocadoPor }
+                        ? {
+                              alocacaoId: resultado.alocacaoId,
+                              turnoId,
+                              participanteUserId: perfil.userId,
+                              voluntarioPerfilId,
+                              alocadoPor,
+                              origem: 'gestao'
+                          }
                         : null
                 })
             },
-            () => this.atividades.alocar({ turnoId, voluntarioPerfilId, alocadoPor })
+            () =>
+                this.atividades.alocar({
+                    turnoId,
+                    participanteUserId: perfil.userId,
+                    voluntarioPerfilId,
+                    alocadoPor,
+                    origem: 'gestao'
+                })
         )
 
         if (!alocado) {

@@ -56,7 +56,16 @@ const VALORES_INICIAIS: DadosFormulario = {
     quantidadeTurnos: '2',
     vagasPorTurno: '5'
 }
-export function GestaoAtividades({ atividades, categorias }: { atividades: LinhaAtividade[]; categorias: Lookup[] }) {
+export function GestaoAtividades({
+    atividades,
+    categorias,
+    podeGerirAtividade
+}: {
+    atividades: LinhaAtividade[]
+    categorias: Lookup[]
+    /** Criar e mudar status: só coordenação (018, FR-019a). */
+    podeGerirAtividade: boolean
+}) {
     const [emAndamento, iniciarTransicao] = useTransition()
     const [criando, setCriando] = useState(false)
 
@@ -119,15 +128,19 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
 
     return (
         <>
-            <div className="flex justify-end">
-                <Button iconeInicio={<Plus aria-hidden className="size-5" />} onClick={() => setCriando(true)}>
-                    Nova atividade
-                </Button>
-            </div>
+            {podeGerirAtividade && (
+                <div className="flex justify-end">
+                    <Button iconeInicio={<Plus aria-hidden className="size-5" />} onClick={() => setCriando(true)}>
+                        Nova atividade
+                    </Button>
+                </div>
+            )}
 
             {atividades.length === 0 ? (
                 <Alert tom="info" titulo="Nenhuma atividade cadastrada">
-                    Crie uma atividade para começar a montar a escala de voluntários.
+                    {podeGerirAtividade
+                        ? 'Crie uma atividade para começar a montar a escala de voluntários.'
+                        : 'Quando a coordenação criar uma atividade, ela aparece aqui.'}
                 </Alert>
             ) : (
                 <ul className="flex flex-col gap-3">
@@ -177,35 +190,37 @@ export function GestaoAtividades({ atividades, categorias }: { atividades: Linha
                                             Abrir escala
                                         </Button>
                                     </Link>
-                                    <Menu
-                                        gatilho={
-                                            <Button
-                                                variant="secondary"
-                                                iconeInicio={<MoreVertical className="size-4" />}
-                                            />
-                                        }
-                                        itens={[
-                                            {
-                                                value: 'encerrar',
-                                                label: 'Encerrar',
-                                                disabled: a.status !== 'aberta',
-                                                onSelect: () => mudarStatus(a.id, 'encerrada')
-                                            },
-                                            {
-                                                value: 'cancelar',
-                                                label: 'Cancelar atividade',
-                                                destrutivo: true,
-                                                disabled: a.status === 'cancelada',
-                                                onSelect: () => mudarStatus(a.id, 'cancelada')
-                                            },
-                                            {
-                                                value: 'reabrir',
-                                                label: 'Reabrir',
-                                                disabled: a.status === 'aberta',
-                                                onSelect: () => mudarStatus(a.id, 'aberta')
+                                    {podeGerirAtividade && (
+                                        <Menu
+                                            gatilho={
+                                                <Button
+                                                    variant="secondary"
+                                                    iconeInicio={<MoreVertical className="size-4" />}
+                                                />
                                             }
-                                        ]}
-                                    />
+                                            itens={[
+                                                {
+                                                    value: 'encerrar',
+                                                    label: 'Encerrar',
+                                                    disabled: a.status !== 'aberta',
+                                                    onSelect: () => mudarStatus(a.id, 'encerrada')
+                                                },
+                                                {
+                                                    value: 'cancelar',
+                                                    label: 'Cancelar atividade',
+                                                    destrutivo: true,
+                                                    disabled: a.status === 'cancelada',
+                                                    onSelect: () => mudarStatus(a.id, 'cancelada')
+                                                },
+                                                {
+                                                    value: 'reabrir',
+                                                    label: 'Reabrir',
+                                                    disabled: a.status === 'aberta',
+                                                    onSelect: () => mudarStatus(a.id, 'aberta')
+                                                }
+                                            ]}
+                                        />
+                                    )}
                                 </div>
                             </li>
                         )

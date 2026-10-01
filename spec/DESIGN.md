@@ -545,8 +545,17 @@ condicional que possa ser esquecido em um novo relatório).
   status).
 - Fragmentação em `turno`s de 4 horas — validada no **domínio** (não via `CHECK` de banco,
   para permitir mensagens de erro específicas e futura flexibilização sem migration).
-- Alocação: Coordenador seleciona voluntário (filtrável por `habilidade` via
-  `voluntario_habilidade`) e cria `alocacao` vinculando a um `turno`.
+- Alocação: Coordenador ou Membro da Defesa Civil seleciona voluntário (filtrável por
+  `habilidade` via `voluntario_habilidade`) e cria `alocacao` vinculando a um `turno`. A gestão
+  pode exceder as vagas.
+- Inscrição própria (specs/018-inscricao-atividades): a pessoa se inscreve em
+  `/voluntariado/atividades-abertas`. O participante da `alocacao` é o `user`
+  (`participante_user_id`), não o perfil, porque a equipe interna se inscreve sem cadastro de
+  voluntário. A vaga é garantida numa transação com lock consultivo por participante
+  (`pg_advisory_xact_lock`) seguido de `SELECT … FOR UPDATE` no turno, sempre nessa ordem;
+  as regras (vagas, conflito de horário, prazo de desistência de 30 min) são funções puras em
+  `domain/inscricao.ts`. Exceção documentada ao Princípio I: leitura de `user.name`/`user.role`
+  a partir de `voluntariado` (plan.md da feature, Complexity Tracking).
 - Painel Kanban: colunas/lista por `atividade`, cada `turno` mostra vagas preenchidas
   (`count(alocacao where status='confirmado')`) vs. `turno.vagas`; destaque vermelho quando
   `preenchidas < vagas` (déficit).
@@ -572,7 +581,8 @@ condicional que possa ser esquecido em um novo relatório).
   real no MVP** — decisão confirmada; lembretes/alertas são e-mail + sino in-app.
 - Catálogo de eventos espelha 1:1 a matriz de comunicação do BRD §6: `triagem_concluida`,
   `atividade_atribuida`, `alteracao_atividade`, `lembrete_turno`, `broadcast_urgencia`,
-  `cadastros_acumulados`, `estoque_critico`, `deficit_atendimento`.
+  `cadastros_acumulados`, `estoque_critico`, `deficit_atendimento`, `inscricao_turno`
+  (018 — aviso à gestão de inscrição/desistência própria, só na plataforma).
 - **Lembrete de turno** (aviso diário): não há trigger de evento natural (é baseado em
   tempo), então usa **Vercel Cron** — `vercel.json` agenda `GET /api/cron/lembrete-turno`
   **1x por dia** às 12:00 UTC (09:00 America/Sao_Paulo). O plano Hobby da Vercel só

@@ -1,10 +1,13 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
+import { user } from '@/db/schema/identidade'
 import { alocacao, atividade, atividadeCategoria, turno, voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS, tagAtividade } from '@/src/shared/cache'
-import type { StatusAtividade } from '../../application/ports/atividade-repository'
+import { ROLES_STAFF, type Role } from '@/src/shared/auth/roles'
+import { MENSAGEM_NAO_ELEGIVEL, podeSeInscrever } from '../../domain/inscricao'
+import type { OrigemAlocacao, StatusAtividade } from '../../application/ports/atividade-repository'
 
 export type LinhaAtividade = {
     id: string
@@ -59,8 +62,13 @@ export async function listarAtividades(): Promise<LinhaAtividade[]> {
 
 export type AlocadoNoTurno = {
     alocacaoId: string
-    voluntarioPerfilId: string
-    nomeCompleto: string
+    participanteUserId: string
+    /** `null` para a equipe interna sem perfil de voluntário (research D1). */
+    voluntarioPerfilId: string | null
+    nome: string
+    /** Papel na aplicação — decide o ícone exibido ao lado do nome (FR-024). */
+    role: Role
+    origem: OrigemAlocacao
 }
 
 export type TurnoDetalhado = {
@@ -120,24 +128,31 @@ export async function buscarAtividadeDetalhada(atividadeId: string): Promise<Ati
         .where(eq(turno.atividadeId, atividadeId))
         .orderBy(asc(turno.inicio))
 
+    // Leitura de `user` (nome/papel) é a exceção documentada do Princípio I —
+    // plan.md, Complexity Tracking.
+    const nome = sql<string>`coalesce(${voluntarioPerfil.nomeCompleto}, ${user.name})`
     const alocados = await db
         .select({
             turnoId: alocacao.turnoId,
             alocacaoId: alocacao.id,
+            participanteUserId: alocacao.participanteUserId,
             voluntarioPerfilId: alocacao.voluntarioPerfilId,
-            nomeCompleto: voluntarioPerfil.nomeCompleto
+            nome,
+            role: user.role,
+            origem: alocacao.origem
         })
         .from(alocacao)
         .innerJoin(turno, eq(turno.id, alocacao.turnoId))
-        .innerJoin(voluntarioPerfil, eq(voluntarioPerfil.id, alocacao.voluntarioPerfilId))
+        .innerJoin(user, eq(user.id, alocacao.participanteUserId))
+        .leftJoin(voluntarioPerfil, eq(voluntarioPerfil.id, alocacao.voluntarioPerfilId))
         .where(and(eq(turno.atividadeId, atividadeId), eq(alocacao.status, 'confirmado')))
-        .orderBy(asc(voluntarioPerfil.nomeCompleto))
+        .orderBy(asc(nome))
 
     const porTurno = new Map<string, AlocadoNoTurno[]>()
-    for (const a of alocados) {
-        const lista = porTurno.get(a.turnoId) ?? []
-        lista.push({ alocacaoId: a.alocacaoId, voluntarioPerfilId: a.voluntarioPerfilId, nomeCompleto: a.nomeCompleto })
-        porTurno.set(a.turnoId, lista)
+    for (const { turnoId, ...alocado } of alocados) {
+        const lista = porTurno.get(turnoId) ?? []
+        lista.push(alocado)
+        porTurno.set(turnoId, lista)
     }
 
     return {
@@ -165,8 +180,9 @@ export type MinhaAtividade = {
 }
 
 /**
- * Turnos atribuídos ao voluntário logado (VOL-13). **Não** cacheada: o
- * resultado depende de quem está autenticado (DESIGN.md §7).
+ * Turnos atribuídos ao usuário logado (VOL-13) — voluntário ou equipe interna
+ * inscrita sem perfil. **Não** cacheada: o resultado depende de quem está
+ * autenticado (DESIGN.md §7).
  */
 export async function listarMinhasAtividades(userId: string): Promise<MinhaAtividade[]> {
     const linhas = await db
@@ -181,11 +197,10 @@ export async function listarMinhasAtividades(userId: string): Promise<MinhaAtivi
             fim: turno.fim
         })
         .from(alocacao)
-        .innerJoin(voluntarioPerfil, eq(voluntarioPerfil.id, alocacao.voluntarioPerfilId))
         .innerJoin(turno, eq(turno.id, alocacao.turnoId))
         .innerJoin(atividade, eq(atividade.id, turno.atividadeId))
         .innerJoin(atividadeCategoria, eq(atividadeCategoria.id, atividade.categoriaId))
-        .where(and(eq(voluntarioPerfil.userId, userId), eq(alocacao.status, 'confirmado')))
+        .where(and(eq(alocacao.participanteUserId, userId), eq(alocacao.status, 'confirmado')))
         .orderBy(asc(turno.inicio))
 
     return linhas.map((l) => ({
@@ -193,6 +208,121 @@ export async function listarMinhasAtividades(userId: string): Promise<MinhaAtivi
         inicio: l.inicio.toISOString(),
         fim: l.fim.toISOString()
     }))
+}
+
+export type TurnoAberto = {
+    id: string
+    inicio: string
+    fim: string
+    vagas: number
+    preenchidas: number
+}
+
+/** Vitrine de "Atividades abertas" — igual para todos, **sem nomes** (FR-010a). */
+export type AtividadeAberta = {
+    id: string
+    titulo: string
+    categoriaId: string
+    categoria: string
+    local: string
+    turnos: TurnoAberto[]
+}
+
+/**
+ * Atividades `aberta` com turnos ainda não terminados (018, FR-004/FR-005).
+ *
+ * Cacheada e compartilhada entre usuários (research D8): não contém nada da
+ * sessão. O `fim > now()` é avaliado quando o cache é preenchido — a página
+ * filtra de novo com o `agora` da requisição. Duas consultas, sem N+1.
+ */
+export async function listarAtividadesAbertas(): Promise<AtividadeAberta[]> {
+    'use cache'
+    cacheTag(CACHE_TAGS.atividades)
+    cacheLife(CACHE_LIFE.curto)
+
+    const turnos = await db
+        .select({
+            id: turno.id,
+            atividadeId: turno.atividadeId,
+            inicio: turno.inicio,
+            fim: turno.fim,
+            vagas: turno.vagas,
+            preenchidas: CONFIRMADOS_NO_TURNO
+        })
+        .from(turno)
+        .innerJoin(atividade, eq(atividade.id, turno.atividadeId))
+        .where(and(eq(atividade.status, 'aberta'), gt(turno.fim, sql`now()`)))
+        .orderBy(asc(turno.inicio))
+
+    if (turnos.length === 0) return []
+
+    const cabecalhos = await db
+        .select({
+            id: atividade.id,
+            titulo: atividade.titulo,
+            categoriaId: atividade.categoriaId,
+            categoria: atividadeCategoria.nome,
+            local: atividade.local
+        })
+        .from(atividade)
+        .innerJoin(atividadeCategoria, eq(atividadeCategoria.id, atividade.categoriaId))
+        .where(inArray(atividade.id, [...new Set(turnos.map((t) => t.atividadeId))]))
+
+    const porAtividade = new Map<string, TurnoAberto[]>()
+    for (const t of turnos) {
+        const lista = porAtividade.get(t.atividadeId) ?? []
+        lista.push({
+            id: t.id,
+            inicio: t.inicio.toISOString(),
+            fim: t.fim.toISOString(),
+            vagas: t.vagas,
+            preenchidas: t.preenchidas
+        })
+        porAtividade.set(t.atividadeId, lista)
+    }
+
+    return cabecalhos.map((c) => ({ ...c, turnos: porAtividade.get(c.id) ?? [] }))
+}
+
+export type MeuTurnoConfirmado = {
+    turnoId: string
+    alocacaoId: string
+    atividadeId: string
+    inicio: string
+    fim: string
+}
+
+/**
+ * Turnos confirmados do usuário logado — marca "Você está inscrito" na
+ * vitrine. **Não** cacheada: depende da sessão (DESIGN.md §7).
+ */
+export async function listarMeusTurnosConfirmados(userId: string): Promise<MeuTurnoConfirmado[]> {
+    const linhas = await db
+        .select({
+            turnoId: alocacao.turnoId,
+            alocacaoId: alocacao.id,
+            atividadeId: turno.atividadeId,
+            inicio: turno.inicio,
+            fim: turno.fim
+        })
+        .from(alocacao)
+        .innerJoin(turno, eq(turno.id, alocacao.turnoId))
+        .where(
+            and(eq(alocacao.participanteUserId, userId), eq(alocacao.status, 'confirmado'), gt(turno.fim, sql`now()`))
+        )
+
+    return linhas.map((l) => ({ ...l, inicio: l.inicio.toISOString(), fim: l.fim.toISOString() }))
+}
+
+export type Elegibilidade = { elegivel: true } | { elegivel: false; motivo: string }
+
+/** FR-011 — se o usuário logado pode se inscrever, e por que não. */
+export async function obterElegibilidade(userId: string, role: Role): Promise<Elegibilidade> {
+    const equipeInterna = ROLES_STAFF.includes(role)
+    const perfil = equipeInterna ? null : await buscarMinhaCandidatura(userId)
+    return podeSeInscrever({ equipeInterna, statusPerfil: perfil?.status ?? null })
+        ? { elegivel: true }
+        : { elegivel: false, motivo: MENSAGEM_NAO_ELEGIVEL }
 }
 
 /** Perfil de voluntário do usuário logado — usado na tela de candidatura. */

@@ -29,6 +29,7 @@ export { Dialog, type DialogProps } from './dialog/dialog'
 export { Drawer, type DrawerProps } from './drawer/drawer'
 export { Toaster, avisar } from './toast/toast'
 export { Tooltip, type TooltipProps } from './tooltip/tooltip'
+export { IconePapel } from './icone-papel/icone-papel'
 export { Popover, type PopoverProps } from './popover/popover'
 export { Menu, type MenuProps, type ItemMenu } from './menu/menu'
 

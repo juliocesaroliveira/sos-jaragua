@@ -1,7 +1,7 @@
 import { and, between, eq, inArray, isNull } from 'drizzle-orm'
 import { NextResponse, after, type NextRequest } from 'next/server'
 import { db } from '@/src/shared/db/postgres'
-import { alocacao, atividade, turno, voluntarioPerfil } from '@/db/schema/voluntariado'
+import { alocacao, atividade, turno } from '@/db/schema/voluntariado'
 import { notificacaoService } from '@/src/modules/notificacoes/infrastructure'
 import { reavaliarTodosOsAlertas } from '@/src/modules/notificacoes/presentation/alertas'
 
@@ -39,8 +39,9 @@ export async function GET(request: NextRequest) {
     const pendentes = await db
         .select({
             alocacaoId: alocacao.id,
-            userId: voluntarioPerfil.userId,
-            nomeCompleto: voluntarioPerfil.nomeCompleto,
+            // Participante pode ser da equipe interna, sem perfil de
+            // voluntário (018-inscricao-atividades, research D1).
+            userId: alocacao.participanteUserId,
             titulo: atividade.titulo,
             local: atividade.local,
             inicio: turno.inicio,
@@ -51,7 +52,6 @@ export async function GET(request: NextRequest) {
         .from(alocacao)
         .innerJoin(turno, eq(turno.id, alocacao.turnoId))
         .innerJoin(atividade, eq(atividade.id, turno.atividadeId))
-        .innerJoin(voluntarioPerfil, eq(voluntarioPerfil.id, alocacao.voluntarioPerfilId))
         .where(
             and(
                 eq(alocacao.status, 'confirmado'),

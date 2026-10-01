@@ -45,6 +45,15 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
             return (linha as PerfilVoluntario) ?? null
         },
 
+        async buscarPorUserId(userId) {
+            const [linha] = await executor
+                .select(COLUNAS_PERFIL)
+                .from(voluntarioPerfil)
+                .where(eq(voluntarioPerfil.userId, userId))
+                .limit(1)
+            return (linha as PerfilVoluntario) ?? null
+        },
+
         async salvarCandidatura({ userId, dados }) {
             const valores = {
                 userId,

@@ -112,6 +112,14 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         atalho: { descricao: 'Envie seus dados para a triagem da Defesa Civil.' }
     },
     {
+        href: '/voluntariado/atividades-abertas',
+        rotulo: 'Atividades abertas',
+        icone: 'CalendarPlus',
+        grupo: 'voluntariado',
+        roles: ['voluntario', ...STAFF],
+        atalho: { descricao: 'Encontre turnos com vagas e inscreva-se.' }
+    },
+    {
         href: '/voluntariado/minhas-atividades',
         rotulo: 'Minhas atividades',
         icone: 'CalendarCheck',

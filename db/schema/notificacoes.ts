@@ -13,7 +13,9 @@ export const tipoNotificacaoEnum = pgEnum('tipo_notificacao', [
     'broadcast_urgencia',
     'cadastros_acumulados',
     'estoque_critico',
-    'deficit_atendimento'
+    'deficit_atendimento',
+    // 018-inscricao-atividades: aviso à gestão de inscrição/desistência própria (só plataforma)
+    'inscricao_turno'
 ])
 
 /** Sem push real no MVP (decisão confirmada, DESIGN.md §12). */

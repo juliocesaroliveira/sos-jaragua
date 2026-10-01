@@ -197,12 +197,14 @@ Tabela lookup livre (decisão confirmada, substitui a lista exemplificativa do B
 | -------------------- | --------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
 | `id`                 | uuid, pk                          |             |                                                                                                         |
 | `turnoId`            | uuid, fk → `turno.id`             | Sim         |                                                                                                         |
-| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` | Sim         |                                                                                                         |
+| `participanteUserId` | text, fk → `user.id`              | Sim         | Identidade de quem está na escala (018). Voluntário ou equipe interna sem perfil                       |
+| `voluntarioPerfilId` | uuid, fk → `voluntario_perfil.id` | Não         | Preenchido quando o participante tem perfil de voluntário (018)                                        |
 | `status`             | enum(`confirmado,cancelado`)      | Sim         | default `confirmado`                                                                                    |
-| `alocadoPor`         | uuid, fk → `user.id`              | Sim         | Coordenador                                                                                             |
+| `origem`             | enum(`gestao,inscricao_propria`)  | Sim         | default `gestao` (018)                                                                                  |
+| `alocadoPor`         | uuid, fk → `user.id`              | Sim         | Gestão, ou o próprio participante na inscrição própria                                                 |
 | `lembreteEnviadoEm`  | timestamptz, nullable             |             | Flag de dedupe do cron de lembrete (DESIGN.md §12)                                                      |
 | `criadoEm`           | timestamptz                       |             |                                                                                                         |
-| —                    |                                   |             | `unique(turnoId, voluntarioPerfilId)` — mesmo voluntário não pode ser alocado duas vezes ao mesmo turno |
+| —                    |                                   |             | `unique(turnoId, participanteUserId)` — a mesma pessoa não pode estar duas vezes no mesmo turno (018)   |
 
 ---
 
@@ -432,7 +434,7 @@ O BRD referencia auditoria para as entidades abstratas "Doacao", "Voluntario" e
 | `item.nome` — GIN/trigram (`pg_trgm`)                                                                                      | Autocomplete-dedup na Entrada (BR-EST-01)            |
 | `voluntario_perfil.status`                                                                                                 | Query da fila de Cadastros Pendentes                 |
 | `voluntario_perfil.cpf` — único                                                                                            | Regra de negócio (documento único por voluntário)    |
-| `alocacao(turnoId, voluntarioPerfilId)` — único                                                                            | Impede alocação duplicada                            |
+| `alocacao(turnoId, participanteUserId)` — único                                                                            | Impede alocação duplicada (018)                      |
 | `entrada(itemId, criadoEm)`, `saida_item(itemId, criadoEm)` (via `saidaId`→`saida.criadoEm`), `descarte(itemId, criadoEm)` | Agregações de relatório/histórico por item e período |
 | `notificacao(destinatarioUserId, lida)`                                                                                    | Contagem de não-lidas por usuário                    |
 | `atividade_categoria.nome`, `habilidade.nome` — único                                                                      | Evita duplicidade nas tabelas lookup livres          |

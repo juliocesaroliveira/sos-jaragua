@@ -8,6 +8,7 @@ import { Badge, COR_STATUS_ATIVIDADE, ROTULO_STATUS_ATIVIDADE } from '@/src/shar
 import { Button } from '@/src/shared/ui/button/button'
 import { Dialog } from '@/src/shared/ui/dialog/dialog'
 import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
+import { IconePapel } from '@/src/shared/ui/icone-papel/icone-papel'
 import { KanbanCard } from '@/src/shared/ui/kanban/kanban-card'
 import { KanbanColumn } from '@/src/shared/ui/kanban/kanban-column'
 import { Select } from '@/src/shared/ui/select/select'
@@ -45,7 +46,12 @@ export function PainelEscala({
     const [selecionado, setSelecionado] = useState<string[]>([])
     const [erro, setErro] = useState<string | null>(null)
 
-    const jaAlocados = useMemo(() => new Set(turnoAlvo?.alocados.map((a) => a.voluntarioPerfilId) ?? []), [turnoAlvo])
+    // A seleção manual só lista voluntários com perfil; a equipe interna sem
+    // perfil (`voluntarioPerfilId` nulo) nunca aparece entre os disponíveis.
+    const jaAlocados = useMemo(
+        () => new Set(turnoAlvo?.alocados.flatMap((a) => (a.voluntarioPerfilId ? [a.voluntarioPerfilId] : [])) ?? []),
+        [turnoAlvo]
+    )
 
     const disponiveis = voluntarios.filter((v) => !jaAlocados.has(v.id))
 
@@ -165,13 +171,19 @@ export function PainelEscala({
                                                 // aparece ao lado, mas chega
                                                 // truncado quando é longo — a dica
                                                 // é onde ele cabe inteiro.
-                                                const rotulo = `Remover ${a.nomeCompleto} do turno`
+                                                const rotulo = `Remover ${a.nome} do turno`
                                                 return (
                                                     <li
                                                         key={a.alocacaoId}
                                                         className="flex min-h-11 items-center justify-between gap-2 rounded-lg bg-surface-muted px-2 text-sm text-foreground"
                                                     >
-                                                        <span className="truncate">{a.nomeCompleto}</span>
+                                                        <span className="flex min-w-0 items-center gap-1.5">
+                                                            <span className="truncate">{a.nome}</span>
+                                                            <IconePapel role={a.role} />
+                                                            {a.origem === 'inscricao_propria' && (
+                                                                <Badge cor="neutral">Inscrição própria</Badge>
+                                                            )}
+                                                        </span>
                                                         {/*
                                                           Durante `emAndamento` o
                                                           botão fica desabilitado e a
@@ -186,7 +198,7 @@ export function PainelEscala({
                                                                 size="sm"
                                                                 variant="ghost"
                                                                 loading={emAndamento}
-                                                                onClick={() => remover(a.alocacaoId, a.nomeCompleto)}
+                                                                onClick={() => remover(a.alocacaoId, a.nome)}
                                                             />
                                                         </Tooltip>
                                                     </li>
