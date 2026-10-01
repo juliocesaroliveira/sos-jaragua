@@ -1,22 +1,22 @@
 <!--
 Sync Impact Report
-- Version change: (none, template) → 1.0.0
-- Rationale: initial ratification — first concrete constitution for the project (template
-  previously left in placeholder form, no bracketed tokens filled).
-- Modified principles: n/a (all six are new)
-- Added sections:
-  - Core Principles: I. Clean Architecture por Módulo (DDD); II. Tipagem Estrita e Qualidade
-    de Código; III. Testes Focados em Regras de Negócio; IV. Segurança e Defesa em
-    Profundidade; V. Auditoria Não Bloqueante; VI. Simplicidade Operacional
-  - Stack e Convenções Técnicas (Section 2)
-  - Fluxo de Desenvolvimento (Section 3)
-  - Governance
-- Removed sections: none (template placeholders only)
-- Deferred/TODO placeholders: none — ratification date set to the date this constitution was
-  first authored, since no earlier governance document exists to backdate against.
-- Templates requiring follow-up: none checked in this run — this command only touches
-  constitution.md; dependent templates (plan/spec/tasks) read this file at runtime and were
-  not modified here.
+- Version change: 1.0.0 → 1.0.1 (PATCH)
+- Rationale: troca de pacote dentro da mesma capacidade (planilhas), sem mudança de princípio.
+  Feature 020-resolver-pendencias, decisão Q1 (2026-10-01): `xlsx@0.18.5` tem CVE de
+  severidade alta (prototype pollution / ReDoS) sem versão corrigida publicada no npm; o
+  responsável escolheu `exceljs`, publicado no registro público e mantido. Registrado também em
+  `spec/DESIGN.md` §16 e §19.
+- Modified principles: none
+- Modified sections:
+  - Stack e Convenções Técnicas: "**Planilhas**: `xlsx` (SheetJS)" → "**Planilhas**: `exceljs`"
+- Added sections: none
+- Removed sections: none
+- Deferred/TODO placeholders: none
+- Templates requiring follow-up: none — plan/spec/tasks templates read this file at runtime and
+  do not name the spreadsheet library.
+
+Previous report (1.0.0, 2026-08-12): initial ratification — six Core Principles, Stack e
+Convenções Técnicas, Fluxo de Desenvolvimento and Governance added from the placeholder template.
 -->
 
 # SOS Jaraguá Constitution
@@ -153,7 +153,7 @@ duramente qualquer complexidade operacional que não seja estritamente necessár
 - **Client-side data**: TanStack Query + Server Actions; TanStack Table com paginação
   obrigatoriamente server-side para listagens.
 - **UI**: Ark UI + Tailwind CSS v4; suporte nativo a Dark/Light; interface 100% pt-BR.
-- **E-mail**: Resend. **Planilhas**: `xlsx` (SheetJS).
+- **E-mail**: Resend. **Planilhas**: `exceljs`.
 - Novas dependências que dupliquem capacidade já coberta pela stack acima (outro ORM, outro
   client de query, outra lib de auth) exigem decisão documentada, não substituição silenciosa.
 
@@ -188,4 +188,4 @@ estilo, ou padrões de PRs anteriores que a contradigam.
   arquivos em `.claude/skills/` e `AGENTS.md` — este documento rege princípios, não mecânica
   de tooling.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-08-12
+**Version**: 1.0.1 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-10-01
