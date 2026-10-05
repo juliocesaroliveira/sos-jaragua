@@ -1,14 +1,17 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
-import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
-import { listarItens, listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { SaidaForm } from './saida-form'
 
 export const metadata: Metadata = {
     title: 'Saída de itens — SOS Jaraguá'
 }
 
-/** BR-EST-04 / DESIGN.md §9.3 — saída de itens avulsos ou kits (EST-09). */
+/**
+ * BR-EST-04 / DESIGN.md §9.3 — saída de itens avulsos ou kits (EST-09).
+ *
+ * Sem leitura no servidor: itens e kits são escolhidos por Lookup (021), que
+ * busca sob demanda — a tela não carrega mais o catálogo inteiro para montar
+ * selects, e por isso também não precisa de `Suspense`.
+ */
 export default function SaidaPage() {
     return (
         <div className="flex flex-col gap-6">
@@ -19,14 +22,7 @@ export default function SaidaPage() {
                 </p>
             </header>
 
-            <Suspense fallback={<SkeletonLista linhas={5} altura="h-16" />}>
-                <Formulario />
-            </Suspense>
+            <SaidaForm />
         </div>
     )
-}
-
-async function Formulario() {
-    const [itens, kits] = await Promise.all([listarItens(), listarKitsComReceita(true)])
-    return <SaidaForm itens={itens} kits={kits} />
 }

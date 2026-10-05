@@ -6,11 +6,12 @@
  * "quem invalida o quê" continue verificável em um único arquivo.
  *
  * Convenção: o `queryKey` do TanStack Query espelha a tag
- * (`estoque:itens` ↔ `['estoque', 'itens', ...]`, DESIGN.md §8).
+ * (`estoque:listagem` ↔ `['estoque', 'listagem', ...]`, DESIGN.md §8).
+ *
+ * Não existe mais `estoque:itens`: o catálogo inteiro de itens deixou de ser
+ * lido pelas telas — o Lookup (021) busca por termo, sem cache no servidor.
  */
 export const CACHE_TAGS = {
-    /** Catálogo de itens — autocomplete da Entrada (BR-EST-01). */
-    estoqueItens: 'estoque:itens',
     /** Saldo materializado por item. */
     estoqueSaldo: 'estoque:saldo',
     /** Listagem paginada de estoque (TanStack Table). */

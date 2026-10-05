@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Controller } from 'react-hook-form'
 import { Check, RotateCcw } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
@@ -11,11 +12,12 @@ import {
     textoObrigatorio,
     useFormulario
 } from '@/src/shared/formulario'
+import { RAIZ_LOOKUP } from '@/src/shared/query/chaves'
 import { Alert } from '@/src/shared/ui/alert/alert'
 import { Button } from '@/src/shared/ui/button/button'
-import { Combobox } from '@/src/shared/ui/combobox/combobox'
 import { DatePicker } from '@/src/shared/ui/date-picker/date-picker'
 import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Lookup } from '@/src/shared/ui/lookup/lookup'
 import { NumberInput } from '@/src/shared/ui/number-input/number-input'
 import { Select } from '@/src/shared/ui/select/select'
 import { Switch } from '@/src/shared/ui/switch/switch'
@@ -33,17 +35,19 @@ import {
 } from '@/src/modules/estoque/domain/item'
 import { validadeEstaVencida } from '@/src/modules/estoque/domain/entrada'
 import { apoioEstoqueMinimo, campoEstoqueMinimo, paraEstoqueMinimo } from '../campo-estoque-minimo'
-import { buscarItens, registrarEntrada } from '@/src/modules/estoque/presentation/actions/estoque'
+import { registrarEntrada } from '@/src/modules/estoque/presentation/actions/estoque'
+import { fonteItens, fonteKits } from '@/src/modules/estoque/presentation/lookups/fontes'
+import type { ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
 
 /**
  * Registro de Entrada (BR-EST-01, EST-03/EST-04).
  *
- * O campo "Nome do item" é um Combobox com autocomplete por índice trigram: é a
- * defesa contra cadastro duplicado ("Água Mineral 5L" × "agua mineral 5l"). O
- * operador **pode** cadastrar um item novo — o autocomplete existe para que ele
- * só faça isso quando realmente não achar o existente.
+ * O campo "Nome do item" é um Lookup em modo valor livre (021, FR-022/FR-025):
+ * a busca sem acento é a defesa contra cadastro duplicado ("Água Mineral 5L" ×
+ * "agua mineral 5l"). O operador **pode** cadastrar um item novo — as sugestões
+ * e a pesquisa existem para que ele só faça isso quando realmente não achar o
+ * existente.
  */
-type ItemEncontrado = { id: string; nome: string; categoria: CategoriaItem; unidadeMedida: UnidadeMedida }
 
 /**
  * Os nomes dos campos espelham as chaves que o domínio devolve em
@@ -103,10 +107,11 @@ const VALORES_INICIAIS: DadosFormulario = {
     estoqueMinimo: ''
 }
 
-export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: string }[]; limiarGlobal: number }) {
-    const [sugestoes, setSugestoes] = useState<ItemEncontrado[]>([])
-    const [buscando, setBuscando] = useState(false)
-    const [itemSelecionado, setItemSelecionado] = useState<ItemEncontrado | null>(null)
+export function EntradaForm({ limiarGlobal }: { limiarGlobal: number }) {
+    const queryClient = useQueryClient()
+    const [itemSelecionado, setItemSelecionado] = useState<ItemComSaldo | null>(null)
+    /** Nome do kit de destinação escolhido — o formulário guarda só o id. */
+    const [kitDestinoNome, setKitDestinoNome] = useState('')
     const [erroGeral, setErroGeral] = useState<string | null>(null)
 
     const {
@@ -127,23 +132,9 @@ export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: 
     /** Item novo = digitou um nome que não corresponde a nenhuma sugestão escolhida. */
     const ehItemNovo = itemSelecionado === null && nomeDigitado.trim().length > 0
 
-    /**
-     * A busca é deliberadamente independente do estado de envio: um `pending`
-     * compartilhado deixaria o botão "Registrar entrada" desabilitado enquanto o
-     * operador ainda digita o nome do item.
-     */
-    const buscar = useCallback(async (termo: string) => {
-        setBuscando(true)
-        try {
-            setSugestoes((await buscarItens(termo)) as ItemEncontrado[])
-        } finally {
-            setBuscando(false)
-        }
-    }, [])
-
     function limpar() {
         setItemSelecionado(null)
-        setSugestoes([])
+        setKitDestinoNome('')
         setErroGeral(null)
         // `reset` zera valores **e** mensagens de erro de uma vez (FR-016).
         reset(VALORES_INICIAIS)
@@ -181,6 +172,8 @@ export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: 
         }
 
         avisar.sucesso('Entrada registrada', 'O saldo do item foi atualizado.')
+        // Saldo mudou e pode ter nascido um item novo (contracts L-07).
+        void queryClient.invalidateQueries({ queryKey: RAIZ_LOOKUP })
         limpar()
     }
 
@@ -192,29 +185,21 @@ export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: 
                 control={control}
                 name="item"
                 render={({ field }) => (
-                    <Combobox
+                    <Lookup
                         ref={field.ref}
                         id="item"
                         label="Nome do item"
                         obrigatorio
                         apoio="Comece a digitar: sugerimos itens já cadastrados para evitar duplicidade."
-                        opcoes={sugestoes.map((i) => ({
-                            value: i.id,
-                            label: i.nome,
-                            descricao: `${ROTULO_CATEGORIA_ITEM[i.categoria]} · ${ROTULO_UNIDADE_MEDIDA[i.unidadeMedida]}`
-                        }))}
-                        carregando={buscando}
+                        fonte={fonteItens}
                         // Nome não encontrado é o caso normal de item novo: o texto
                         // digitado precisa permanecer no campo para virar o cadastro.
                         permitirValorLivre
-                        onBuscar={buscar}
-                        onInputValueChange={(termo) => {
-                            field.onChange(termo)
-                            // Editar o texto desfaz a seleção: o que vale é o que está escrito.
-                            if (itemSelecionado && termo !== itemSelecionado.nome) setItemSelecionado(null)
-                        }}
-                        onValueChange={(_valores, itens) => {
-                            const escolhido = sugestoes.find((s) => s.id === itens[0]?.value) ?? null
+                        value={itemSelecionado?.id ?? null}
+                        descricao={field.value}
+                        // Editar o texto desfaz a seleção: o que vale é o que está escrito.
+                        onTextoLivre={field.onChange}
+                        onSelecionar={(escolhido) => {
                             setItemSelecionado(escolhido)
                             if (escolhido) {
                                 field.onChange(escolhido.nome)
@@ -376,15 +361,21 @@ export function EntradaForm({ kits, limiarGlobal }: { kits: { id: string; nome: 
                 control={control}
                 name="kitDestinoId"
                 render={({ field }) => (
-                    <Select
+                    <Lookup
                         ref={field.ref}
                         id="kitDestinoId"
                         label="Destinação (kit)"
                         placeholder="Sem destinação específica"
                         apoio="Informativo: o item entra no saldo geral e pode sair avulso ou via kit."
-                        opcoes={kits.map((k) => ({ value: k.id, label: k.nome }))}
-                        value={field.value ? [field.value] : []}
-                        onValueChange={(v) => field.onChange(v[0])}
+                        fonte={fonteKits}
+                        // Sem bloqueio por receita: a destinação é informativa e todo
+                        // kit ativo era selecionável no select substituído (FR-024).
+                        value={field.value}
+                        descricao={kitDestinoNome}
+                        onSelecionar={(kit) => {
+                            setKitDestinoNome(kit?.nome ?? '')
+                            field.onChange(kit?.id)
+                        }}
                         erro={errors.kitDestinoId?.message}
                     />
                 )}

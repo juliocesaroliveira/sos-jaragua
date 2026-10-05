@@ -64,3 +64,18 @@ export function chaveSaidas(params: ParametrosPaginacao) {
 export function chaveNotificacoes() {
     return ['notificacoes'] as const
 }
+
+/**
+ * Sugestões e páginas do componente Lookup (021-componente-lookup).
+ *
+ * Também não deriva de `CACHE_TAGS`: as leituras do Lookup não são cacheadas
+ * no servidor (o termo muda a cada tecla), então não há tag para espelhar. O
+ * que o cliente precisa é invalidar **todos** os Lookups abertos depois de uma
+ * escrita que mexe em saldo ou cadastro — por isso uma raiz única, `['lookup']`
+ * (contracts/leituras-lookup.md L-07). `fonte` separa itens de kits.
+ */
+export const RAIZ_LOOKUP = ['lookup'] as const
+
+export function chaveLookup(fonte: string, tipo: 'sugestoes' | 'pagina', params: Record<string, unknown>) {
+    return [...RAIZ_LOOKUP, fonte, tipo, params] as const
+}

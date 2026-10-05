@@ -3,7 +3,7 @@
 import { Combobox as Ark, createListCollection } from '@ark-ui/react/combobox'
 import { Portal } from '@ark-ui/react/portal'
 import { Loader2, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type Ref } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref } from 'react'
 import { ANEL_FOCO, CLASSE_FLUTUANTE, cn } from '../cn'
 import { Campo, bordaControle, idsCampo } from '../campo/campo'
 import { Tooltip } from '../tooltip/tooltip'
@@ -19,7 +19,13 @@ const ROTULO_LIMPAR = 'Limpar seleção'
  * e evita cadastro duplicado. O debounce de digitação é responsabilidade deste
  * componente (200–300ms), não de cada tela.
  */
-export type OpcaoCombobox = { value: string; label: string; descricao?: string }
+export type OpcaoCombobox = {
+    value: string
+    label: string
+    descricao?: string
+    /** Exibida, mas não selecionável — o motivo vai em `descricao` (021, FR-013). */
+    disabled?: boolean
+}
 
 export interface ComboboxProps {
     id: string
@@ -48,6 +54,26 @@ export interface ComboboxProps {
      * cadastrar um registro novo a partir do que foi digitado.
      */
     permitirValorLivre?: boolean
+    /**
+     * Texto escrito no input por quem usa o componente — não pela digitação.
+     * Só é aplicado quando `versao` muda, e nunca dispara `onBuscar`: é como o
+     * Lookup (021) mostra a descrição de uma seleção feita fora da lista
+     * (diálogo, valor carregado em edição). Um `inputValue` controlado a cada
+     * render apagaria o texto em digitação; por isso a versão.
+     */
+    inputValueExterno?: { texto: string; versao: number }
+    /**
+     * `preserve` mantém o texto do input ao selecionar ou desfazer a seleção,
+     * deixando o texto inteiramente a cargo de quem usa (`inputValueExterno`).
+     * O padrão do primitivo (`replace`) reescreve o input a partir da collection
+     * a cada mudança de valor — e apaga o texto quando o valor selecionado não
+     * está entre as opções carregadas.
+     */
+    selectionBehavior?: 'replace' | 'preserve'
+    /** Ação dentro da borda do campo, à direita (ex.: botão de pesquisa do Lookup). */
+    acaoFim?: ReactNode
+    /** Conteúdo no fim da lista (dica de digitação, erro com "tentar de novo"). */
+    rodapeLista?: ReactNode
     /** Alvo do foco quando o envio é bloqueado (FR-011) — recebe `field.ref` do `Controller`. */
     ref?: Ref<HTMLInputElement>
 }
@@ -71,10 +97,25 @@ export function Combobox({
     mensagemVazia = 'Nenhum resultado encontrado.',
     debounceMs = 250,
     permitirValorLivre = false,
+    inputValueExterno,
+    selectionBehavior,
+    acaoFim,
+    rodapeLista,
     ref
 }: ComboboxProps) {
     const ids = idsCampo(id, Boolean(erro), Boolean(apoio))
-    const [termo, setTermo] = useState(defaultInputValue ?? '')
+    const [termo, setTermo] = useState(inputValueExterno?.texto ?? defaultInputValue ?? '')
+    /**
+     * Último texto aplicado de fora. Enquanto o input mostrar exatamente ele, o
+     * debounce não busca — a descrição de uma seleção não é um termo digitado.
+     * Qualquer digitação limpa a marca.
+     */
+    const externoRef = useRef<string | null>(inputValueExterno?.texto ?? null)
+    const versaoExterna = inputValueExterno?.versao
+    const textoExternoRef = useRef(inputValueExterno?.texto)
+    useEffect(() => {
+        textoExternoRef.current = inputValueExterno?.texto
+    })
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
     /**
@@ -89,8 +130,21 @@ export function Combobox({
         buscarRef.current = onBuscar
     })
 
+    /**
+     * Só a versão decide quando reescrever o input: no modo valor livre o texto
+     * muda a cada tecla sem que isso seja uma escrita externa. O texto é lido da
+     * ref atualizada no efeito acima, que roda antes deste no mesmo commit.
+     */
+    useEffect(() => {
+        if (versaoExterna === undefined) return
+        const texto = textoExternoRef.current ?? ''
+        externoRef.current = texto
+        setTermo(texto)
+    }, [versaoExterna])
+
     useEffect(() => {
         if (!buscarRef.current) return
+        if (externoRef.current !== null && termo === externoRef.current) return
         clearTimeout(timeoutRef.current)
         timeoutRef.current = setTimeout(() => buscarRef.current?.(termo), debounceMs)
         return () => clearTimeout(timeoutRef.current)
@@ -101,7 +155,8 @@ export function Combobox({
             createListCollection({
                 items: [...opcoes],
                 itemToValue: (i) => i.value,
-                itemToString: (i) => i.label
+                itemToString: (i) => i.label,
+                isItemDisabled: (i) => Boolean(i.disabled)
             }),
         [opcoes]
     )
@@ -118,12 +173,16 @@ export function Combobox({
                 value={value}
                 inputValue={termo}
                 onInputValueChange={(detalhe) => {
+                    // Mudança vinda do primitivo (digitação, revert): deixa de
+                    // ser o texto externo e volta a valer como termo de busca.
+                    if (detalhe.inputValue !== externoRef.current) externoRef.current = null
                     setTermo(detalhe.inputValue)
                     onInputValueChange?.(detalhe.inputValue)
                 }}
                 onValueChange={(detalhe) => onValueChange?.(detalhe.value, detalhe.items as OpcaoCombobox[])}
                 disabled={disabled}
                 allowCustomValue={permitirValorLivre}
+                selectionBehavior={selectionBehavior}
                 // A filtragem acontece no servidor (índice trigram); o
                 // componente só exibe o que recebeu.
                 openOnClick
@@ -170,6 +229,7 @@ export function Combobox({
                             </Ark.ClearTrigger>
                         </Tooltip>
                     )}
+                    {acaoFim}
                 </Ark.Control>
                 <Portal>
                     <Ark.Positioner className={CLASSE_FLUTUANTE}>
@@ -186,7 +246,7 @@ export function Combobox({
                                     <Ark.Item
                                         key={opcao.value}
                                         item={opcao}
-                                        className="flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 data-highlighted:bg-surface-muted"
+                                        className="flex min-h-11 cursor-pointer flex-col justify-center rounded-lg px-3 data-highlighted:bg-surface-muted data-disabled:cursor-not-allowed data-disabled:opacity-50"
                                     >
                                         <Ark.ItemText className="text-base text-foreground">{opcao.label}</Ark.ItemText>
                                         {opcao.descricao && (
@@ -195,6 +255,7 @@ export function Combobox({
                                     </Ark.Item>
                                 ))
                             )}
+                            {rodapeLista}
                         </Ark.Content>
                     </Ark.Positioner>
                 </Portal>

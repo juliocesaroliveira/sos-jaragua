@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useId, useState, useTransition } from 'react'
+import { useEffect, useId, useMemo, useState, useTransition } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { RAIZ_LOOKUP } from '@/src/shared/query/chaves'
 import { Alert } from '@/src/shared/ui/alert/alert'
 import { Badge } from '@/src/shared/ui/badge/badge'
 import { Button } from '@/src/shared/ui/button/button'
@@ -12,16 +14,17 @@ import { Dialog } from '@/src/shared/ui/dialog/dialog'
 import { Formulario } from '@/src/shared/ui/formulario/formulario'
 import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
 import { Input } from '@/src/shared/ui/input/input'
+import { Lookup } from '@/src/shared/ui/lookup/lookup'
 import { NumberInput } from '@/src/shared/ui/number-input/number-input'
-import { Select } from '@/src/shared/ui/select/select'
 import { Switch } from '@/src/shared/ui/switch/switch'
 import { Textarea } from '@/src/shared/ui/textarea/textarea'
 import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
 import { avisar } from '@/src/shared/ui/toast/toast'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade, kitsPossiveis } from '@/src/modules/estoque/domain'
-import type { ItemComSaldo, KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
+import type { KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { salvarKit } from '@/src/modules/estoque/presentation/actions/estoque'
+import { fonteItens } from '@/src/modules/estoque/presentation/lookups/fontes'
 
 /**
  * CRUD de Kits e composição da receita (BR-EST-02, BR-EST-03 — EST-06).
@@ -77,7 +80,8 @@ const VALORES_INICIAIS: DadosFormulario = {
     componentes: [COMPONENTE_VAZIO]
 }
 
-export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: ItemComSaldo[] }) {
+export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
+    const queryClient = useQueryClient()
     const [enviando, iniciarTransicao] = useTransition()
 
     const [editando, setEditando] = useState<KitComReceita | null>(null)
@@ -87,7 +91,29 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
     /** Prefixo de `id` estável entre servidor e cliente — ver `saida-form.tsx`. */
     const idBase = useId()
 
-    const saldos = new Map(itens.map((i) => [i.id, i.saldo]))
+    /**
+     * Saldo de cada item que aparece em alguma receita — o único que
+     * `kitsPossiveis` consulta. Vem dos próprios componentes (a query já traz o
+     * saldo de cada um), o que dispensa carregar o catálogo inteiro na tela.
+     */
+    const saldos = useMemo(
+        () => new Map(kits.flatMap((k) => k.componentes.map((c) => [c.itemId, c.saldo] as const))),
+        [kits]
+    )
+
+    /**
+     * Descrição exibida no Lookup de cada componente, por id do item. Começa com
+     * os nomes das receitas gravadas — é o que faz a edição de um kit mostrar os
+     * itens sem nova seleção (FR-012) — e recebe cada item escolhido.
+     */
+    const [nomesSelecionados, setNomesSelecionados] = useState<Record<string, string>>({})
+    const nomes = useMemo(
+        () => ({
+            ...Object.fromEntries(kits.flatMap((k) => k.componentes.map((c) => [c.itemId, c.nome] as const))),
+            ...nomesSelecionados
+        }),
+        [kits, nomesSelecionados]
+    )
 
     const {
         control,
@@ -163,6 +189,9 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
             }
 
             avisar.sucesso(editando ? 'Kit atualizado' : 'Kit criado')
+            // Receita e nome mudaram: o Lookup de kits da saída e da entrada
+            // precisa refletir (contracts L-07).
+            void queryClient.invalidateQueries({ queryKey: RAIZ_LOOKUP })
             setAberto(false)
         })
     }
@@ -331,14 +360,23 @@ export function GestaoKits({ kits, itens }: { kits: KitComReceita[]; itens: Item
                                             control={control}
                                             name={`componentes.${indice}.itemId`}
                                             render={({ field }) => (
-                                                <Select
+                                                <Lookup
                                                     ref={field.ref}
                                                     id={`item-${idBase}-${indice}`}
                                                     label="Item"
                                                     obrigatorio
-                                                    opcoes={itens.map((i) => ({ value: i.id, label: i.nome }))}
-                                                    value={field.value ? [field.value] : []}
-                                                    onValueChange={(v) => field.onChange(v[0] ?? '')}
+                                                    fonte={fonteItens}
+                                                    value={field.value}
+                                                    descricao={field.value ? (nomes[field.value] ?? '') : ''}
+                                                    onSelecionar={(item) => {
+                                                        if (item) {
+                                                            setNomesSelecionados((atual) => ({
+                                                                ...atual,
+                                                                [item.id]: item.nome
+                                                            }))
+                                                        }
+                                                        field.onChange(item?.id ?? '')
+                                                    }}
                                                     erro={errors.componentes?.[indice]?.itemId?.message}
                                                 />
                                             )}

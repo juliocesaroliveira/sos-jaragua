@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
-import { listarItens, listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
+import { listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { GestaoKits } from './gestao-kits'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
@@ -33,6 +33,6 @@ async function Conteudo() {
     // ROLES_STAFF (DESIGN.md §6.2).
     await exigirAcessoA('/estoque/kits')
 
-    const [kits, itens] = await Promise.all([listarKitsComReceita(), listarItens()])
-    return <GestaoKits kits={kits} itens={itens} />
+    const kits = await listarKitsComReceita()
+    return <GestaoKits kits={kits} />
 }

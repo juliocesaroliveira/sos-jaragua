@@ -20,8 +20,6 @@ export type ItemComSaldo = Item & { saldo: number }
 
 export interface ItemRepository {
     buscarPorId(id: string): Promise<Item | null>
-    /** Autocomplete por similaridade (índice trigram) — BR-EST-01. */
-    buscarPorNome(termo: string, limite?: number): Promise<Item[]>
     criar(dados: { nome: string; categoria: CategoriaItem; unidadeMedida: UnidadeMedida }): Promise<Item>
     /** `null` volta a herdar o padrão global (feature 020, Q3). */
     definirEstoqueMinimo(id: string, estoqueMinimo: number | null): Promise<void>

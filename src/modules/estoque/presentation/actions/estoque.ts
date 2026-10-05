@@ -45,19 +45,6 @@ function invalidarSaldo() {
     revalidateTag(CACHE_TAGS.dashboardKits, PERFIL_REVALIDACAO)
 }
 
-// -- Autocomplete de item (BR-EST-01) -----------------------------------------
-
-/**
- * Busca por similaridade trigram. É uma Server Action (e não uma query
- * cacheada) porque o termo muda a cada tecla: cachear por termo encheria o
- * cache de entradas de uso único.
- */
-export async function buscarItens(termo: string) {
-    const ator = await exigir(ROLES_OPERACAO)
-    if (!ator) return []
-    return itemRepository.buscarPorNome(termo, 10)
-}
-
 // -- Entrada (EST-04) ---------------------------------------------------------
 
 const esquemaEntrada = z.object({
@@ -98,9 +85,9 @@ export async function registrarEntrada(
     const resultado = await comAtorDaSessao(ator, () => useCase.executar({ ...parse.data, registradoPor: ator.userId }))
 
     if (resultado.ok) {
+        // Item novo aparece nas buscas do Lookup sem invalidação de cache: essas
+        // leituras não são cacheadas no servidor (021, queries/estoque.ts).
         invalidarSaldo()
-        // Item novo entra no catálogo do autocomplete imediatamente.
-        updateTag(CACHE_TAGS.estoqueItens)
         // Item novo pode nascer já abaixo do mínimo informado (feature 020).
         if (parse.data.novoItem && !parse.data.itemId) agendarAlertasDeEstoque({ estoqueCritico: true })
     }

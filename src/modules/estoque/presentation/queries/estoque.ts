@@ -1,10 +1,11 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { asc, count, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
+import { escaparLike } from '@/src/shared/busca/escapar-like'
 import { paraNumero } from '../../domain/quantidade'
 import type { CategoriaItem, UnidadeMedida } from '../../domain/item'
 
@@ -25,37 +26,6 @@ function comNumeros<T extends { saldo: string | null; estoqueMinimo: string | nu
         saldo: paraNumero(linha.saldo ?? '0'),
         estoqueMinimo: linha.estoqueMinimo === null ? null : paraNumero(linha.estoqueMinimo)
     }
-}
-
-/**
- * Catálogo de itens para o autocomplete da Entrada (BR-EST-01).
- * Cacheado sob `estoque:itens`, invalidado por qualquer criação de item.
- *
- * **`'use cache: remote'`** (DESIGN.md §7): em serverless o `'use cache'`
- * padrão guarda o resultado na memória de cada instância, que raramente
- * atende o request seguinte. Dados de referência — poucas chaves, lidos em
- * quase toda tela — vão para o cache remoto da plataforma, compartilhado entre
- * instâncias; `cacheTag` + `updateTag`/`revalidateTag` o invalidam igual.
- */
-export async function listarItens(): Promise<ItemComSaldo[]> {
-    'use cache: remote'
-    cacheTag(CACHE_TAGS.estoqueItens, CACHE_TAGS.estoqueSaldo)
-    cacheLife(CACHE_LIFE.curto)
-
-    const linhas = await db
-        .select({
-            id: item.id,
-            nome: item.nome,
-            categoria: item.categoria,
-            unidadeMedida: item.unidadeMedida,
-            saldo: saldoEstoque.quantidadeAtual,
-            estoqueMinimo: item.estoqueMinimo
-        })
-        .from(item)
-        .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
-        .orderBy(asc(item.nome))
-
-    return linhas.map(comNumeros) as ItemComSaldo[]
 }
 
 export type FiltrosEstoque = ParametrosPaginacao & {
@@ -108,6 +78,129 @@ async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSa
         rows: linhas.map(comNumeros) as ItemComSaldo[],
         totalCount: total?.total ?? 0
     }
+}
+
+// -- Leituras do Lookup (021, contracts/leituras-lookup.md) ------------------
+//
+// **Sem `'use cache'`**, de propósito: o termo muda a cada tecla, e cachear por
+// termo encheria o cache de entradas de uso único — a mesma decisão do antigo
+// autocomplete da Entrada. A velocidade vem do índice
+// `item_nome_unaccent_trgm_idx` e do read-model `saldo_estoque`; a repetição
+// imediata (voltar a uma página, reabrir as sugestões) é absorvida pelo
+// TanStack Query no cliente.
+
+/** Limite fixo de sugestões por digitação (L-02) — o cliente não escolhe. */
+const LIMITE_SUGESTOES = 5
+
+export type FiltrosLookup = ParametrosPaginacao & { termo?: string }
+
+/**
+ * Filtro por nome sem acento e sem caixa (FR-015). `%` (similaridade trigram)
+ * usa o índice `item_nome_unaccent_trgm_idx`; o `ilike` cobre o termo curto,
+ * cuja similaridade ainda não passa do limiar padrão do `pg_trgm` — o mesmo
+ * par que `buscarPorNome` usava, agora sobre `f_unaccent`.
+ */
+function condicaoNome(coluna: AnyColumn, termo: string): SQL {
+    return sql`(f_unaccent(${coluna}) % f_unaccent(${termo}) or f_unaccent(${coluna}) ilike '%' || f_unaccent(${escaparLike(termo)}) || '%' escape '\\')`
+}
+
+function ordemPorSemelhanca(coluna: AnyColumn, termo: string | undefined): SQL[] {
+    return termo ? [desc(sql`similarity(f_unaccent(${coluna}), f_unaccent(${termo}))`), asc(coluna)] : [asc(coluna)]
+}
+
+const COLUNAS_ITEM_COM_SALDO = {
+    id: item.id,
+    nome: item.nome,
+    categoria: item.categoria,
+    unidadeMedida: item.unidadeMedida,
+    saldo: saldoEstoque.quantidadeAtual,
+    estoqueMinimo: item.estoqueMinimo
+}
+
+/** Sugestões de item para o Lookup — até 5, por semelhança com o termo. */
+export async function sugerirItens(termo: string): Promise<ItemComSaldo[]> {
+    const linhas = await db
+        .select(COLUNAS_ITEM_COM_SALDO)
+        .from(item)
+        .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
+        .where(condicaoNome(item.nome, termo))
+        .orderBy(...ordemPorSemelhanca(item.nome, termo))
+        .limit(LIMITE_SUGESTOES)
+
+    return linhas.map(comNumeros) as ItemComSaldo[]
+}
+
+/** Página da tabela de pesquisa de itens do Lookup (FR-005, FR-007). */
+export async function listarItensLookup(filtros: FiltrosLookup): Promise<PaginaDe<ItemComSaldo>> {
+    return paginarComClamp(filtros, async ({ page, pageSize }) => {
+        const where = filtros.termo ? condicaoNome(item.nome, filtros.termo) : undefined
+        const [linhas, [total]] = await Promise.all([
+            db
+                .select(COLUNAS_ITEM_COM_SALDO)
+                .from(item)
+                .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
+                .where(where)
+                .orderBy(...ordemPorSemelhanca(item.nome, filtros.termo))
+                .limit(pageSize)
+                .offset((page - 1) * pageSize),
+            db.select({ total: count() }).from(item).where(where)
+        ])
+        return { rows: linhas.map(comNumeros) as ItemComSaldo[], totalCount: total?.total ?? 0 }
+    })
+}
+
+export type KitLookup = {
+    id: string
+    nome: string
+    ativo: boolean
+    /** `0` ⇒ kit sem receita — não selecionável na saída (FR-023). */
+    totalComponentes: number
+}
+
+const COLUNAS_KIT_LOOKUP = {
+    id: kit.id,
+    nome: kit.nome,
+    ativo: kit.ativo,
+    // `count` da coluna do lado direito do left join: kit sem receita conta 0.
+    totalComponentes: count(kitReceitaItem.itemId)
+}
+
+/** Só kits ativos: é o que a saída e a destinação da entrada aceitam. */
+function condicaoKit(termo: string | undefined): SQL {
+    const ativo = eq(kit.ativo, true)
+    return termo ? (and(ativo, condicaoNome(kit.nome, termo)) as SQL) : ativo
+}
+
+/** Sugestões de kit para o Lookup — até 5, só ativos. */
+export async function sugerirKits(termo: string): Promise<KitLookup[]> {
+    return db
+        .select(COLUNAS_KIT_LOOKUP)
+        .from(kit)
+        .leftJoin(kitReceitaItem, eq(kitReceitaItem.kitId, kit.id))
+        .where(condicaoKit(termo))
+        .groupBy(kit.id)
+        .orderBy(...ordemPorSemelhanca(kit.nome, termo))
+        .limit(LIMITE_SUGESTOES)
+}
+
+/** Página da tabela de pesquisa de kits do Lookup — só ativos. */
+export async function listarKitsLookup(filtros: FiltrosLookup): Promise<PaginaDe<KitLookup>> {
+    return paginarComClamp(filtros, async ({ page, pageSize }) => {
+        const where = condicaoKit(filtros.termo)
+        const [linhas, [total]] = await Promise.all([
+            db
+                .select(COLUNAS_KIT_LOOKUP)
+                .from(kit)
+                .leftJoin(kitReceitaItem, eq(kitReceitaItem.kitId, kit.id))
+                .where(where)
+                .groupBy(kit.id)
+                .orderBy(...ordemPorSemelhanca(kit.nome, filtros.termo))
+                .limit(pageSize)
+                .offset((page - 1) * pageSize),
+            db.select({ total: count() }).from(kit).where(where)
+        ])
+        return { rows: linhas, totalCount: total?.total ?? 0 }
+    })
 }
 
 export type ComponenteDoKit = {

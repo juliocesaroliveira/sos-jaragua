@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { asc, eq, inArray, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { descarte, entrada, item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { arredondar, paraNumeric, paraNumero } from '../../domain/quantidade'
@@ -39,26 +39,6 @@ export const itemRepository: ItemRepository = {
     async buscarPorId(id) {
         const [linha] = await db.select(COLUNAS_ITEM).from(item).where(eq(item.id, id)).limit(1)
         return linha ? paraItem(linha as LinhaItem) : null
-    },
-
-    async buscarPorNome(termo, limite = 10) {
-        const busca = termo.trim()
-        if (busca.length === 0) {
-            const linhas = await db.select(COLUNAS_ITEM).from(item).orderBy(asc(item.nome)).limit(limite)
-            return (linhas as LinhaItem[]).map(paraItem)
-        }
-
-        // `%` (similaridade trigram) usa o índice GIN de `item.nome`; o
-        // `ilike` cobre o prefixo curto, onde a similaridade ainda é baixa
-        // demais para passar do limiar padrão do pg_trgm.
-        const linhas = await db
-            .select(COLUNAS_ITEM)
-            .from(item)
-            .where(sql`${item.nome} % ${busca} or ${item.nome} ilike ${'%' + busca + '%'}`)
-            .orderBy(desc(sql`similarity(${item.nome}, ${busca})`), asc(item.nome))
-            .limit(limite)
-
-        return (linhas as LinhaItem[]).map(paraItem)
     },
 
     async criar(dados) {

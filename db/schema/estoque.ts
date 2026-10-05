@@ -67,6 +67,11 @@ export const item = pgTable(
         // Índice trigram para o autocomplete-dedup da Entrada (BR-EST-01).
         // A extensão `pg_trgm` é criada por um statement manual na migration.
         index('item_nome_trgm_idx').using('gin', sql`${t.nome} gin_trgm_ops`),
+        // Busca sem acento do Lookup (021, FR-015): "agua" encontra "Água".
+        // A extensão `unaccent` e a função IMMUTABLE `f_unaccent` vêm de
+        // statements manuais na migration 0006 — `unaccent()` é STABLE e não
+        // pode compor um índice.
+        index('item_nome_unaccent_trgm_idx').using('gin', sql`f_unaccent(${t.nome}) gin_trgm_ops`),
         index('item_categoria_idx').on(t.categoria)
     ]
 )

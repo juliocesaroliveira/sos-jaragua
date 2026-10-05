@@ -43,6 +43,13 @@
       "when": 1790883892762,
       "tag": "0005_mean_misty_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791237631326,
+      "tag": "0006_lookup_unaccent",
+      "breakpoints": true
     }
   ]
 }

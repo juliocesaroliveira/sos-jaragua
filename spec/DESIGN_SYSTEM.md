@@ -238,7 +238,7 @@ ad-hoc por tela.
 | `notificacao_envio.status`                        | `falhou`     | `danger`                                                                         |
 | Turno com déficit (Kanban, `preenchidas < vagas`) | —            | fundo `danger-50`/borda `danger-400` (claro), `danger-950`/`danger-700` (escuro) |
 | Alerta "Estoque Crítico"                          | —            | banner `warning`                                                                 |
-| Item com saldo ≤ mínimo (tabela de estoque)       | —            | badge `warning` "Abaixo do mínimo" (`COR_ESTOQUE_ITEM`)                         |
+| Item com saldo ≤ mínimo (tabela de estoque)       | —            | badge `warning` "Abaixo do mínimo" (`COR_ESTOQUE_ITEM`)                          |
 | Alerta "Déficit de Atendimento"                   | —            | banner `danger`                                                                  |
 | Alerta "Cadastros Acumulados"                     | —            | banner `info`                                                                    |
 
@@ -323,13 +323,13 @@ Base: Ark UI `PasswordInput`, partes `Root`, `Control`, `Input`, `VisibilityTrig
 `Indicator`. **`PasswordInput.Label` não é usada** — quem renderiza rótulo, marcação de
 obrigatório e faixa de apoio/erro é a moldura `Campo`, como em todos os outros campos.
 
-| Detalhe | Regra |
-| ------- | ----- |
-| Caixa visual | É o `Control`, não o `<input>` — o gatilho vive dentro da mesma borda. Anel de foco por `focus-within` |
-| Gatilho | `size-11` (44×44, §1.3) com ícone de 20px (§1.8): `Eye` quando oculto, `EyeOff` quando visível |
-| Posição do gatilho | **Irmão** do input no flex, nunca sobreposto — o texto digitado não tem como passar por baixo |
-| `autoComplete` | Obrigatório e sem padrão: `current-password` para autenticar, `new-password` para criar ou redefinir |
-| Estado inicial | Sempre oculto, em qualquer montagem |
+| Detalhe            | Regra                                                                                                  |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| Caixa visual       | É o `Control`, não o `<input>` — o gatilho vive dentro da mesma borda. Anel de foco por `focus-within` |
+| Gatilho            | `size-11` (44×44, §1.3) com ícone de 20px (§1.8): `Eye` quando oculto, `EyeOff` quando visível         |
+| Posição do gatilho | **Irmão** do input no flex, nunca sobreposto — o texto digitado não tem como passar por baixo          |
+| `autoComplete`     | Obrigatório e sem padrão: `current-password` para autenticar, `new-password` para criar ou redefinir   |
+| Estado inicial     | Sempre oculto, em qualquer montagem                                                                    |
 
 **Duas correções sobre o que a biblioteca entrega** — as duas são obrigatórias, e nenhuma
 falha de forma visível se for removida:
@@ -394,9 +394,53 @@ apagado pelo teclado.
 ### 4.4. Combobox
 
 - Ark UI `Combobox` (`Root`, `Input`, `Content`, `Item`, `ClearTrigger`).
-- **Uso único e crítico**: autocomplete de "Nome do Item" na tela de Entrada (BR-EST-01),
-  consultando `item.nome` via índice trigram. Debounce de 200–300ms na digitação.
+- Base do `Lookup` (§4.4.1), que é como as telas o usam. Debounce de 200–300ms na digitação
+  é responsabilidade do componente.
 - **Limpar seleção** — ver §4.3.1.
+- **Extensões (021)**, todas opcionais e sem efeito sobre usos que não as passam:
+    - `OpcaoCombobox.disabled` — opção exibida, mas não selecionável (atenuada, com o motivo
+      na `descricao`).
+    - `acaoFim` — ação dentro da borda do campo, à direita (a lupa do Lookup).
+    - `rodapeLista` — conteúdo no fim da lista (ex.: "Tentar de novo" após erro de busca).
+    - `selectionBehavior="preserve"` + `inputValueExterno={{ texto, versao }}` — o texto do
+      input passa a ser de quem usa: só é reescrito quando `versao` muda, e essa escrita não
+      dispara busca. Necessário porque, no comportamento padrão do primitivo, mudar o valor
+      selecionado reescreve o input a partir das opções carregadas — o que apagava o texto em
+      digitação e esvaziava o campo quando o registro escolhido não estava entre as opções.
+
+#### 4.4.1. Lookup (021-componente-lookup)
+
+Campo de referência a um registro de outro cadastro (FK). `src/shared/ui/lookup/lookup.tsx`.
+
+- **Anatomia**: `Combobox` + `IconButton` de lupa ("Pesquisar {rótulo}", com tooltip) dentro
+  da borda do campo + diálogo de pesquisa (`LookupDialog`: filtro + `Table` paginada no
+  servidor).
+- **Dois caminhos para a mesma seleção**:
+    - **Digitação**: a partir de 2 caracteres, até 5 sugestões do servidor, com linha
+      secundária de detalhe (ex.: categoria · saldo). Abaixo de 2 caracteres, a lista diz
+      "Digite ao menos 2 caracteres." sem consultar o servidor.
+    - **Pesquisa**: o diálogo abre com o foco no filtro. Mudar o filtro volta à página 1.
+      Clique, Enter ou Espaço numa linha seleciona e fecha. Fechar sem escolher não altera nada.
+- **Valor**: o campo do formulário guarda só o identificador. A descrição exibida vem de
+  quem usa, pela prop `descricao`. Em edição, ela vem do dado já carregado, sem nova seleção.
+- **Digitar com algo selecionado desfaz a seleção** e mantém o texto em tela. Sem o modo valor
+  livre, texto que não virou seleção é descartado ao sair do campo, e a validação de
+  obrigatório cuida do envio.
+- **Modo valor livre** (`permitirValorLivre` + `onTextoLivre`): o texto digitado é um valor
+  válido. Só a Entrada usa, para o nome de item novo.
+- **Indisponíveis** (`motivoIndisponivel`): o registro aparece, com o motivo em texto ("Sem
+  saldo", "Sem receita"), mas não é selecionável — nas sugestões e na tabela, onde ganha a
+  coluna "Situação". A regra é do **uso**, não da fonte.
+- **Fonte** (`FonteLookup<T>`): declarada pelo módulo dono dos dados (ex.:
+  `src/modules/estoque/presentation/lookups/fontes.ts`) — ações de sugestão e de página,
+  `idDe`, `descricaoDe`, `detalheDe`, colunas e título da pesquisa. O componente não importa
+  nada de módulo.
+- **Estados**: carregando (spinner no campo; tabela atenuada na troca de página), vazio,
+  erro com "Tentar de novo" — todos em pt-BR.
+- **Limpar**: campo opcional mostra o botão de limpar; campo obrigatório limpa apagando o
+  texto (§4.3.1).
+- **Cache no cliente**: sugestões e páginas ficam sob `['lookup', …]`. Toda escrita que muda
+  saldo ou cadastro invalida `RAIZ_LOOKUP`.
 
 ### 4.5. CheckboxGroup / RadioGroup / Switch
 
@@ -426,6 +470,8 @@ apagado pelo teclado.
   posicionamento lateral/inferior via CSS) — filtros de listagem em mobile, formulários
   longos que não cabem em modal centralizado.
 - `rounded-xl`, `shadow-lg`, overlay `bg-black/50`.
+- `focoInicial` (021) define quem recebe o foco ao abrir. Sem ele, o primitivo foca o primeiro
+  tabulável (o "Fechar" do cabeçalho), e `autoFocus` no conteúdo é ignorado.
 
 ### 4.8. Toast
 
@@ -544,6 +590,13 @@ têm botão de fechar com dica. É seguro porque o conteúdo da dica não recebe
   `py-3`), cabeçalho `text-xs font-semibold uppercase text-neutral-500`, linha com hover
   `bg-surface-muted`, linha clicável quando aplicável mantém o touch target de 44px em
   cada célula de ação.
+- **Linha acionável (021)**: com `onLinhaClick`, cada linha é focável (`tabIndex=0`), ativa
+  com Enter/Espaço e mostra anel de foco — clicar na linha nunca depende só do mouse.
+  `linhaDesabilitada` torna uma linha visível, mas inerte (`aria-disabled`, atenuada, fora da
+  ordem de foco). O motivo vai numa coluna de texto, não só no visual.
+- **Paginação fora da URL**: tabelas dentro de diálogo usam `useListagemLocal`
+  (`src/shared/query`), com o mesmo contrato de `useListagemPaginada`, mas com página em
+  estado local.
 
 ### 4.14. Alert / Banner
 
@@ -583,12 +636,12 @@ os requisitos de validação estão atendidos sem nenhuma decisão adicional.
 
 #### As peças
 
-| Peça                      | Onde                              | Papel                                                        |
-| ------------------------- | --------------------------------- | ------------------------------------------------------------ |
-| `Formulario`              | `src/shared/ui/formulario`        | O `<form>`, sempre com `noValidate`                          |
-| `useFormulario(esquema)`  | `src/shared/formulario`           | `useForm` com a configuração fixa do padrão                  |
-| Construtores de campo     | `src/shared/formulario/campos.ts` | `textoObrigatorio`, `email`, `senha`, `selecaoObrigatoria`, `listaNaoVazia` |
-| `aplicarErrosDoServidor`  | `src/shared/formulario`           | Recusa do servidor → campo certo, ou aviso geral             |
+| Peça                     | Onde                              | Papel                                                                       |
+| ------------------------ | --------------------------------- | --------------------------------------------------------------------------- |
+| `Formulario`             | `src/shared/ui/formulario`        | O `<form>`, sempre com `noValidate`                                         |
+| `useFormulario(esquema)` | `src/shared/formulario`           | `useForm` com a configuração fixa do padrão                                 |
+| Construtores de campo    | `src/shared/formulario/campos.ts` | `textoObrigatorio`, `email`, `senha`, `selecaoObrigatoria`, `listaNaoVazia` |
+| `aplicarErrosDoServidor` | `src/shared/formulario`           | Recusa do servidor → campo certo, ou aviso geral                            |
 
 #### Regras
 
@@ -600,7 +653,7 @@ os requisitos de validação estão atendidos sem nenhuma decisão adicional.
    (`.superRefine()` com `path` no campo dependente), nunca espalhadas por manipulador de
    evento. Ao desligar a condição, limpe o erro do campo dependente com `clearErrors`: o
    campo sai da tela, e uma mensagem órfã bloquearia o envio sem nada visível para corrigir.
-4. **Toda mensagem em pt-BR, no esquema, nunca no JSX.** Declare o texto também no *tipo*
+4. **Toda mensagem em pt-BR, no esquema, nunca no JSX.** Declare o texto também no _tipo_
    (`z.string({ error })`, o que os construtores já fazem): com o campo `undefined` — o
    formulário enviado vazio, o caso mais comum — o `.min()` sequer roda e a mensagem cairia
    no locale.
@@ -614,11 +667,11 @@ os requisitos de validação estão atendidos sem nenhuma decisão adicional.
 
 #### Comportamento fixado por `useFormulario`
 
-| Opção              | Valor        | Por quê                                                              |
-| ------------------ | ------------ | -------------------------------------------------------------------- |
-| `mode`             | `'onSubmit'` | Não marca erro antes da primeira tentativa — não pune quem preenche  |
-| `reValidateMode`   | `'onChange'` | Depois do envio, a mensagem some sozinha ao corrigir                 |
-| `shouldFocusError` | `true`       | Foco no primeiro campo com erro                                      |
+| Opção              | Valor        | Por quê                                                             |
+| ------------------ | ------------ | ------------------------------------------------------------------- |
+| `mode`             | `'onSubmit'` | Não marca erro antes da primeira tentativa — não pune quem preenche |
+| `reValidateMode`   | `'onChange'` | Depois do envio, a mensagem some sozinha ao corrigir                |
+| `shouldFocusError` | `true`       | Foco no primeiro campo com erro                                     |
 
 Não são parametrizáveis: é o que torna o comportamento igual entre formulários. Divergir
 exige decisão documentada, não um parâmetro a mais.

@@ -2,7 +2,7 @@
 
 import { useTable, type ColumnDef, type RowData } from '@tanstack/react-table'
 import type { ReactNode } from 'react'
-import { cn } from '../cn'
+import { ANEL_FOCO, cn } from '../cn'
 import { Skeleton } from '../skeleton/skeleton'
 import { TableFooter, type PaginacaoTabela } from './table-footer'
 
@@ -34,7 +34,14 @@ export interface TableProps<TData extends RowData> {
     carregando?: boolean
     /** Exibido quando `dados` está vazio e não há carregamento em curso. */
     vazio?: ReactNode
+    /**
+     * Torna a linha acionável — por clique **e** por teclado (Tab até a linha,
+     * Enter ou Espaço), para que a seleção por linha do Lookup (021, FR-006/017)
+     * não dependa de mouse.
+     */
     onLinhaClick?: (linha: TData) => void
+    /** Linha exibida, mas não acionável (ex.: item sem saldo no Lookup da saída). */
+    linhaDesabilitada?: (linha: TData) => boolean
     /**
      * Quando presente, o rodapé de paginação é renderizado — inclusive com
      * `totalCount === 0` ou uma única página (U-01.2). Ausente, o `Table`
@@ -57,6 +64,7 @@ export function Table<TData extends RowData>({
     carregando,
     vazio,
     onLinhaClick,
+    linhaDesabilitada,
     paginacao,
     atualizando
 }: TableProps<TData>) {
@@ -110,26 +118,43 @@ export function Table<TData extends RowData>({
                         ))}
                     </thead>
                     <tbody className="divide-y divide-border">
-                        {table.getRowModel().rows.map((linha) => (
-                            <tr
-                                key={linha.id}
-                                onClick={onLinhaClick ? () => onLinhaClick(linha.original as TData) : undefined}
-                                className={cn(
-                                    'hover:bg-surface-muted',
-                                    onLinhaClick && 'cursor-pointer focus-within:bg-surface-muted'
-                                )}
-                            >
-                                {/* `getAllCells` e não `getVisibleCells`: a feature de
+                        {table.getRowModel().rows.map((linha) => {
+                            const original = linha.original as TData
+                            const desabilitada = linhaDesabilitada?.(original) ?? false
+                            const acionavel = Boolean(onLinhaClick) && !desabilitada
+                            return (
+                                <tr
+                                    key={linha.id}
+                                    tabIndex={onLinhaClick ? (acionavel ? 0 : -1) : undefined}
+                                    aria-disabled={onLinhaClick && desabilitada ? true : undefined}
+                                    onClick={acionavel ? () => onLinhaClick?.(original) : undefined}
+                                    onKeyDown={
+                                        acionavel
+                                            ? (evento) => {
+                                                  if (evento.key !== 'Enter' && evento.key !== ' ') return
+                                                  evento.preventDefault()
+                                                  onLinhaClick?.(original)
+                                              }
+                                            : undefined
+                                    }
+                                    className={cn(
+                                        'hover:bg-surface-muted',
+                                        acionavel && cn('cursor-pointer focus-within:bg-surface-muted', ANEL_FOCO),
+                                        desabilitada && 'cursor-not-allowed opacity-60'
+                                    )}
+                                >
+                                    {/* `getAllCells` e não `getVisibleCells`: a feature de
                                 visibilidade de coluna não está habilitada — as
                                 colunas exibidas são decididas por quem monta
                                 `colunas`. */}
-                                {linha.getAllCells().map((celula) => (
-                                    <td key={celula.id} className="px-4 py-3 text-base text-foreground">
-                                        <table.FlexRender cell={celula} />
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
+                                    {linha.getAllCells().map((celula) => (
+                                        <td key={celula.id} className="px-4 py-3 text-base text-foreground">
+                                            <table.FlexRender cell={celula} />
+                                        </td>
+                                    ))}
+                                </tr>
+                            )
+                        })}
                     </tbody>
                 </table>
             </div>

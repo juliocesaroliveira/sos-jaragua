@@ -26,7 +26,6 @@ function repositorio(itens: Item[] = [ARROZ]) {
     })
     const repo: ItemRepository = {
         buscarPorId: async (id) => banco.get(id) ?? null,
-        buscarPorNome: async () => [],
         criar: async () => {
             throw new Error('não usado')
         },

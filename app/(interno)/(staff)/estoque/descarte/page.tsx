@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
-import { listarItens } from '@/src/modules/estoque/presentation/queries/estoque'
+
 import { DescarteForm } from './descarte-form'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
 
@@ -33,6 +33,5 @@ async function Formulario() {
     // ROLES_STAFF (DESIGN.md §6.2).
     await exigirAcessoA('/estoque/descarte')
 
-    const itens = await listarItens()
-    return <DescarteForm itens={itens} />
+    return <DescarteForm />
 }

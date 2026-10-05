@@ -1,21 +1,24 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Controller } from 'react-hook-form'
 import { Trash2 } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { RAIZ_LOOKUP } from '@/src/shared/query/chaves'
 import { Alert } from '@/src/shared/ui/alert/alert'
 import { Button } from '@/src/shared/ui/button/button'
 import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Lookup } from '@/src/shared/ui/lookup/lookup'
 import { NumberInput } from '@/src/shared/ui/number-input/number-input'
-import { Select } from '@/src/shared/ui/select/select'
 import { Textarea } from '@/src/shared/ui/textarea/textarea'
 import { avisar } from '@/src/shared/ui/toast/toast'
 import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
 import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
 import type { ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
 import { registrarDescarte } from '@/src/modules/estoque/presentation/actions/estoque'
+import { fonteItens, semSaldo } from '@/src/modules/estoque/presentation/lookups/fontes'
 
 /**
  * Baixa por descarte (BR-EST-05, EST-11).
@@ -23,6 +26,9 @@ import { registrarDescarte } from '@/src/modules/estoque/presentation/actions/es
  * Deduz o saldo como uma saída, mas grava em tabela dedicada — o que garante,
  * por estrutura, que o descarte nunca apareça nos relatórios de "itens
  * entregues à população" (DESIGN.md §9.4).
+ *
+ * O item é escolhido por Lookup (021): digitação ou pesquisa paginada, sem
+ * carregar o catálogo inteiro na tela.
  */
 const esquemaBase = z.object({
     // O nome do campo espelha a chave devolvida pelo caso de uso em
@@ -39,8 +45,13 @@ type DadosFormulario = z.infer<typeof esquemaBase>
 
 const VALORES_INICIAIS: DadosFormulario = { itemId: '', quantidade: '', motivo: '' }
 
-export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
+export function DescarteForm() {
+    const queryClient = useQueryClient()
     const [erroGeral, setErroGeral] = useState<string | null>(null)
+    /** Registro escolhido no Lookup — fonte do saldo exibido e validado (FR-019). */
+    const [selecionado, setSelecionado] = useState<ItemComSaldo | null>(null)
+    /** O esquema lê o saldo no momento da validação, não a cada render. */
+    const selecionadoRef = useRef<ItemComSaldo | null>(null)
 
     /**
      * O saldo do item escolhido entra na validação, então o esquema depende de
@@ -52,8 +63,8 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
     const esquema = useMemo(
         () =>
             esquemaBase.superRefine((dados, ctx) => {
-                const item = itens.find((i) => i.id === dados.itemId)
-                if (!item || !dados.quantidade) return
+                const item = selecionadoRef.current
+                if (!item || item.id !== dados.itemId || !dados.quantidade) return
 
                 if (Number(dados.quantidade) > item.saldo) {
                     ctx.addIssue({
@@ -63,7 +74,7 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
                     })
                 }
             }),
-        [itens]
+        []
     )
 
     const {
@@ -72,11 +83,13 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
         handleSubmit,
         setError,
         reset,
-        watch,
         formState: { errors, isSubmitting }
     } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
 
-    const selecionado = itens.find((i) => i.id === watch('itemId'))
+    function selecionar(item: ItemComSaldo | null) {
+        selecionadoRef.current = item
+        setSelecionado(item)
+    }
 
     async function salvar(dados: DadosFormulario) {
         setErroGeral(null)
@@ -99,6 +112,9 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
         }
 
         avisar.sucesso('Descarte registrado', 'O saldo foi deduzido do estoque.')
+        // Os saldos exibidos nas sugestões e na pesquisa mudaram (contracts L-07).
+        void queryClient.invalidateQueries({ queryKey: RAIZ_LOOKUP })
+        selecionar(null)
         reset(VALORES_INICIAIS)
     }
 
@@ -114,18 +130,20 @@ export function DescarteForm({ itens }: { itens: ItemComSaldo[] }) {
                 control={control}
                 name="itemId"
                 render={({ field }) => (
-                    <Select
+                    <Lookup
                         ref={field.ref}
                         id="itemId"
                         label="Item"
                         obrigatorio
-                        opcoes={itens.map((i) => ({
-                            value: i.id,
-                            label: `${i.nome} — ${formatarQuantidade(i.saldo)} ${ABREVIACAO_UNIDADE[i.unidadeMedida]} em estoque`,
-                            disabled: i.saldo <= 0
-                        }))}
-                        value={field.value ? [field.value] : []}
-                        onValueChange={(v) => field.onChange(v[0] ?? '')}
+                        fonte={fonteItens}
+                        // Mesma regra do select substituído: sem saldo, nada a descartar (FR-024).
+                        motivoIndisponivel={semSaldo}
+                        value={field.value}
+                        descricao={selecionado?.nome ?? ''}
+                        onSelecionar={(item) => {
+                            selecionar(item)
+                            field.onChange(item?.id ?? '')
+                        }}
                         erro={errors.itemId?.message}
                     />
                 )}

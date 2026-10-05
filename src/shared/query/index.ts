@@ -6,6 +6,7 @@
  */
 export { QueryProvider } from './query-provider'
 export { useListagemPaginada } from './use-listagem-paginada'
+export { useListagemLocal } from './use-listagem-local'
 export {
     chaveUsuarios,
     chaveVoluntarios,
@@ -13,6 +14,8 @@ export {
     chaveSaidas,
     chaveHabilidades,
     chaveNotificacoes,
+    chaveLookup,
+    RAIZ_LOOKUP,
     RAIZ_USUARIOS,
     RAIZ_VOLUNTARIOS,
     RAIZ_ESTOQUE,

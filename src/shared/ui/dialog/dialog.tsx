@@ -24,6 +24,12 @@ export interface DialogProps {
     /** Rodapé de ações — normalmente `Button`s. */
     acoes?: ReactNode
     tamanho?: 'sm' | 'md' | 'lg'
+    /**
+     * Elemento que recebe o foco ao abrir. Sem isto o primitivo foca o
+     * primeiro tabulável — o botão "Fechar" do cabeçalho —, e `autoFocus` no
+     * conteúdo é ignorado (ex.: o filtro da pesquisa do Lookup, 021).
+     */
+    focoInicial?: () => HTMLElement | null
 }
 
 const LARGURA = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl' } as const
@@ -37,13 +43,15 @@ export function Dialog({
     gatilho,
     children,
     acoes,
-    tamanho = 'md'
+    tamanho = 'md',
+    focoInicial
 }: DialogProps) {
     return (
         <Ark.Root
             open={open}
             defaultOpen={defaultOpen}
             onOpenChange={(detalhe) => onOpenChange?.(detalhe.open)}
+            initialFocusEl={focoInicial}
             lazyMount
             unmountOnExit
         >

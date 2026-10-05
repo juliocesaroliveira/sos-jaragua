@@ -1,24 +1,25 @@
 'use client'
 
 import { useId, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Controller, useFieldArray } from 'react-hook-form'
 import { Check, Plus, Trash2 } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
+import { RAIZ_LOOKUP } from '@/src/shared/query/chaves'
 import { Alert } from '@/src/shared/ui/alert/alert'
 import { Button } from '@/src/shared/ui/button/button'
 import { Formulario } from '@/src/shared/ui/formulario/formulario'
 import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
 import { Input } from '@/src/shared/ui/input/input'
+import { Lookup } from '@/src/shared/ui/lookup/lookup'
 import { NumberInput } from '@/src/shared/ui/number-input/number-input'
 import { RadioGroup } from '@/src/shared/ui/radio-group/radio-group'
-import { Select } from '@/src/shared/ui/select/select'
 import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
 import { avisar } from '@/src/shared/ui/toast/toast'
-import { ABREVIACAO_UNIDADE, type TipoSaida } from '@/src/modules/estoque/domain/item'
-import { formatarQuantidade } from '@/src/modules/estoque/domain/quantidade'
-import type { ItemComSaldo, KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
+import type { TipoSaida } from '@/src/modules/estoque/domain/item'
 import { registrarSaida } from '@/src/modules/estoque/presentation/actions/estoque'
+import { fonteItens, fonteKits, semReceita, semSaldo } from '@/src/modules/estoque/presentation/lookups/fontes'
 
 /**
  * Registro de Saída (BR-EST-04, EST-09).
@@ -75,9 +76,16 @@ const VALORES_INICIAIS: DadosFormulario = {
     linhas: [LINHA_VAZIA]
 }
 
-export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitComReceita[] }) {
+export function SaidaForm() {
+    const queryClient = useQueryClient()
     const [erroDeficit, setErroDeficit] = useState<string | null>(null)
     const [erroGeral, setErroGeral] = useState<string | null>(null)
+    /**
+     * Descrição exibida em cada linha, por `campo.id` do `useFieldArray` — o
+     * formulário guarda só o id do item/kit (FR-024). O `campo.id` muda a cada
+     * `replace`/`reset`, então entradas antigas apenas deixam de ser lidas.
+     */
+    const [descricoes, setDescricoes] = useState<Record<string, string>>({})
 
     /**
      * Prefixo de `id` estável entre servidor e cliente. Não se usa o `id` que o
@@ -107,6 +115,7 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
         // As linhas referenciam entidades diferentes (item × kit) — recomeçar
         // evita enviar um id de kit no lugar de um id de item.
         replace([LINHA_VAZIA])
+        setDescricoes({})
         setErroDeficit(null)
     }
 
@@ -145,21 +154,11 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
         }
 
         avisar.sucesso('Saída registrada', 'O saldo foi deduzido do estoque.')
+        // Os saldos exibidos nas sugestões e na pesquisa mudaram (contracts L-07).
+        void queryClient.invalidateQueries({ queryKey: RAIZ_LOOKUP })
+        setDescricoes({})
         reset(VALORES_INICIAIS)
     }
-
-    const opcoes =
-        tipo === 'avulso'
-            ? itens.map((i) => ({
-                  value: i.id,
-                  label: `${i.nome} — ${formatarQuantidade(i.saldo)} ${ABREVIACAO_UNIDADE[i.unidadeMedida]} em estoque`,
-                  disabled: i.saldo <= 0
-              }))
-            : kits.map((k) => ({
-                  value: k.id,
-                  label: k.componentes.length > 0 ? k.nome : `${k.nome} (sem receita)`,
-                  disabled: k.componentes.length === 0
-              }))
 
     return (
         <Formulario onSubmit={handleSubmit(salvar)} className="flex max-w-3xl flex-col gap-6">
@@ -207,18 +206,41 @@ export function SaidaForm({ itens, kits }: { itens: ItemComSaldo[]; kits: KitCom
                                 <Controller
                                     control={control}
                                     name={`linhas.${indice}.refId`}
-                                    render={({ field }) => (
-                                        <Select
-                                            ref={field.ref}
-                                            id={`ref-${idBase}-${indice}`}
-                                            label={tipo === 'avulso' ? 'Item' : 'Kit'}
-                                            obrigatorio
-                                            opcoes={opcoes}
-                                            value={field.value ? [field.value] : []}
-                                            onValueChange={(v) => field.onChange(v[0] ?? '')}
-                                            erro={errors.linhas?.[indice]?.refId?.message}
-                                        />
-                                    )}
+                                    render={({ field }) => {
+                                        const comum = {
+                                            ref: field.ref,
+                                            id: `ref-${idBase}-${indice}`,
+                                            obrigatorio: true,
+                                            value: field.value,
+                                            descricao: descricoes[campo.id] ?? '',
+                                            erro: errors.linhas?.[indice]?.refId?.message
+                                        }
+                                        const aoSelecionar = (id: string | null, descricao: string) => {
+                                            setDescricoes((atual) => ({ ...atual, [campo.id]: descricao }))
+                                            field.onChange(id ?? '')
+                                        }
+                                        // Mesmas regras dos selects substituídos: item sem
+                                        // saldo e kit sem receita não saem (FR-020, FR-023).
+                                        return tipo === 'avulso' ? (
+                                            <Lookup
+                                                key={`avulso-${campo.id}`}
+                                                {...comum}
+                                                label="Item"
+                                                fonte={fonteItens}
+                                                motivoIndisponivel={semSaldo}
+                                                onSelecionar={(i) => aoSelecionar(i?.id ?? null, i?.nome ?? '')}
+                                            />
+                                        ) : (
+                                            <Lookup
+                                                key={`kit-${campo.id}`}
+                                                {...comum}
+                                                label="Kit"
+                                                fonte={fonteKits}
+                                                motivoIndisponivel={semReceita}
+                                                onSelecionar={(k) => aoSelecionar(k?.id ?? null, k?.nome ?? '')}
+                                            />
+                                        )
+                                    }}
                                 />
                             </div>
                             <div className="w-32 shrink-0">
