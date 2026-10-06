@@ -1,9 +1,17 @@
-import { asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { escaparLike } from '@/src/shared/busca/escapar-like'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { descarte, entrada, item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { arredondar, paraNumeric, paraNumero } from '../../domain/quantidade'
-import type { ComponenteReceita, ItemConsolidado } from '../../domain/receita-kit'
+import {
+    normalizarNomeItem,
+    type ComponenteInformado,
+    type ComponenteReceita,
+    type ItemConsolidado,
+    type NovoItem
+} from '../../domain/receita-kit'
 import type {
+    ConflitoComposicao,
     Deficit,
     DescarteRepository,
     EntradaRepository,
@@ -19,7 +27,8 @@ const COLUNAS_ITEM = {
     nome: item.nome,
     categoria: item.categoria,
     unidadeMedida: item.unidadeMedida,
-    estoqueMinimo: item.estoqueMinimo
+    estoqueMinimo: item.estoqueMinimo,
+    aguardandoPrimeiraEntrada: item.aguardandoPrimeiraEntrada
 }
 
 type LinhaItem = Omit<Item, 'estoqueMinimo'> & { estoqueMinimo: string | null }
@@ -77,6 +86,14 @@ export const entradaRepository: EntradaRepository = {
                     .returning({ id: item.id })
                 itemId = criado.id
                 await tx.insert(saldoEstoque).values({ itemId, quantidadeAtual: '0' }).onConflictDoNothing()
+            } else {
+                // Item criado pelo kit (feature 022) passa a contar no alerta de
+                // estoque crítico a partir daqui: a entrada é a primeira
+                // movimentação possível, porque saída e descarte exigem saldo.
+                await tx
+                    .update(item)
+                    .set({ aguardandoPrimeiraEntrada: false })
+                    .where(and(eq(item.id, itemId), eq(item.aguardandoPrimeiraEntrada, true)))
             }
 
             const [linha] = await tx
@@ -256,23 +273,6 @@ export const kitRepository: KitRepository = {
         return (linha as Kit) ?? null
     },
 
-    async criar({ nome, descricao }) {
-        const [linha] = await db
-            .insert(kit)
-            .values({ nome, descricao: descricao ?? null })
-            .returning(COLUNAS_KIT)
-        return linha as Kit
-    },
-
-    async atualizar({ id, nome, descricao, ativo }) {
-        const [linha] = await db
-            .update(kit)
-            .set({ nome, descricao: descricao ?? null, ativo })
-            .where(eq(kit.id, id))
-            .returning(COLUNAS_KIT)
-        return (linha as Kit) ?? null
-    },
-
     async receita(kitId) {
         const linhas = await db
             .select({ itemId: kitReceitaItem.itemId, quantidade: kitReceitaItem.quantidade })
@@ -281,22 +281,144 @@ export const kitRepository: KitRepository = {
         return linhas.map((l) => ({ itemId: l.itemId, quantidadePorKit: paraNumero(l.quantidade) }))
     },
 
-    async definirReceita(kitId, componentes) {
-        // Substituição completa: a receita enviada é a verdade. Fazer diff
-        // incremental abriria espaço para componente órfão de uma edição
-        // anterior continuar sendo deduzido nas saídas.
-        await db.transaction(async (tx) => {
-            await tx.delete(kitReceitaItem).where(eq(kitReceitaItem.kitId, kitId))
-            if (componentes.length === 0) return
-            await tx.insert(kitReceitaItem).values(
-                componentes.map((c) => ({
-                    kitId,
-                    itemId: c.itemId,
-                    quantidade: paraNumeric(c.quantidadePorKit)
+    async salvarComposicao({ id, nome, descricao, ativo, componentes }) {
+        try {
+            return await db.transaction(async (tx) => {
+                const { ids, itensCriados, vinculos, conflitos } = await resolverComponentes(tx, componentes)
+
+                // Depois de resolvidos, dois componentes podem apontar para o mesmo
+                // item — um nome novo que vinculou a um item já escolhido em outra
+                // linha. `unique(kitId, itemId)` recusaria com erro de constraint;
+                // aqui vira mensagem na linha certa.
+                const vistos = new Set<string>()
+                ids.forEach((itemId, indice) => {
+                    if (!itemId) return
+                    if (vistos.has(itemId)) conflitos.push({ indice, tipo: 'repetido' })
+                    vistos.add(itemId)
+                })
+
+                if (conflitos.length > 0) {
+                    throw new ComposicaoRecusada({ conflitos: conflitos.sort((a, b) => a.indice - b.indice) })
+                }
+
+                const [salvo] = id
+                    ? await tx
+                          .update(kit)
+                          .set({ nome, descricao: descricao ?? null, ativo })
+                          .where(eq(kit.id, id))
+                          .returning(COLUNAS_KIT)
+                    : await tx
+                          .insert(kit)
+                          .values({ nome, descricao: descricao ?? null, ativo })
+                          .returning(COLUNAS_KIT)
+                // Kit inexistente: o throw desfaz os itens que já tinham sido criados.
+                if (!salvo) throw new ComposicaoRecusada(null)
+
+                const receita: ComponenteReceita[] = componentes.map((c, indice) => ({
+                    itemId: ids[indice] as string,
+                    quantidadePorKit: c.quantidadePorKit
                 }))
-            )
-        })
+
+                // Substituição completa: a receita enviada é a verdade. Fazer diff
+                // incremental abriria espaço para componente órfão de uma edição
+                // anterior continuar sendo deduzido nas saídas.
+                await tx.delete(kitReceitaItem).where(eq(kitReceitaItem.kitId, salvo.id))
+                if (receita.length > 0) {
+                    await tx.insert(kitReceitaItem).values(
+                        receita.map((c) => ({
+                            kitId: salvo.id,
+                            itemId: c.itemId,
+                            quantidade: paraNumeric(c.quantidadePorKit)
+                        }))
+                    )
+                }
+
+                return { kit: salvo as Kit, receita, itensCriados, vinculos }
+            })
+        } catch (erro) {
+            if (erro instanceof ComposicaoRecusada) return erro.resultado
+            throw erro
+        }
     }
+}
+
+/**
+ * Sai da transação **lançando**, que é o que faz o Drizzle dar rollback; o
+ * `catch` de `salvarComposicao` devolve o resultado como valor. Nada do que foi
+ * criado antes do conflito (itens novos de outras linhas) sobrevive.
+ */
+class ComposicaoRecusada extends Error {
+    constructor(readonly resultado: { conflitos: ConflitoComposicao[] } | null) {
+        super('composição recusada')
+    }
+}
+
+/**
+ * Resolve cada componente para um id de item, criando os itens novos que não
+ * existem (feature 022, research R3/R4).
+ *
+ * Os nomes novos são processados em ordem de nome normalizado: dois kits com os
+ * mesmos nomes em ordens diferentes pegariam os locks em ordem cruzada e
+ * entrariam em deadlock.
+ */
+async function resolverComponentes(tx: Transacao, componentes: ComponenteInformado[]) {
+    const ids: (string | null)[] = componentes.map((c) => (c.tipo === 'existente' ? c.itemId : null))
+    const itensCriados: Item[] = []
+    const vinculos: { indice: number; itemId: string }[] = []
+    const conflitos: ConflitoComposicao[] = []
+
+    const novos = componentes
+        .map((c, indice) => (c.tipo === 'novo' ? { indice, novoItem: c.novoItem } : null))
+        .filter((c): c is { indice: number; novoItem: NovoItem } => c !== null)
+        .sort((a, b) => normalizarNomeItem(a.novoItem.nome).localeCompare(normalizarNomeItem(b.novoItem.nome)))
+
+    for (const { indice, novoItem } of novos) {
+        const nome = novoItem.nome.trim()
+
+        // Serializa quem cria o mesmo nome ao mesmo tempo: o segundo espera o
+        // commit do primeiro e então o encontra na busca abaixo. O lock vive só
+        // até o fim da transação.
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${'item-nome:' + normalizarNomeItem(nome)}))`)
+
+        // `ILIKE` sem curinga = igualdade sem diferença de caixa; com
+        // `f_unaccent` dos dois lados, também sem acento. Usa o índice trigram
+        // `item_nome_unaccent_trgm_idx` (021).
+        const equivalentes = await tx
+            .select({ id: item.id })
+            .from(item)
+            .where(sql`f_unaccent(${item.nome}) ilike f_unaccent(${escaparLike(nome)}) escape '\\'`)
+            .limit(2)
+
+        if (equivalentes.length > 1) {
+            conflitos.push({ indice, tipo: 'ambiguo' })
+            continue
+        }
+
+        if (equivalentes.length === 1) {
+            ids[indice] = equivalentes[0].id
+            vinculos.push({ indice, itemId: equivalentes[0].id })
+            continue
+        }
+
+        const [criado] = await tx
+            .insert(item)
+            .values({
+                nome,
+                categoria: novoItem.categoria,
+                unidadeMedida: novoItem.unidadeMedida,
+                // Ausente ou `null`: herda o padrão global (feature 020).
+                estoqueMinimo: novoItem.estoqueMinimo == null ? null : paraNumeric(novoItem.estoqueMinimo),
+                // Saldo 0 por planejamento, não por falta (FR-015).
+                aguardandoPrimeiraEntrada: true
+            })
+            .returning(COLUNAS_ITEM)
+        await tx.insert(saldoEstoque).values({ itemId: criado.id, quantidadeAtual: '0' }).onConflictDoNothing()
+
+        ids[indice] = criado.id
+        itensCriados.push(paraItem(criado as LinhaItem))
+    }
+
+    return { ids, itensCriados, vinculos, conflitos }
 }
 
 /** Receitas de vários kits de uma vez — usado pela saída e pelo dashboard. */

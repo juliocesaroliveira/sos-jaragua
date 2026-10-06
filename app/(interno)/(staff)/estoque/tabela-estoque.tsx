@@ -54,10 +54,11 @@ export function TabelaEstoque({ categoria, limiarGlobal }: { categoria?: Categor
                 id: 'saldo',
                 header: 'Saldo',
                 cell: ({ row }) => {
-                    const { saldo, estoqueMinimo, unidadeMedida } = row.original
+                    const { saldo, estoqueMinimo, unidadeMedida, aguardandoPrimeiraEntrada } = row.original
                     const limiar = limiarDoItem(estoqueMinimo, limiarGlobal)
-                    // Mesma regra do alerta (`itensCriticos`): `<=` o limiar efetivo.
-                    const abaixoDoMinimo = limiar !== null && saldo <= limiar
+                    // Mesma regra do alerta (`itensCriticos`): `<=` o limiar efetivo,
+                    // exceto item criado pelo kit ainda sem entrada (022, FR-015).
+                    const abaixoDoMinimo = !aguardandoPrimeiraEntrada && limiar !== null && saldo <= limiar
                     return (
                         <span className="inline-flex flex-wrap items-center gap-2">
                             <span className={saldo <= 0 ? 'text-danger-700 dark:text-danger-400' : 'text-foreground'}>

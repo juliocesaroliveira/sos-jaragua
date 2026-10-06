@@ -60,6 +60,13 @@ export const item = pgTable(
          * item. A semântica fica em `estoque/domain/estoque-minimo.ts`.
          */
         estoqueMinimo: quantidade(),
+        /**
+         * `true` só para item criado pelo cadastro de kit (feature 022, FR-015):
+         * nasce com saldo 0 por planejamento, não por falta, e fica fora do
+         * alerta de estoque crítico até a primeira entrada, que volta a `false`.
+         * Itens criados pela Entrada (e os anteriores à 022) ficam `false`.
+         */
+        aguardandoPrimeiraEntrada: boolean().notNull().default(false),
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
     },
     (t) => [

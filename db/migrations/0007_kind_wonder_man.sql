@@ -1,0 +1,1 @@
+ALTER TABLE "item" ADD COLUMN "aguardando_primeira_entrada" boolean DEFAULT false NOT NULL;

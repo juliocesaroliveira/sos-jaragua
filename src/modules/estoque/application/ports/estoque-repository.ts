@@ -1,5 +1,5 @@
 import type { CategoriaItem, CondicaoItem, TipoSaida, UnidadeMedida } from '../../domain/item'
-import type { ComponenteReceita, ItemConsolidado } from '../../domain/receita-kit'
+import type { ComponenteInformado, ComponenteReceita, ItemConsolidado } from '../../domain/receita-kit'
 
 /** Ports do módulo de Estoque (DESIGN.md §4). */
 
@@ -13,6 +13,11 @@ export type Item = {
      * global; `0` desliga o alerta. Ver `domain/estoque-minimo.ts`.
      */
     estoqueMinimo: number | null
+    /**
+     * Item criado pelo cadastro de kit que ainda não recebeu entrada (feature
+     * 022, FR-015) — fica fora do alerta de estoque crítico.
+     */
+    aguardandoPrimeiraEntrada: boolean
 }
 
 /** Item com o dado necessário para compor a mensagem de déficit (BR-EST-04). */
@@ -91,13 +96,41 @@ export type Kit = {
     ativo: boolean
 }
 
+/** Componente que não pôde ser resolvido — a composição inteira é recusada. */
+export type ConflitoComposicao = {
+    indice: number
+    /** `ambiguo`: mais de um item com o nome; `repetido`: o id já está em outra linha. */
+    tipo: 'ambiguo' | 'repetido'
+}
+
+export type ResultadoComposicao =
+    | {
+          kit: Kit
+          /** Componentes já com o id resolvido, na ordem enviada. */
+          receita: ComponenteReceita[]
+          itensCriados: Item[]
+          vinculos: { indice: number; itemId: string }[]
+      }
+    | { conflitos: ConflitoComposicao[] }
+
 export interface KitRepository {
     listar(apenasAtivos?: boolean): Promise<Kit[]>
     buscarPorId(id: string): Promise<Kit | null>
-    criar(dados: { nome: string; descricao?: string | null }): Promise<Kit>
-    atualizar(dados: { id: string; nome: string; descricao?: string | null; ativo: boolean }): Promise<Kit | null>
     /** Receita de um kit — os componentes e a quantidade por unidade de kit. */
     receita(kitId: string): Promise<ComponenteReceita[]>
-    /** Substitui a receita inteira; `unique(kitId, itemId)` garante a unicidade. */
-    definirReceita(kitId: string, componentes: ComponenteReceita[]): Promise<void>
+    /**
+     * Cria ou atualiza o kit e substitui a receita inteira em **uma** transação
+     * (feature 022, FR-006). Cada item novo é resolvido pelo nome normalizado,
+     * sob lock por nome: nenhum equivalente ⇒ cria (saldo 0, aguardando a
+     * primeira entrada); um ⇒ vincula; mais de um ⇒ conflito.
+     *
+     * Havendo qualquer conflito, nada é gravado. `null` quando `id` não existe.
+     */
+    salvarComposicao(dados: {
+        id?: string
+        nome: string
+        descricao?: string | null
+        ativo: boolean
+        componentes: ComponenteInformado[]
+    }): Promise<ResultadoComposicao | null>
 }

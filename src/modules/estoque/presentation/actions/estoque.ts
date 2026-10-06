@@ -4,12 +4,11 @@ import { revalidateTag, updateTag } from 'next/cache'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
-import { withAudit } from '@/src/modules/auditoria'
 import { agendarAlertasDeEstoque } from '@/src/modules/notificacoes/presentation/alertas'
 import type { Role } from '@/src/shared/auth/roles'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { CATEGORIAS_ITEM, CONDICOES_ITEM, UNIDADES_MEDIDA } from '../../domain/item'
-import type { Kit } from '../../application/ports/estoque-repository'
+import type { ComponenteInformado } from '../../domain/receita-kit'
 import {
     descarteRepository,
     entradaRepository,
@@ -23,6 +22,7 @@ import { RegistrarEntradaUseCase } from '../../application/use-cases/registrar-e
 import { RegistrarSaidaUseCase } from '../../application/use-cases/registrar-saida'
 import { RegistrarDescarteUseCase } from '../../application/use-cases/registrar-descarte'
 import { DefinirEstoqueMinimoUseCase } from '../../application/use-cases/definir-estoque-minimo'
+import { SalvarKitUseCase } from '../../application/use-cases/salvar-kit'
 
 /**
  * Matriz de permissões do BRD §2 / DESIGN.md §6.2:
@@ -217,17 +217,41 @@ export async function definirEstoqueMinimo(
 
 // -- Kits e receitas (EST-06) -------------------------------------------------
 
+/**
+ * Cada componente é um item escolhido **ou** um item a criar (feature 022). O
+ * `.strict()` recusa o componente que traz os dois — sem ele, o Zod aceitaria
+ * a primeira forma e descartaria o `novoItem` em silêncio. O payload antigo,
+ * só com `itemId`, continua válido (contracts S-01, S-02).
+ */
+const esquemaComponente = z.union([
+    z.object({ itemId: z.uuid(), quantidadePorKit: z.number().positive() }).strict(),
+    z
+        .object({
+            novoItem: z.object({
+                nome: z.string().trim().min(1),
+                categoria: z.enum(CATEGORIAS_ITEM),
+                unidadeMedida: z.enum(UNIDADES_MEDIDA),
+                // Validação completa (casas decimais, limite) fica no domínio.
+                estoqueMinimo: z.number().min(0).nullable().optional()
+            }),
+            quantidadePorKit: z.number().positive()
+        })
+        .strict()
+])
+
 const esquemaKit = z.object({
     id: z.uuid().optional(),
     nome: z.string().min(1),
     descricao: z.string().nullable().optional(),
     ativo: z.boolean().optional(),
-    componentes: z.array(z.object({ itemId: z.uuid(), quantidadePorKit: z.number().positive() }))
+    componentes: z.array(esquemaComponente)
 })
 
 export type EntradaFormularioKit = z.infer<typeof esquemaKit>
 
-export async function salvarKit(entrada: EntradaFormularioKit): Promise<ResultadoAction<{ id: string }>> {
+export async function salvarKit(
+    entrada: EntradaFormularioKit
+): Promise<ResultadoAction<{ id: string; itensCriados: number }>> {
     const ator = await exigir(ROLES_COORDENACAO)
     if (!ator) return erroAction('nao_autorizado', 'Somente coordenação pode gerir kits.')
 
@@ -236,50 +260,36 @@ export async function salvarKit(entrada: EntradaFormularioKit): Promise<Resultad
 
     const { id, nome, descricao, ativo, componentes } = parse.data
 
-    // Um item repetido na receita violaria `unique(kitId, itemId)` no banco;
-    // barramos antes para devolver uma mensagem em vez de um erro de constraint.
-    const ids = new Set(componentes.map((c) => c.itemId))
-    if (ids.size !== componentes.length) {
-        return erroAction('validacao', 'Há itens repetidos na receita do kit.')
-    }
-
-    // Receita de kit entra na auditoria de `Doacao` (DB_SCHEMA.md §10): mudar a
-    // receita muda o que é deduzido do estoque em cada saída.
-    const kit = await comAtorDaSessao(ator, () =>
-        // Genérico explícito: `withAudit` recebe as opções antes de `fn`, então
-        // o TypeScript não tem como inferir o tipo do resultado a partir delas.
-        withAudit<Kit | null>(
-            {
-                entidade: 'Doacao',
-                acao: id ? 'update' : 'create',
-                tabela: 'kit',
-                dadosAnteriores: async () => {
-                    if (!id) return null
-                    const anterior = await kitRepository.buscarPorId(id)
-                    if (!anterior) return null
-                    return { ...anterior, receita: await kitRepository.receita(id) }
-                },
-                extrair: (salvo) => ({
-                    entidadeId: salvo?.id ?? id ?? 'desconhecido',
-                    dadosNovos: salvo ? { ...salvo, receita: componentes } : null
-                })
-            },
-            async () => {
-                const salvo = id
-                    ? await kitRepository.atualizar({ id, nome, descricao, ativo: ativo ?? true })
-                    : await kitRepository.criar({ nome, descricao })
-                if (salvo) await kitRepository.definirReceita(salvo.id, componentes)
-                return salvo
-            }
-        )
+    const useCase = new SalvarKitUseCase(kitRepository)
+    const resultado = await comAtorDaSessao(ator, () =>
+        useCase.executar({
+            id,
+            nome,
+            descricao,
+            ativo: ativo ?? true,
+            componentes: componentes.map((c): ComponenteInformado =>
+                'itemId' in c
+                    ? { tipo: 'existente', itemId: c.itemId, quantidadePorKit: c.quantidadePorKit }
+                    : {
+                          tipo: 'novo',
+                          novoItem: { ...c.novoItem, estoqueMinimo: c.novoItem.estoqueMinimo ?? null },
+                          quantidadePorKit: c.quantidadePorKit
+                      }
+            )
+        })
     )
 
-    if (!kit) return erroAction('nao_encontrado', 'Kit não encontrado.')
+    if (resultado.ok) {
+        updateTag(CACHE_TAGS.estoqueKits)
+        // Mudar a receita muda quantos kits são montáveis (BR-INT-02).
+        revalidateTag(CACHE_TAGS.dashboardKits, PERFIL_REVALIDACAO)
+        // Item nascido no kit aparece na tabela de estoque, com saldo 0. As
+        // buscas do Lookup não têm cache no servidor (021).
+        if (resultado.valor.itensCriados > 0) updateTag(CACHE_TAGS.estoqueListagem)
+        // Item novo fica fora do alerta até a primeira entrada (FR-015), então
+        // basta a reavaliação de kits.
+        agendarAlertasDeEstoque({ estoqueCritico: false })
+    }
 
-    updateTag(CACHE_TAGS.estoqueKits)
-    // Mudar a receita muda quantos kits são montáveis (BR-INT-02).
-    revalidateTag(CACHE_TAGS.dashboardKits, PERFIL_REVALIDACAO)
-    agendarAlertasDeEstoque({ estoqueCritico: false })
-
-    return { ok: true, valor: { id: kit.id } }
+    return serializar(resultado)
 }

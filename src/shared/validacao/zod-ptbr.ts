@@ -8,6 +8,7 @@ import {
     number,
     object,
     string,
+    union,
     uuid,
     type ZodSafeParseResult as ZodSafeParseResultOriginal,
     type ZodType as ZodTypeOriginal,
@@ -49,6 +50,7 @@ export const z = {
     number,
     object,
     string,
+    union,
     uuid
 }
 

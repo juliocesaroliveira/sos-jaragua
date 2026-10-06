@@ -47,6 +47,18 @@ describe('itensCriticos', () => {
         expect(itensCriticos([item('Cobertor', 0, 0)], 5)).toEqual([])
     })
 
+    it('ignora item criado pelo kit que ainda aguarda a primeira entrada (022, FR-015)', () => {
+        expect(itensCriticos([{ ...item('Lanterna', 0, 10), aguardandoPrimeiraEntrada: true }], 5)).toEqual([])
+    })
+
+    it('volta a avaliar o item depois da primeira entrada', () => {
+        expect(itensCriticos([{ ...item('Lanterna', 2, 10), aguardandoPrimeiraEntrada: false }], 5)).toHaveLength(1)
+    })
+
+    it('avalia normalmente o item que não informa a flag', () => {
+        expect(itensCriticos([item('Lanterna', 0, 10)], 5)).toHaveLength(1)
+    })
+
     it('aplica o limiar global ao item sem mínimo próprio e informa o limiar usado', () => {
         expect(itensCriticos([item('Sabonete', 4, null)], 5)).toEqual([{ ...item('Sabonete', 4, null), limiar: 5 }])
     })

@@ -23,12 +23,15 @@ export function limiarDoItem(estoqueMinimo: number | null, limiarGlobal: number)
     return estoqueMinimo
 }
 
-export function itensCriticos<T extends { saldo: number; estoqueMinimo: number | null }>(
-    itens: T[],
-    limiarGlobal: number
-): (T & { limiar: number })[] {
+export function itensCriticos<
+    T extends { saldo: number; estoqueMinimo: number | null; aguardandoPrimeiraEntrada?: boolean }
+>(itens: T[], limiarGlobal: number): (T & { limiar: number })[] {
     const criticos: (T & { limiar: number })[] = []
     for (const item of itens) {
+        // Item criado pelo cadastro de kit nasce com saldo 0 por planejamento,
+        // não por falta: só entra na avaliação depois da primeira entrada
+        // (feature 022, FR-015).
+        if (item.aguardandoPrimeiraEntrada === true) continue
         const limiar = limiarDoItem(item.estoqueMinimo, limiarGlobal)
         if (limiar !== null && item.saldo <= limiar) criticos.push({ ...item, limiar })
     }

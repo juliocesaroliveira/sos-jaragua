@@ -490,6 +490,11 @@ remoto consome cota da plataforma por entrada. A invalidação por tag é a mesm
 - CRUD de `kit` (nome, descrição, ativo).
 - Composição via `kit_receita_item` (kit + item + quantidade necessária por unidade de
   kit).
+- Item novo na composição (feature 022): o componente aceita o nome de um item ainda não
+  cadastrado, com categoria e unidade obrigatórias e mínimo opcional. `SalvarKitUseCase` +
+  `KitRepository.salvarComposicao` criam os itens novos, o kit e a receita numa única
+  transação; nome idêntico (sem acento/caixa) a um item existente vincula a ele, e a mais de
+  um é recusado. O item nasce com saldo 0 e `aguardando_primeira_entrada = true`.
 
 ### 9.3. Saída (BR-EST-04)
 
@@ -731,6 +736,7 @@ com o usuário, sem pendências para a implementação:
 | Auto-cadastro público                    | Só por login social (2026-08-16, PENDENCIAS §2). **Risco aceito**: com Google e Facebook fora do ar, ou para quem não tem conta em nenhum dos dois, a entrada depende de um administrador criar a conta no `/admin`                                                                                                   |
 | Campos de referência (FK) em formulários | Componente `Lookup` (feature 021): digitação com até 5 sugestões + pesquisa em diálogo com tabela paginada no servidor. Aplicado a todos os campos de item e de kit do Estoque; a Entrada usa o modo valor livre para cadastrar item novo                                                                             |
 | Busca sem acento (021)                   | Extensão `unaccent` + função `IMMUTABLE` `public.f_unaccent` (o `unaccent()` é `STABLE` e não compõe índice) + índice GIN trigram de expressão `item_nome_unaccent_trgm_idx`. Descartadas: normalizar só no cliente (não resolve o acento gravado) e coluna gerada `nome_busca` (backfill e mais uma coluna a manter) |
+| Item criado no cadastro de kit (022)     | Criado só ao salvar o kit, na mesma transação. Vínculo por nome normalizado (`f_unaccent` + `ILIKE` sem curinga) sob `pg_advisory_xact_lock` por nome, que serializa kits concorrentes. Coluna `item.aguardando_primeira_entrada` (default `false`) o mantém fora do alerta de estoque crítico até a primeira entrada. Descartadas: índice único em nome (duplicatas antigas e a Entrada aceita repetição) e "sem entrada" derivado (tiraria do alerta itens antigos sem entrada). **Risco aceito**: Entrada e kit simultâneos com o mesmo nome novo ainda podem duplicar, porque a Entrada não pega o lock. Substitui, para o kit, a premissa da 021 de que só a Entrada cria item |
 | Vulnerabilidades moderadas aceitas       | `drizzle-kit` (`esbuild` antigo via `@esbuild-kit/*`; ferramenta de dev, corrigir exige downgrade major) e `uuid` via `exceljs` (caminhos v3/v5/v6 com `buf`, que o `exceljs` não usa). Revisar a cada atualização das duas (feature 020)                                                                             |
 
 ---

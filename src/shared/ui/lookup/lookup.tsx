@@ -40,6 +40,14 @@ export interface LookupProps<T extends RowData> {
     /** Só com `permitirValorLivre`: texto digitado sem seleção (FR-025). */
     onTextoLivre?: (texto: string) => void
     permitirValorLivre?: boolean
+    /**
+     * Só com `permitirValorLivre` (022, contracts/lookup-vincular-identico.md):
+     * ao sair do campo sem seleção, se exatamente **um** registro das sugestões
+     * carregadas para o texto atual for "idêntico" a ele, seleciona esse
+     * registro — o texto livre que já existe no cadastro deixa de virar um
+     * registro novo duplicado.
+     */
+    vincularIdentico?: (texto: string, registro: T) => boolean
     /** Regra do uso (FR-013): motivo ⇒ registro exibido, mas não selecionável. */
     motivoIndisponivel?: MotivoIndisponivel<T>
     obrigatorio?: boolean
@@ -64,6 +72,7 @@ export function Lookup<T extends RowData>({
     onSelecionar,
     onTextoLivre,
     permitirValorLivre = false,
+    vincularIdentico,
     motivoIndisponivel,
     obrigatorio,
     apoio,
@@ -141,15 +150,35 @@ export function Lookup<T extends RowData>({
     }
 
     /**
-     * Sem o modo valor livre, texto que não virou seleção não vale nada: ao sair
-     * do campo ele é descartado, como no `Combobox` padrão. Ir para a lista de
-     * sugestões, para o botão de pesquisa ou para o diálogo não é "sair".
+     * Sair do campo — ir para a lista de sugestões, para o botão de pesquisa ou
+     * para o diálogo não conta. Sem o modo valor livre, texto que não virou
+     * seleção não vale nada e é descartado, como no `Combobox` padrão. No modo
+     * valor livre, o texto fica — e, com `vincularIdentico`, vira seleção quando
+     * corresponde a exatamente um registro já cadastrado.
      */
     function aoPerderFoco(evento: FocusEvent<HTMLDivElement>) {
-        if (permitirValorLivre || valorAtual || dialogoAbertoRef.current) return
+        if (valorAtual || dialogoAbertoRef.current) return
         const destino = evento.relatedTarget as HTMLElement | null
         if (destino && (evento.currentTarget.contains(destino) || destino.closest('[data-scope="combobox"]'))) return
+
+        if (permitirValorLivre) {
+            vincularSeIdentico()
+            return
+        }
         if (textoRef.current !== '') escreverTexto('')
+    }
+
+    function vincularSeIdentico() {
+        if (!vincularIdentico) return
+        const atual = textoRef.current.trim()
+        // Sugestões de um termo anterior (debounce ainda correndo) não valem:
+        // o servidor resolve o vínculo no salvamento (V-02).
+        if (!atual || termoBusca.trim() !== atual) return
+        const identicos = (sugestoes.data ?? []).filter(
+            (registro) => vincularIdentico(atual, registro) && !motivoIndisponivel?.(registro)
+        )
+        // Dois ou mais idênticos: não há como escolher por quem usa (V-04).
+        if (identicos.length === 1) onSelecionar(identicos[0])
     }
 
     function abrirDialogo(aberto: boolean) {

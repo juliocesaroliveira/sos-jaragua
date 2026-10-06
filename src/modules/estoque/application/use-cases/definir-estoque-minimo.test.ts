@@ -15,7 +15,8 @@ const ARROZ: Item = {
     nome: 'Arroz',
     categoria: 'alimentacao',
     unidadeMedida: 'kg',
-    estoqueMinimo: null
+    estoqueMinimo: null,
+    aguardandoPrimeiraEntrada: false
 }
 
 function repositorio(itens: Item[] = [ARROZ]) {

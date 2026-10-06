@@ -427,7 +427,15 @@ Campo de referência a um registro de outro cadastro (FK). `src/shared/ui/lookup
   livre, texto que não virou seleção é descartado ao sair do campo, e a validação de
   obrigatório cuida do envio.
 - **Modo valor livre** (`permitirValorLivre` + `onTextoLivre`): o texto digitado é um valor
-  válido. Só a Entrada usa, para o nome de item novo.
+  válido. A Entrada e a composição de kit (022) usam, para o nome de item novo.
+- **Vínculo por nome idêntico** (`vincularIdentico`, só com valor livre — 022): ao sair do
+  campo sem seleção, se exatamente um registro das sugestões carregadas para o texto atual é
+  "idêntico" a ele (critério de quem usa; no kit, nome sem acento/caixa), ele é selecionado.
+  Ir para a lista, para a lupa ou para o diálogo não conta como sair. Zero ou mais de um
+  idêntico: nada acontece (o servidor decide ao salvar). Usado só no kit.
+- **Item novo em formulário com linhas** (022): os campos do cadastro novo aparecem logo
+  abaixo da linha, num `<fieldset>` com borda e `<legend>` "Item novo", só enquanto a linha
+  é item novo — sem diálogo secundário.
 - **Indisponíveis** (`motivoIndisponivel`): o registro aparece, com o motivo em texto ("Sem
   saldo", "Sem receita"), mas não é selecionável — nas sugestões e na tabela, onde ganha a
   coluna "Situação". A regra é do **uso**, não da fonte.

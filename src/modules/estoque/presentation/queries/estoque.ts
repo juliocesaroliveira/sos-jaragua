@@ -17,6 +17,8 @@ export type ItemComSaldo = {
     saldo: number
     /** `null` herda o padrão global; `0` desliga o alerta (feature 020, Q3). */
     estoqueMinimo: number | null
+    /** Criado pelo kit, sem entrada ainda: fora do alerta de estoque crítico (022, FR-015). */
+    aguardandoPrimeiraEntrada: boolean
 }
 
 /** `numeric` volta do driver como `string`; a tela e o alerta trabalham com `number`. */
@@ -63,7 +65,8 @@ async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSa
                 categoria: item.categoria,
                 unidadeMedida: item.unidadeMedida,
                 saldo: saldoEstoque.quantidadeAtual,
-                estoqueMinimo: item.estoqueMinimo
+                estoqueMinimo: item.estoqueMinimo,
+                aguardandoPrimeiraEntrada: item.aguardandoPrimeiraEntrada
             })
             .from(item)
             .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
@@ -114,7 +117,8 @@ const COLUNAS_ITEM_COM_SALDO = {
     categoria: item.categoria,
     unidadeMedida: item.unidadeMedida,
     saldo: saldoEstoque.quantidadeAtual,
-    estoqueMinimo: item.estoqueMinimo
+    estoqueMinimo: item.estoqueMinimo,
+    aguardandoPrimeiraEntrada: item.aguardandoPrimeiraEntrada
 }
 
 /** Sugestões de item para o Lookup — até 5, por semelhança com o termo. */
@@ -410,7 +414,8 @@ export async function inventarioParaExportacao(): Promise<ItemComSaldo[]> {
             categoria: item.categoria,
             unidadeMedida: item.unidadeMedida,
             saldo: saldoEstoque.quantidadeAtual,
-            estoqueMinimo: item.estoqueMinimo
+            estoqueMinimo: item.estoqueMinimo,
+            aguardandoPrimeiraEntrada: item.aguardandoPrimeiraEntrada
         })
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))

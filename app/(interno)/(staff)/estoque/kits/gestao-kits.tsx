@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useState, useTransition } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Controller, useFieldArray } from 'react-hook-form'
+import { Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { Check, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, quantidadePositiva, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
@@ -16,15 +16,25 @@ import { IconButton } from '@/src/shared/ui/icon-button/icon-button'
 import { Input } from '@/src/shared/ui/input/input'
 import { Lookup } from '@/src/shared/ui/lookup/lookup'
 import { NumberInput } from '@/src/shared/ui/number-input/number-input'
+import { Select } from '@/src/shared/ui/select/select'
 import { Switch } from '@/src/shared/ui/switch/switch'
 import { Textarea } from '@/src/shared/ui/textarea/textarea'
 import { Tooltip } from '@/src/shared/ui/tooltip/tooltip'
 import { avisar } from '@/src/shared/ui/toast/toast'
-import { ABREVIACAO_UNIDADE } from '@/src/modules/estoque/domain/item'
-import { formatarQuantidade, kitsPossiveis } from '@/src/modules/estoque/domain'
+import {
+    ABREVIACAO_UNIDADE,
+    CATEGORIAS_ITEM,
+    ROTULO_CATEGORIA_ITEM,
+    ROTULO_UNIDADE_MEDIDA,
+    UNIDADES_MEDIDA,
+    type CategoriaItem,
+    type UnidadeMedida
+} from '@/src/modules/estoque/domain/item'
+import { formatarQuantidade, kitsPossiveis, normalizarNomeItem } from '@/src/modules/estoque/domain'
 import type { KitComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { salvarKit } from '@/src/modules/estoque/presentation/actions/estoque'
 import { fonteItens } from '@/src/modules/estoque/presentation/lookups/fontes'
+import { apoioEstoqueMinimo, campoEstoqueMinimo, paraEstoqueMinimo } from '../campo-estoque-minimo'
 
 /**
  * CRUD de Kits e composição da receita (BR-EST-02, BR-EST-03 — EST-06).
@@ -32,6 +42,11 @@ import { fonteItens } from '@/src/modules/estoque/presentation/lookups/fontes'
  * Cada card mostra quantos kits o saldo atual permite montar, calculado pelo
  * mesmo `kitsPossiveis` do domínio que alimenta o painel de crise — a
  * coordenação vê o efeito da receita sobre a capacidade sem trocar de tela.
+ *
+ * Cada componente aceita um item já cadastrado **ou** o nome de um item novo,
+ * como a Entrada (feature 022): texto digitado sem seleção vira item novo, com
+ * categoria e unidade pedidas logo abaixo da linha, e é criado junto com o kit
+ * ao salvar — nunca antes, para um diálogo cancelado não deixar item órfão.
  */
 const esquemaBase = z.object({
     nome: textoObrigatorio('Informe o nome do kit.'),
@@ -40,30 +55,53 @@ const esquemaBase = z.object({
     componentes: z
         .array(
             z.object({
-                itemId: textoObrigatorio('Selecione o item.'),
+                /** Item escolhido (sugestão ou pesquisa); vazio = item novo ou nada. */
+                itemId: z.string(),
+                /** Texto digitado sem seleção — o nome do item novo. */
+                nomeNovo: z.string(),
+                // Sem valor inicial, de propósito (research R7): no kit o item
+                // ainda não chegou, e uma unidade errada muda o significado da
+                // "quantidade por kit". Obrigatórios só para item novo, no
+                // `superRefine` abaixo.
+                categoria: z.string(),
+                unidadeMedida: z.string(),
+                estoqueMinimo: campoEstoqueMinimo(),
                 quantidade: quantidadePositiva('Informe a quantidade por kit.')
             })
         )
         .min(1, 'O kit precisa de ao menos um componente.')
 })
 
+/** Item novo = digitou um nome e não escolheu nenhum item cadastrado. */
+function ehItemNovo(componente: { itemId: string; nomeNovo: string }) {
+    return !componente.itemId && componente.nomeNovo.trim().length > 0
+}
+
 /**
  * O mesmo item não pode aparecer duas vezes na receita: duas linhas do mesmo
  * item significam duas verdades sobre quanto o kit consome dele, e o cálculo de
  * "kits montáveis" passaria a depender de qual das duas o servidor considerou.
+ * Vale também para itens novos, pelo nome normalizado — "Feijão" e "feijao"
+ * seriam o mesmo item criado duas vezes (feature 022, FR-010).
  */
 const esquema = esquemaBase.superRefine((dados, ctx) => {
-    const vistos = new Map<string, number>()
+    const vistos = new Set<string>()
     dados.componentes.forEach((componente, indice) => {
-        if (!componente.itemId) return
-        if (vistos.has(componente.itemId)) {
-            ctx.addIssue({
-                code: 'custom',
-                path: ['componentes', indice, 'itemId'],
-                message: 'Este item já está na receita.'
-            })
+        const erro = (campo: string, message: string) =>
+            ctx.addIssue({ code: 'custom', path: ['componentes', indice, campo], message })
+
+        if (!componente.itemId && !ehItemNovo(componente)) {
+            erro('itemId', 'Selecione ou digite o item.')
+            return
         }
-        vistos.set(componente.itemId, indice)
+        if (ehItemNovo(componente)) {
+            if (!componente.categoria) erro('categoria', 'Selecione a categoria.')
+            if (!componente.unidadeMedida) erro('unidadeMedida', 'Selecione a unidade de medida.')
+        }
+
+        const chave = componente.itemId || `novo:${normalizarNomeItem(componente.nomeNovo)}`
+        if (vistos.has(chave)) erro('itemId', 'Este item já está na receita.')
+        vistos.add(chave)
     })
 })
 
@@ -71,7 +109,17 @@ const CAMPOS = Object.keys(esquemaBase.shape)
 
 type DadosFormulario = z.infer<typeof esquemaBase>
 
-const COMPONENTE_VAZIO = { itemId: '', quantidade: '' }
+const COMPONENTE_VAZIO = {
+    itemId: '',
+    nomeNovo: '',
+    categoria: '',
+    unidadeMedida: '',
+    estoqueMinimo: '',
+    quantidade: ''
+}
+
+/** Caminhos de erro por linha que o servidor pode devolver (contracts S-04). */
+const CAMPOS_DA_LINHA = ['itemId', 'categoria', 'unidadeMedida', 'estoqueMinimo', 'quantidade']
 
 const VALORES_INICIAIS: DadosFormulario = {
     nome: '',
@@ -80,7 +128,7 @@ const VALORES_INICIAIS: DadosFormulario = {
     componentes: [COMPONENTE_VAZIO]
 }
 
-export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
+export function GestaoKits({ kits, limiarGlobal }: { kits: KitComReceita[]; limiarGlobal: number }) {
     const queryClient = useQueryClient()
     const [enviando, iniciarTransicao] = useTransition()
 
@@ -120,11 +168,14 @@ export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
         register,
         handleSubmit,
         setError,
+        setValue,
+        clearErrors,
         reset,
         formState: { errors }
     } = useFormulario(esquema, { defaultValues: VALORES_INICIAIS })
 
     const { fields, append, remove } = useFieldArray({ control, name: 'componentes' })
+    const componentes = useWatch({ control, name: 'componentes' })
 
     /**
      * Reinicialização ao abrir: cobre tanto "Novo kit" quanto trocar de um kit
@@ -144,6 +195,7 @@ export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
                       componentes:
                           editando.componentes.length > 0
                               ? editando.componentes.map((c) => ({
+                                    ...COMPONENTE_VAZIO,
                                     itemId: c.itemId,
                                     quantidade: String(c.quantidadePorKit)
                                 }))
@@ -172,25 +224,41 @@ export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
                 nome: dados.nome,
                 descricao: dados.descricao?.trim() || null,
                 ativo: dados.ativo,
-                componentes: dados.componentes.map((c) => ({
-                    itemId: c.itemId,
-                    quantidadePorKit: Number(c.quantidade)
-                }))
+                componentes: dados.componentes.map((c) =>
+                    c.itemId
+                        ? { itemId: c.itemId, quantidadePorKit: Number(c.quantidade) }
+                        : {
+                              novoItem: {
+                                  nome: c.nomeNovo.trim(),
+                                  categoria: c.categoria as CategoriaItem,
+                                  unidadeMedida: c.unidadeMedida as UnidadeMedida,
+                                  estoqueMinimo: paraEstoqueMinimo(c.estoqueMinimo)
+                              },
+                              quantidadePorKit: Number(c.quantidade)
+                          }
+                )
             })
 
             if (!resultado.ok) {
                 const { mensagemGeral } = aplicarErrosDoServidor({
                     erro: resultado.erro,
-                    camposConhecidos: CAMPOS,
+                    camposConhecidos: [
+                        ...CAMPOS,
+                        ...dados.componentes.flatMap((_, i) => CAMPOS_DA_LINHA.map((c) => `componentes.${i}.${c}`))
+                    ],
                     definirErro: (campo, msg) => setError(campo as keyof DadosFormulario, { message: msg })
                 })
                 setErro(mensagemGeral)
                 return
             }
 
-            avisar.sucesso(editando ? 'Kit atualizado' : 'Kit criado')
-            // Receita e nome mudaram: o Lookup de kits da saída e da entrada
-            // precisa refletir (contracts L-07).
+            const { itensCriados } = resultado.valor
+            avisar.sucesso(
+                editando ? 'Kit atualizado' : 'Kit criado',
+                itensCriados > 0 ? `Com ${itensCriados} item(ns) novo(s) no estoque.` : undefined
+            )
+            // Receita e nome mudaram, e pode ter nascido item novo: os Lookups
+            // de kits e de itens precisam refletir (contracts L-07).
             void queryClient.invalidateQueries({ queryKey: RAIZ_LOOKUP })
             setAberto(false)
         })
@@ -353,72 +421,188 @@ export function GestaoKits({ kits }: { kits: KitComReceita[] }) {
                         {fields.map((campo, indice) => {
                             // Um kit sem componente algum não consumiria nada.
                             const ultimoComponente = fields.length === 1
+                            const linha = componentes?.[indice] ?? COMPONENTE_VAZIO
+                            const itemNovo = ehItemNovo(linha)
+                            const erroLinha = errors.componentes?.[indice]
                             return (
-                                <div key={campo.id} className="flex items-start gap-2">
-                                    <div className="min-w-0 flex-1">
-                                        <Controller
-                                            control={control}
-                                            name={`componentes.${indice}.itemId`}
-                                            render={({ field }) => (
-                                                <Lookup
-                                                    ref={field.ref}
-                                                    id={`item-${idBase}-${indice}`}
-                                                    label="Item"
-                                                    obrigatorio
-                                                    fonte={fonteItens}
-                                                    value={field.value}
-                                                    descricao={field.value ? (nomes[field.value] ?? '') : ''}
-                                                    onSelecionar={(item) => {
-                                                        if (item) {
-                                                            setNomesSelecionados((atual) => ({
-                                                                ...atual,
-                                                                [item.id]: item.nome
-                                                            }))
+                                <div key={campo.id} className="flex flex-col gap-3">
+                                    <div className="flex items-start gap-2">
+                                        <div className="min-w-0 flex-1">
+                                            <Controller
+                                                control={control}
+                                                name={`componentes.${indice}.itemId`}
+                                                render={({ field }) => (
+                                                    <Lookup
+                                                        ref={field.ref}
+                                                        id={`item-${idBase}-${indice}`}
+                                                        label="Item"
+                                                        obrigatorio
+                                                        fonte={fonteItens}
+                                                        // Nome não encontrado = item novo (feature 022): o
+                                                        // texto precisa permanecer para virar o cadastro.
+                                                        permitirValorLivre
+                                                        // Nome idêntico ao de um item cadastrado vira
+                                                        // seleção ao sair do campo (FR-009).
+                                                        vincularIdentico={(texto, item) =>
+                                                            normalizarNomeItem(texto) === normalizarNomeItem(item.nome)
                                                         }
-                                                        field.onChange(item?.id ?? '')
-                                                    }}
-                                                    erro={errors.componentes?.[indice]?.itemId?.message}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="w-32 shrink-0">
-                                        <Controller
-                                            control={control}
-                                            name={`componentes.${indice}.quantidade`}
-                                            render={({ field }) => (
-                                                <NumberInput
-                                                    ref={field.ref}
-                                                    id={`qtdKit-${idBase}-${indice}`}
-                                                    label="Por kit"
-                                                    obrigatorio
-                                                    min={0}
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                    erro={errors.componentes?.[indice]?.quantidade?.message}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    {/* Mesma condição de antes; agora ela se explica (A-05). */}
-                                    <div className="mt-7 shrink-0">
-                                        <Tooltip
-                                            conteudo={
-                                                ultimoComponente
-                                                    ? 'O kit precisa de ao menos um componente'
-                                                    : 'Remover componente'
-                                            }
-                                            descricao={ultimoComponente}
-                                        >
-                                            <IconButton
-                                                aria-label="Remover componente"
-                                                icone={<Trash2 aria-hidden className="size-5" />}
-                                                variant="ghost"
-                                                inativo={ultimoComponente}
-                                                onClick={() => remove(indice)}
+                                                        mensagemVazia="Nenhum item com esse nome. Ele será cadastrado como item novo."
+                                                        value={field.value || null}
+                                                        descricao={
+                                                            field.value ? (nomes[field.value] ?? '') : linha.nomeNovo
+                                                        }
+                                                        onTextoLivre={(texto) =>
+                                                            setValue(`componentes.${indice}.nomeNovo`, texto)
+                                                        }
+                                                        onSelecionar={(item) => {
+                                                            if (item) {
+                                                                setNomesSelecionados((atual) => ({
+                                                                    ...atual,
+                                                                    [item.id]: item.nome
+                                                                }))
+                                                                // Categoria, unidade e mínimo passam a ser os
+                                                                // do cadastro: o grupo "Item novo" some.
+                                                                setValue(`componentes.${indice}.nomeNovo`, '')
+                                                                setValue(`componentes.${indice}.categoria`, '')
+                                                                setValue(`componentes.${indice}.unidadeMedida`, '')
+                                                                setValue(`componentes.${indice}.estoqueMinimo`, '')
+                                                                clearErrors([
+                                                                    `componentes.${indice}.categoria`,
+                                                                    `componentes.${indice}.unidadeMedida`,
+                                                                    `componentes.${indice}.estoqueMinimo`
+                                                                ])
+                                                            }
+                                                            field.onChange(item?.id ?? '')
+                                                        }}
+                                                        erro={erroLinha?.itemId?.message}
+                                                    />
+                                                )}
                                             />
-                                        </Tooltip>
+                                        </div>
+                                        <div className="w-32 shrink-0">
+                                            <Controller
+                                                control={control}
+                                                name={`componentes.${indice}.quantidade`}
+                                                render={({ field }) => (
+                                                    <NumberInput
+                                                        ref={field.ref}
+                                                        id={`qtdKit-${idBase}-${indice}`}
+                                                        label="Por kit"
+                                                        obrigatorio
+                                                        min={0}
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        erro={erroLinha?.quantidade?.message}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                        {/* Mesma condição de antes; agora ela se explica (A-05). */}
+                                        <div className="mt-7 shrink-0">
+                                            <Tooltip
+                                                conteudo={
+                                                    ultimoComponente
+                                                        ? 'O kit precisa de ao menos um componente'
+                                                        : 'Remover componente'
+                                                }
+                                                descricao={ultimoComponente}
+                                            >
+                                                <IconButton
+                                                    aria-label="Remover componente"
+                                                    icone={<Trash2 aria-hidden className="size-5" />}
+                                                    variant="ghost"
+                                                    inativo={ultimoComponente}
+                                                    onClick={() => remove(indice)}
+                                                />
+                                            </Tooltip>
+                                        </div>
                                     </div>
+
+                                    {/*
+                                  Só para item novo (feature 022, FR-003): o
+                                  item será cadastrado ao salvar o kit, com
+                                  estes dados, como na Entrada.
+                                */}
+                                    {itemNovo && (
+                                        <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-3">
+                                            <legend className="px-1 text-sm font-medium text-foreground">
+                                                Item novo
+                                            </legend>
+                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                <Controller
+                                                    control={control}
+                                                    name={`componentes.${indice}.categoria`}
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            ref={field.ref}
+                                                            id={`categoria-${idBase}-${indice}`}
+                                                            label="Categoria"
+                                                            obrigatorio
+                                                            opcoes={CATEGORIAS_ITEM.map((c) => ({
+                                                                value: c,
+                                                                label: ROTULO_CATEGORIA_ITEM[c]
+                                                            }))}
+                                                            value={field.value ? [field.value] : []}
+                                                            onValueChange={(v) => field.onChange(v[0] ?? '')}
+                                                            erro={erroLinha?.categoria?.message}
+                                                        />
+                                                    )}
+                                                />
+                                                <Controller
+                                                    control={control}
+                                                    name={`componentes.${indice}.unidadeMedida`}
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            ref={field.ref}
+                                                            id={`unidade-${idBase}-${indice}`}
+                                                            label="Unidade de medida"
+                                                            obrigatorio
+                                                            opcoes={UNIDADES_MEDIDA.map((u) => ({
+                                                                value: u,
+                                                                label: ROTULO_UNIDADE_MEDIDA[u]
+                                                            }))}
+                                                            value={field.value ? [field.value] : []}
+                                                            onValueChange={(v) => field.onChange(v[0] ?? '')}
+                                                            erro={erroLinha?.unidadeMedida?.message}
+                                                        />
+                                                    )}
+                                                />
+                                                <div className="sm:col-span-2">
+                                                    <Controller
+                                                        control={control}
+                                                        name={`componentes.${indice}.estoqueMinimo`}
+                                                        render={({ field }) => {
+                                                            const unidade = linha.unidadeMedida
+                                                                ? ABREVIACAO_UNIDADE[
+                                                                      linha.unidadeMedida as UnidadeMedida
+                                                                  ]
+                                                                : ''
+                                                            return (
+                                                                <NumberInput
+                                                                    ref={field.ref}
+                                                                    id={`minimo-${idBase}-${indice}`}
+                                                                    label={
+                                                                        unidade
+                                                                            ? `Estoque mínimo (opcional, em ${unidade})`
+                                                                            : 'Estoque mínimo (opcional)'
+                                                                    }
+                                                                    apoio={
+                                                                        unidade
+                                                                            ? apoioEstoqueMinimo(limiarGlobal, unidade)
+                                                                            : 'Escolha a unidade de medida para ver o padrão de alerta.'
+                                                                    }
+                                                                    min={0}
+                                                                    value={field.value ?? ''}
+                                                                    onValueChange={field.onChange}
+                                                                    erro={erroLinha?.estoqueMinimo?.message}
+                                                                />
+                                                            )
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </fieldset>
+                                    )}
                                 </div>
                             )
                         })}

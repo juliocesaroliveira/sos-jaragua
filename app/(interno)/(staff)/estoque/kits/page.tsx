@@ -4,6 +4,7 @@ import { SkeletonLista } from '@/src/shared/ui/skeleton/skeleton'
 import { listarKitsComReceita } from '@/src/modules/estoque/presentation/queries/estoque'
 import { GestaoKits } from './gestao-kits'
 import { exigirAcessoA } from '@/src/shared/auth/sessao'
+import { limiarEstoqueMinimoGlobal } from '@/src/shared/config/limiares-alerta'
 
 export const metadata: Metadata = {
     title: 'Kits — SOS Jaraguá'
@@ -34,5 +35,6 @@ async function Conteudo() {
     await exigirAcessoA('/estoque/kits')
 
     const kits = await listarKitsComReceita()
-    return <GestaoKits kits={kits} />
+    // Para o texto de apoio do mínimo do item novo criado no kit (feature 022).
+    return <GestaoKits kits={kits} limiarGlobal={limiarEstoqueMinimoGlobal()} />
 }
