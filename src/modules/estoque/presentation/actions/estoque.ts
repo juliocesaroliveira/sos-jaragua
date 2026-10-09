@@ -146,9 +146,6 @@ export async function registrarSaida(entrada: EntradaFormularioSaida): Promise<R
 
     if (resultado.ok) {
         invalidarSaldo()
-        // A aba "Saídas" de /relatorios lista as saídas registradas; sem isto
-        // ela seguiria mostrando o histórico anterior até o cache expirar.
-        revalidateTag(CACHE_TAGS.estoqueSaidas, PERFIL_REVALIDACAO)
         agendarAlertasDeEstoque({ estoqueCritico: true })
     }
 

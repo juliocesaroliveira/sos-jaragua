@@ -19,7 +19,6 @@ function raizDe(tag: string): string[] {
 export const RAIZ_USUARIOS = raizDe(CACHE_TAGS.identidadeListagem)
 export const RAIZ_VOLUNTARIOS = raizDe(CACHE_TAGS.voluntariadoListagem)
 export const RAIZ_ESTOQUE = raizDe(CACHE_TAGS.estoqueListagem)
-export const RAIZ_SAIDAS = raizDe(CACHE_TAGS.estoqueSaidas)
 export const RAIZ_HABILIDADES = raizDe(CACHE_TAGS.habilidadesListagem)
 
 /**
@@ -42,10 +41,6 @@ export function chaveEstoque(params: ParametrosPaginacao & { categoria?: string 
     return [...RAIZ_ESTOQUE, params] as const
 }
 
-export function chaveSaidas(params: ParametrosPaginacao) {
-    return [...RAIZ_SAIDAS, params] as const
-}
-
 /**
  * Sino de notificações (012-notificacoes-tempo-real).
  *
@@ -63,6 +58,20 @@ export function chaveSaidas(params: ParametrosPaginacao) {
  */
 export function chaveNotificacoes() {
     return ['notificacoes'] as const
+}
+
+/**
+ * Prévia de um relatório da central (023-central-relatorios, research D5).
+ *
+ * Também não deriva de `CACHE_TAGS`: relatórios não são cacheados no servidor
+ * (FR-009), então não há tag para espelhar. `params` traz a página e os
+ * filtros da URL — o mesmo objeto que a página hidrata no servidor, para a
+ * primeira página não gerar um POST redundante.
+ */
+export const RAIZ_RELATORIOS = ['relatorios'] as const
+
+export function chaveRelatorio(slug: string, params: Record<string, unknown>) {
+    return [...RAIZ_RELATORIOS, slug, params] as const
 }
 
 /**

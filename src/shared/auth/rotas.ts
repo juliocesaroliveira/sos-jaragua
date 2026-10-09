@@ -37,6 +37,13 @@ export const REGRAS_DE_ROTA: ReadonlyArray<{ prefixo: string; roles: readonly Ro
     // Convocação em massa — alcance grande demais para operação de campo
     { prefixo: '/convocacao', roles: ['coordenador', 'administrador'] },
 
+    // Trilha de auditoria (023-central-relatorios, Clarification Q2): só o
+    // administrador — quem é auditado não consulta a própria trilha. Precisa vir
+    // **antes** de `/relatorios`, que a liberaria ao membro da Defesa Civil.
+    // Não há regra para a API: o download compartilha `/api/relatorios/export`,
+    // e o handler checa `podeAcessar` contra esta rota (research D3).
+    { prefixo: '/relatorios/auditoria', roles: ['administrador'] },
+
     // Relatórios e exportações — atribuídos à Defesa Civil, não à coordenação.
     // A rota e sua API de download andam juntas: separá-las deixaria a tela
     // acessível com os botões em 403, ou os dados alcançáveis por URL direta

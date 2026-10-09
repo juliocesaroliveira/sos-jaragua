@@ -6,7 +6,7 @@ import { normalizarPaginacao, type PaginaDe } from '@/src/shared/paginacao/esque
 import { podeAcessar } from '@/src/shared/auth/rotas'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import { CATEGORIAS_ITEM } from '../../domain/item'
-import { listarEstoque, listarSaidas, type ItemComSaldo, type LinhaSaidaPlana } from '../queries/estoque'
+import { listarEstoque, type ItemComSaldo } from '../queries/estoque'
 
 /**
  * Leituras paginadas de Estoque consumidas pelo TanStack Query
@@ -35,18 +35,4 @@ export async function listarEstoqueAction(entrada: unknown): Promise<ResultadoAc
 
     const filtros = { ...normalizarPaginacao(entrada), ...esquemaFiltrosEstoque.parse(entrada ?? {}) }
     return { ok: true, valor: await listarEstoque(filtros) }
-}
-
-/**
- * Histórico de saídas da aba de `/relatorios`. Usa a leitura paginada, não a de
- * exportação — a tela precisa de uma página por vez (FR-008); o download
- * continua com o conjunto completo.
- */
-export async function listarSaidasAction(entrada: unknown): Promise<ResultadoAction<PaginaDe<LinhaSaidaPlana>>> {
-    const ator = await obterSessao()
-    if (!podeAcessar('/relatorios', ator?.role)) {
-        return erroAction('nao_autorizado', 'Você não tem permissão para consultar o histórico de saídas.')
-    }
-
-    return { ok: true, valor: await listarSaidas(normalizarPaginacao(entrada)) }
 }

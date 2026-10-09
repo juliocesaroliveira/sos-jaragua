@@ -41,7 +41,11 @@ export const notificacao = pgTable(
         // Contador de não-lidas do sino in-app (DB_SCHEMA.md §12)
         index('notificacao_destinatario_lida_idx').on(t.destinatarioUserId, t.lida),
         // Dedupe idempotente dos alertas de coordenador (DESIGN.md §12)
-        index('notificacao_tipo_criado_idx').on(t.tipo, t.criadoEm)
+        index('notificacao_tipo_criado_idx').on(t.tipo, t.criadoEm),
+        // Relatório de envio de notificações por período (023, research D12):
+        // o índice acima começa por `tipo`, e o broadcast faz a tabela crescer
+        // rápido numa crise.
+        index('notificacao_criado_idx').on(t.criadoEm)
     ]
 )
 

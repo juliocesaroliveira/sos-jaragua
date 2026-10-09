@@ -167,7 +167,7 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         // antigo faria a seção "Coordenação" aparecer para quem não coordena.
         grupo: 'operacao',
         roles: DEFESA_CIVIL,
-        atalho: { descricao: 'Exporte dados de estoque, saídas e voluntariado.' }
+        atalho: { descricao: 'Exporte dados de estoque, voluntariado, crise e notificações.' }
     },
 
     { href: '/estoque', rotulo: 'Estoque', icone: 'Boxes', grupo: 'estoque', roles: STAFF },

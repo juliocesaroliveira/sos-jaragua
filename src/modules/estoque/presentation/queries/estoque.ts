@@ -2,7 +2,7 @@ import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { and, asc, count, desc, eq, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
-import { item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
+import { item, kit, kitReceitaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import { escaparLike } from '@/src/shared/busca/escapar-like'
@@ -294,113 +294,7 @@ export async function saldoPorItem(): Promise<Map<string, number>> {
     return new Map(linhas.map((l) => [l.itemId, paraNumero(l.quantidadeAtual)]))
 }
 
-// -- Leituras para exportação (BR-REL-01, BR-CON-01) --------------------------
-
-export type LinhaSaidaPlana = {
-    saidaId: string
-    criadoEm: string
-    tipo: 'avulso' | 'kit'
-    destino: string
-    responsavelTransporte: string
-    item: string
-    categoria: CategoriaItem
-    quantidade: number
-    unidadeMedida: UnidadeMedida
-}
-
-/**
- * Histórico de saídas **achatado**: uma linha por item entregue.
- *
- * É a forma que planilha entende — a estrutura aninhada de `saida` +
- * `saida_item` da tela não se transporta para CSV. Por vir de `saida_item`, o
- * descarte fica de fora por construção (BR-EST-05).
- *
- * Sem cache: o relatório precisa refletir o estado exato do momento do
- * download, e é uma leitura pontual, não de tela.
- */
-export async function saidasParaExportacao(): Promise<LinhaSaidaPlana[]> {
-    const linhas = await db
-        .select({
-            saidaId: saida.id,
-            criadoEm: saida.criadoEm,
-            tipo: saida.tipo,
-            destino: saida.destino,
-            responsavelTransporte: saida.responsavelTransporte,
-            item: item.nome,
-            categoria: item.categoria,
-            quantidade: saidaItem.quantidade,
-            unidadeMedida: item.unidadeMedida
-        })
-        .from(saidaItem)
-        .innerJoin(saida, eq(saida.id, saidaItem.saidaId))
-        .innerJoin(item, eq(item.id, saidaItem.itemId))
-        .orderBy(desc(saida.criadoEm), asc(item.nome))
-
-    return linhas.map((l) => ({
-        ...l,
-        tipo: l.tipo as 'avulso' | 'kit',
-        criadoEm: l.criadoEm.toISOString(),
-        quantidade: paraNumero(l.quantidade),
-        categoria: l.categoria as CategoriaItem,
-        unidadeMedida: l.unidadeMedida as UnidadeMedida
-    }))
-}
-
-/**
- * Histórico de saídas **paginado**, para a aba "Saídas" de `/relatorios`
- * (007-datatable-server-pagination, L-03.4).
- *
- * Existe separada de `saidasParaExportacao` de propósito: a tela precisa de uma
- * página por vez (FR-008), o download precisa do conjunto completo. Antes a
- * tela reusava a leitura de exportação e trazia o histórico inteiro para o
- * cliente a cada abertura.
- */
-export async function listarSaidas(filtros: ParametrosPaginacao): Promise<PaginaDe<LinhaSaidaPlana>> {
-    'use cache'
-    cacheTag(CACHE_TAGS.estoqueSaidas)
-    cacheLife(CACHE_LIFE.curto)
-
-    return paginarComClamp(filtros, buscarSaidas)
-}
-
-async function buscarSaidas({
-    page,
-    pageSize
-}: ParametrosPaginacao): Promise<{ rows: LinhaSaidaPlana[]; totalCount: number }> {
-    const [linhas, [total]] = await Promise.all([
-        db
-            .select({
-                saidaId: saida.id,
-                criadoEm: saida.criadoEm,
-                tipo: saida.tipo,
-                destino: saida.destino,
-                responsavelTransporte: saida.responsavelTransporte,
-                item: item.nome,
-                categoria: item.categoria,
-                quantidade: saidaItem.quantidade,
-                unidadeMedida: item.unidadeMedida
-            })
-            .from(saidaItem)
-            .innerJoin(saida, eq(saida.id, saidaItem.saidaId))
-            .innerJoin(item, eq(item.id, saidaItem.itemId))
-            .orderBy(desc(saida.criadoEm), asc(item.nome))
-            .limit(pageSize)
-            .offset((page - 1) * pageSize),
-        db.select({ total: count() }).from(saidaItem)
-    ])
-
-    return {
-        rows: linhas.map((l) => ({
-            ...l,
-            tipo: l.tipo as 'avulso' | 'kit',
-            criadoEm: l.criadoEm.toISOString(),
-            quantidade: paraNumero(l.quantidade),
-            categoria: l.categoria as CategoriaItem,
-            unidadeMedida: l.unidadeMedida as UnidadeMedida
-        })),
-        totalCount: total?.total ?? 0
-    }
-}
+// -- Leitura para o pacote de contingência e os alertas (BR-CON-01) -------
 
 /**
  * Inventário completo, sem paginação e sem cache — o pacote de contingência

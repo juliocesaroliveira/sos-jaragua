@@ -148,7 +148,12 @@ export const entrada = pgTable(
             .references(() => user.id),
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
     },
-    (t) => [index('entrada_item_criado_idx').on(t.itemId, t.criadoEm)]
+    (t) => [
+        index('entrada_item_criado_idx').on(t.itemId, t.criadoEm),
+        // Relatórios por período (023, research D12): o índice acima começa por
+        // `item_id` e não serve a um filtro só por data.
+        index('entrada_criado_idx').on(t.criadoEm)
+    ]
 )
 
 // -- Saída (DB_SCHEMA.md §6.4) ------------------------------------------------
@@ -205,7 +210,11 @@ export const descarte = pgTable(
             .references(() => user.id),
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow()
     },
-    (t) => [index('descarte_item_criado_idx').on(t.itemId, t.criadoEm)]
+    (t) => [
+        index('descarte_item_criado_idx').on(t.itemId, t.criadoEm),
+        // Relatório de descartes por período (023, research D12).
+        index('descarte_criado_idx').on(t.criadoEm)
+    ]
 )
 
 // -- Relations ----------------------------------------------------------------

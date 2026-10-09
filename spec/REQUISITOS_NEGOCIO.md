@@ -127,6 +127,7 @@ O **SOS Jaraguá** é uma plataforma web para gestão de crises pela Defesa Civi
 
 - **BR-AUD-01 (Logs Restritos):** Todo evento de CRUD (Create, Read, Update, Delete) nas entidades `Doacao`, `Voluntario`, e `Atividade` deve gerar um log com: `Timestamp`, `User_ID`, `Ação Realizada` e `Dados Anteriores/Novos`. Este log não é apagável e serve para prestação de contas.
 - **BR-REL-01 (Exportação):** Funcionalidade para exportar o Inventário Atual (Estoque) e o Histórico de Saídas em formato `.CSV` ou `.XLSX` (para compatibilidade com outras Defesas Civis).
+  - _Ampliado pela central de relatórios (`specs/023-central-relatorios`): 17 relatórios de estoque, voluntariado, crise, comunicação e auditoria, todos com filtro e exportação `.CSV`/`.XLSX`._
 - **BR-CON-01 (Plano de Contingência Offline):** O sistema deve possuir um botão "Gerar Pacote de Contingência". Ao clicar, o sistema compila e faz o download de uma planilha contendo:
     - Aba 1: Saldo exato do estoque no momento do download.
     - Aba 2: Formulário em branco para anotação manual de Entradas.

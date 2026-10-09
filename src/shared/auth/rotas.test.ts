@@ -41,6 +41,23 @@ describe('rolesExigidas', () => {
         expect(rolesExigidas('/relatorios')).toEqual(['membro_defesa_civil', 'administrador'])
     })
 
+    it('a trilha de auditoria é só do administrador (023, FR-020)', () => {
+        // Regra mais específica que `/relatorios`: precisa vir antes dela em
+        // REGRAS_DE_ROTA, senão o primeiro prefixo que casa a liberaria ao membro.
+        expect(rolesExigidas('/relatorios/auditoria')).toEqual(['administrador'])
+        expect(podeAcessar('/relatorios/auditoria', 'membro_defesa_civil')).toBe(false)
+        expect(podeAcessar('/relatorios/auditoria', 'administrador')).toBe(true)
+    })
+
+    it('as demais páginas de relatório herdam a regra de /relatorios', () => {
+        expect(podeAcessar('/relatorios/saidas', 'membro_defesa_civil')).toBe(true)
+        expect(podeAcessar('/relatorios/saidas', 'administrador')).toBe(true)
+        expect(podeAcessar('/relatorios/saidas', 'coordenador')).toBe(false)
+        expect(podeAcessar('/relatorios', 'coordenador')).toBe(false)
+        // Segmento completo: `/relatorios/auditoria-x` não é a trilha.
+        expect(podeAcessar('/relatorios/auditoriax', 'membro_defesa_civil')).toBe(true)
+    })
+
     it('a API de download de relatórios acompanha a tela', () => {
         // Se divergirem, ou a tela abre com os botões em 403, ou os dados ficam
         // alcançáveis por URL direta para quem já não pode abrir a tela.

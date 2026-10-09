@@ -392,6 +392,10 @@ e exportar.
 específica), `{ userId: 1, timestamp: -1 }` (atividade de um ator), `{ timestamp: -1 }`
 (consultas cronológicas gerais, alimenta BR-REL-01).
 
+**Leitura**: a central de relatórios (`specs/023-central-relatorios`, R-17 "Trilha de
+auditoria", só administrador) é a única leitora — `find`/`countDocuments` com tempo-limite,
+nunca escrita. Os testes de integração do leitor usam a coleção `audit_logs_teste`.
+
 **Imutabilidade** (BR-AUD-01 — "log não é apagável"): garantida em duas camadas — (1) o
 repositório de aplicação nunca expõe operações de update/delete sobre esta coleção; (2)
 recomendação operacional de configurar o usuário do Atlas usado pela aplicação **sem grant
@@ -437,6 +441,7 @@ O BRD referencia auditoria para as entidades abstratas "Doacao", "Voluntario" e
 | `alocacao(turnoId, participanteUserId)` — único                                                                            | Impede alocação duplicada (018)                      |
 | `entrada(itemId, criadoEm)`, `saida_item(itemId, criadoEm)` (via `saidaId`→`saida.criadoEm`), `descarte(itemId, criadoEm)` | Agregações de relatório/histórico por item e período |
 | `notificacao(destinatarioUserId, lida)`                                                                                    | Contagem de não-lidas por usuário                    |
+| `entrada(criadoEm)`, `descarte(criadoEm)`, `notificacao(criadoEm)`                                                         | Filtro só por período da central de relatórios (023) |
 | `atividade_categoria.nome`, `habilidade.nome` — único                                                                      | Evita duplicidade nas tabelas lookup livres          |
 
 ---

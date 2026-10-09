@@ -7,6 +7,7 @@ import {
     enum as enumeracao,
     number,
     object,
+    preprocess,
     string,
     union,
     uuid,
@@ -49,6 +50,7 @@ export const z = {
     enum: enumeracao,
     number,
     object,
+    preprocess,
     string,
     union,
     uuid

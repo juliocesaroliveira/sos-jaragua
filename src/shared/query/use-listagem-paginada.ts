@@ -18,7 +18,13 @@ import type { ResultadoAction } from '@/src/shared/kernel'
  * serializa, então um prefetch especulativo competiria com a navegação real do
  * usuário (L-04.4).
  */
-export function useListagemPaginada<T, F extends Record<string, unknown> = Record<string, never>>({
+export function useListagemPaginada<
+    T,
+    F extends Record<string, unknown> = Record<string, never>,
+    // Página com campos além de `rows`/`totalCount` (ex.: o resumo e as colunas
+    // da prévia de um relatório, 023-central-relatorios) — exposta em `pagina`.
+    P extends PaginaDe<T> = PaginaDe<T>
+>({
     chave,
     buscar,
     filtros,
@@ -26,7 +32,7 @@ export function useListagemPaginada<T, F extends Record<string, unknown> = Recor
 }: {
     /** Construtor de `queryKey` — precisa espelhar a `cacheTag` do servidor. */
     chave: (params: ParametrosPaginacao & F) => readonly unknown[]
-    buscar: (entrada: ParametrosPaginacao & F) => Promise<ResultadoAction<PaginaDe<T>>>
+    buscar: (entrada: ParametrosPaginacao & F) => Promise<ResultadoAction<P>>
     filtros?: F
     /** Distingue duas tabelas paginadas na mesma rota (abas de `/relatorios`). */
     prefixo?: string
@@ -54,6 +60,8 @@ export function useListagemPaginada<T, F extends Record<string, unknown> = Recor
     const pagina = query.data
 
     return {
+        /** A página inteira como veio do servidor, inclusive campos extras de `P`. */
+        pagina,
         rows: pagina?.rows ?? [],
         totalCount: pagina?.totalCount ?? 0,
         /** Só no primeiro carregamento — trocas de página usam `atualizando`. */

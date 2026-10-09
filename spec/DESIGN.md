@@ -207,7 +207,8 @@ entrada explícita em nenhum mapa. Responsabilidades:
     | `/(staff)/estoque/entrada`, `/(staff)/estoque/saida`                        | `membro_defesa_civil`, `coordenador`, `administrador` |
     | `/(staff)/estoque/descarte`, `/(staff)/estoque/kits` (CRUD receita)         | `coordenador`, `administrador`                        |
     | `/(staff)/dashboard`                                                        | `membro_defesa_civil`, `coordenador`, `administrador` |
-    | `/(staff)/relatorios`, `/api/contingencia/export`, `/api/relatorios/export` | `coordenador`, `administrador`                        |
+    | `/(staff)/relatorios/auditoria` (trilha de auditoria, 023)                  | `administrador`                                       |
+    | `/(staff)/relatorios`, `/api/contingencia/export`, `/api/relatorios/export` | `membro_defesa_civil`, `administrador`                |
     | `/(staff)/admin/*` (gestão de usuários/permissões)                          | `administrador`                                       |
     | `/voluntariado/minhas-atividades`                                           | `voluntario` e acima                                  |
 
@@ -637,12 +638,36 @@ condicional que possa ser esquecido em um novo relatório).
 
 ## 14. Relatórios e Exportação (BR-REL-01)
 
-- Export de Inventário Atual (a partir de `saldo_estoque` + `item`) e Histórico de Saídas
-  (a partir de `saida`/`saida_item`) em CSV e XLSX.
-- Biblioteca: `xlsx` (SheetJS).
-- Implementado como **Route Handler** (`GET /api/relatorios/export?tipo=...&formato=...`),
-  não Server Action — payload binário não é um bom fit para o modelo de retorno de Server
-  Actions. Protegido pela mesma checagem de role de `(staff)/relatorios`.
+Central de relatórios (`specs/023-central-relatorios`): 17 relatórios lidos das duas bases,
+agrupados em Estoque, Voluntariado, Crise, Comunicação e Auditoria.
+
+- **Telas**: `/relatorios` é o catálogo (cards por grupo, mais o pacote de contingência, §15);
+  `/relatorios/[relatorio]` é a página genérica de cada relatório — filtros na URL, avisos,
+  resumo, exportação e prévia paginada server-side.
+- **Acesso**: `membro_defesa_civil` e `administrador`; a trilha de auditoria
+  (`/relatorios/auditoria`) só `administrador`. A autorização de cada relatório **é** a regra de
+  rota da sua página: a página, a Server Action de consulta e o download checam
+  `podeAcessar('/relatorios/<slug>')` — não existe lista de perfis por relatório.
+- **Uma definição por relatório** (`contingencia/application/definicoes/`): filtros (Zod),
+  colunas, carregador paginado, resumo e descrição dos filtros. A mesma definição alimenta a
+  prévia e o arquivo; as células são formatadas no servidor (pt-BR, horário de Brasília).
+- **Fronteiras**: cada módulo dono expõe suas consultas em `presentation/queries/relatorios.ts`
+  (a trilha em `auditoria/presentation/queries/trilha.ts`); Contingência só orquestra. Nomes de
+  usuário são resolvidos em lote por Identidade (`nomesPorIds`).
+- **Sem cache**: toda leitura de relatório reflete o momento da geração.
+- **Período**: datas civis inclusivas convertidas em intervalo UTC semiaberto
+  (`contingencia/domain/periodo.ts`); padrão: últimos 30 dias.
+- **Exportação**: Route Handler `GET /api/relatorios/export?tipo=<slug>&formato=csv|xlsx&<filtros>`
+  (implementação em `contingencia/presentation/http/`), em **streaming** — lotes de 2.000 linhas,
+  XLSX pelo `WorkbookWriter` do `exceljs` —, porque o corpo de resposta das funções da Vercel é
+  limitado a 4,5 MB e esse limite não vale para streaming. Teto de 50.000 linhas (acima: `422`).
+  O arquivo começa pelo cabeçalho do documento (relatório, período, filtros, gerado em/por,
+  total); no CSV, texto iniciado por `= + - @` vira texto literal (proteção contra fórmula).
+- **Dados sensíveis**: CPF e restrições de saúde saem completos nos relatórios de voluntariado
+  e na trilha, com aviso de LGPD junto da exportação.
+- **Trilha de auditoria**: leitura somente (`find`/`countDocuments`) com tempo-limite próprio;
+  Mongo fora do ar afeta só esse relatório (`auditoria_indisponivel`).
+- Biblioteca de planilhas: `exceljs` (§16, §19).
 
 ---
 

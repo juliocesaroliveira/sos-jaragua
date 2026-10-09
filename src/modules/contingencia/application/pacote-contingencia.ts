@@ -1,7 +1,12 @@
 import 'server-only'
-import { inventarioParaExportacao } from '@/src/modules/estoque/presentation/queries/estoque'
-import { COLUNAS_INVENTARIO } from './relatorios'
-import type { Aba } from '../infrastructure/planilha'
+import {
+    ROTULO_CATEGORIA_ITEM,
+    ROTULO_UNIDADE_MEDIDA,
+    type CategoriaItem,
+    type UnidadeMedida
+} from '@/src/modules/estoque/domain/item'
+import { inventarioParaExportacao, type ItemComSaldo } from '@/src/modules/estoque/presentation/queries/estoque'
+import type { Aba, Coluna } from '../infrastructure/planilha'
 
 /**
  * Pacote de Contingência (BR-CON-01, DESIGN.md §15).
@@ -12,6 +17,23 @@ import type { Aba } from '../infrastructure/planilha'
  * fórmula ou validação que não sobreviveria à impressão.
  */
 type LinhaEmBranco = Record<string, never>
+
+/**
+ * Aba "Estoque atual" do pacote — as mesmas cinco colunas de sempre (FR-004).
+ *
+ * Vivia em `relatorios.ts`, compartilhada com a exportação do inventário. A
+ * central de relatórios (023) deu ao Inventário colunas próprias (mínimo
+ * aplicado, origem, situação); o pacote fica com as suas, que é o que quem o
+ * imprime para trabalhar sem conexão já conhece.
+ */
+export const COLUNAS_INVENTARIO: Coluna<ItemComSaldo>[] = [
+    { cabecalho: 'Item', valor: (i) => i.nome, largura: 34 },
+    { cabecalho: 'Categoria', valor: (i) => ROTULO_CATEGORIA_ITEM[i.categoria as CategoriaItem], largura: 22 },
+    { cabecalho: 'Unidade', valor: (i) => ROTULO_UNIDADE_MEDIDA[i.unidadeMedida as UnidadeMedida], largura: 12 },
+    { cabecalho: 'Saldo atual', valor: (i) => i.saldo, largura: 14 },
+    // Vazio quando o item herda o padrão global (feature 020, Q3).
+    { cabecalho: 'Estoque mínimo', valor: (i) => i.estoqueMinimo, largura: 16 }
+]
 
 /** Linhas vazias para o operador preencher à mão depois de imprimir. */
 const LINHAS_EM_BRANCO = 40

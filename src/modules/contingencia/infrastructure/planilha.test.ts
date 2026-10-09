@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import { describe, expect, it } from 'vitest'
-import { gerarCsv, gerarXlsx, nomeDeArquivo, type Aba } from './planilha'
+import { gerarCsv, gerarXlsx, nomeDeArquivo, streamCsv, streamXlsx, type Aba } from './planilha'
 
 /**
  * Invariantes do arquivo gerado (specs/020-resolver-pendencias,
@@ -158,6 +158,168 @@ describe('gerarCsv', () => {
 
     it('envolve em aspas valores com quebra de linha', () => {
         expect(gerarCsv(aba)).toContain('"Linha\nquebrada";3')
+    })
+})
+
+/**
+ * Cabeçalho do documento, resumo e proteção contra fórmula
+ * (specs/023-central-relatorios, FR-008, FR-011, research D7/D8).
+ */
+const IDENTIFICACAO = [
+    { rotulo: 'Relatório', valor: 'Histórico de saídas' },
+    { rotulo: 'Período', valor: '01/10/2026 a 05/10/2026' },
+    { rotulo: 'Gerado por', valor: 'Maria' }
+]
+const RESUMO = [{ rotulo: 'Total entregue', valor: 12.5 }]
+
+async function lerStream(stream: ReadableStream<Uint8Array>): Promise<Buffer> {
+    const partes: Uint8Array[] = []
+    const leitor = stream.getReader()
+    for (;;) {
+        const { done, value } = await leitor.read()
+        if (done) break
+        partes.push(value)
+    }
+    return Buffer.concat(partes)
+}
+
+async function* emLotes<T>(...lotes: T[][]): AsyncIterable<T[]> {
+    for (const lote of lotes) yield lote
+}
+
+describe('cabeçalho do documento e resumo', () => {
+    const aba: Aba<Linha> = {
+        nome: 'Saídas',
+        colunas: COLUNAS,
+        linhas: [{ item: 'Arroz', saldo: 2 }],
+        cabecalhoDocumento: IDENTIFICACAO,
+        resumo: RESUMO
+    }
+
+    it('CSV: identificação, resumo e linha em branco antes da tabela', () => {
+        const linhas = gerarCsv(aba).slice(1).split('\r\n')
+        expect(linhas).toEqual([
+            'Relatório;Histórico de saídas',
+            'Período;01/10/2026 a 05/10/2026',
+            'Gerado por;Maria',
+            'Total entregue;12,5',
+            '',
+            'Item;Saldo atual',
+            'Arroz;2'
+        ])
+    })
+
+    it('XLSX: identificação no topo, tabela depois e painel congelado abaixo do cabeçalho da tabela', async () => {
+        const [planilha] = (await reler(await gerarXlsx([aba]))).worksheets
+
+        expect(valores(planilha, 1)).toEqual(['Relatório', 'Histórico de saídas'])
+        expect(valores(planilha, 3)).toEqual(['Gerado por', 'Maria'])
+        expect(valores(planilha, 4)).toEqual(['Total entregue', 12.5])
+        expect(planilha.getRow(5).values).toEqual([])
+        expect(valores(planilha, 6)).toEqual(['Item', 'Saldo atual'])
+        expect(valores(planilha, 7)).toEqual(['Arroz', 2])
+        expect(planilha.views[0]).toMatchObject({ state: 'frozen', ySplit: 6 })
+    })
+
+    it('sem os campos novos, a saída é a de antes (regressão do pacote de contingência, FR-004)', async () => {
+        const semCabecalho: Aba<Linha> = { nome: 'Estoque', colunas: COLUNAS, linhas: [{ item: 'Arroz', saldo: 2 }] }
+
+        expect(gerarCsv(semCabecalho).slice(1).split('\r\n')).toEqual(['Item;Saldo atual', 'Arroz;2'])
+
+        const [planilha] = (await reler(await gerarXlsx([semCabecalho]))).worksheets
+        expect(valores(planilha, 1)).toEqual(['Item', 'Saldo atual'])
+        expect(planilha.rowCount).toBe(2)
+        expect(planilha.views[0]).toMatchObject({ state: 'frozen', ySplit: 1 })
+    })
+})
+
+describe('proteção contra fórmula (FR-011)', () => {
+    const perigosos = ['=1+1', '+5', '-2+3', '@SOMA(A1)', '\tx', '\rx']
+
+    it('CSV: texto que começa com = + - @ TAB ou CR ganha apóstrofo', () => {
+        const aba: Aba<{ texto: string }> = {
+            nome: 'X',
+            colunas: [{ cabecalho: 'Destino', valor: (l) => l.texto }],
+            linhas: perigosos.map((texto) => ({ texto }))
+        }
+        const csv = gerarCsv(aba)
+        expect(csv).toContain("'=1+1")
+        expect(csv).toContain("'+5")
+        expect(csv).toContain("'-2+3")
+        expect(csv).toContain("'@SOMA(A1)")
+        expect(csv).toContain("'\tx")
+        expect(csv).not.toMatch(/(^|\r\n|;)=1\+1/)
+    })
+
+    it('CSV: números negativos continuam números, sem apóstrofo', () => {
+        const aba: Aba<{ n: number }> = {
+            nome: 'X',
+            colunas: [{ cabecalho: 'Variação', valor: (l) => l.n }],
+            linhas: [{ n: -3.5 }]
+        }
+        expect(gerarCsv(aba).slice(1).split('\r\n')[1]).toBe('-3,5')
+    })
+
+    it('CSV: o cabeçalho do documento também é protegido (filtros vêm do usuário)', () => {
+        const aba: Aba<Linha> = {
+            nome: 'X',
+            colunas: COLUNAS,
+            linhas: [],
+            cabecalhoDocumento: [{ rotulo: 'Destino', valor: '=HYPERLINK("x")' }]
+        }
+        expect(gerarCsv(aba)).toContain(`Destino;"'=HYPERLINK(""x"")"`)
+    })
+
+    it('XLSX: o texto é gravado como string, nunca como fórmula', async () => {
+        const aba: Aba<{ texto: string }> = {
+            nome: 'X',
+            colunas: [{ cabecalho: 'Destino', valor: (l) => l.texto }],
+            linhas: [{ texto: '=1+1' }]
+        }
+        const [planilha] = (await reler(await gerarXlsx([aba]))).worksheets
+        const celula = planilha.getRow(2).getCell(1)
+        expect(celula.type).toBe(ExcelJS.ValueType.String)
+        expect(celula.value).toBe('=1+1')
+    })
+})
+
+describe('streaming (research D8)', () => {
+    const aba = { nome: 'Saídas', colunas: COLUNAS, cabecalhoDocumento: IDENTIFICACAO }
+
+    it('streamCsv emite o mesmo conteúdo que gerarCsv, lote a lote', async () => {
+        const linhas = [
+            { item: 'Arroz', saldo: 1 },
+            { item: 'Feijão', saldo: 2 },
+            { item: '=perigo', saldo: 3 }
+        ]
+        const transmitido = (await lerStream(streamCsv(aba, emLotes(linhas.slice(0, 2), linhas.slice(2))))).toString(
+            'utf8'
+        )
+        expect(transmitido).toBe(gerarCsv({ ...aba, linhas }))
+    })
+
+    it('streamCsv sem linhas ainda entrega identificação e cabeçalho', async () => {
+        const transmitido = (await lerStream(streamCsv(aba, emLotes<Linha>()))).toString('utf8')
+        expect(transmitido.slice(1).split('\r\n')).toEqual([
+            'Relatório;Histórico de saídas',
+            'Período;01/10/2026 a 05/10/2026',
+            'Gerado por;Maria',
+            '',
+            'Item;Saldo atual'
+        ])
+    })
+
+    it('streamXlsx gera uma planilha legível com todas as linhas dos lotes', async () => {
+        const buffer = await lerStream(
+            streamXlsx(aba, emLotes([{ item: 'Arroz', saldo: 1 }], [{ item: 'Água', saldo: 2.5 }]))
+        )
+        const [planilha] = (await reler(buffer)).worksheets
+
+        expect(planilha.name).toBe('Saídas')
+        expect(valores(planilha, 1)).toEqual(['Relatório', 'Histórico de saídas'])
+        expect(valores(planilha, 5)).toEqual(['Item', 'Saldo atual'])
+        expect(valores(planilha, 6)).toEqual(['Arroz', 1])
+        expect(valores(planilha, 7)).toEqual(['Água', 2.5])
     })
 })
 

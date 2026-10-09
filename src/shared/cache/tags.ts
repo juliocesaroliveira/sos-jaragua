@@ -16,8 +16,6 @@ export const CACHE_TAGS = {
     estoqueSaldo: 'estoque:saldo',
     /** Listagem paginada de estoque (TanStack Table). */
     estoqueListagem: 'estoque:listagem',
-    /** Histórico de saídas paginado — aba "Saídas" de `/relatorios`. */
-    estoqueSaidas: 'estoque:saidas',
     /** Receitas de kit — afetam a capacidade calculada no dashboard. */
     estoqueKits: 'estoque:kits',
     /** Indicadores "Kits Necessários"/"Kits Possíveis" (BR-INT-02). */

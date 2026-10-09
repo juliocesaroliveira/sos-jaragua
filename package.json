@@ -15,6 +15,7 @@
         "db:push": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs push",
         "db:studio": "node --env-file=.env.local ./node_modules/drizzle-kit/bin.cjs studio",
         "db:seed": "tsx --env-file=.env.local db/seed.ts",
+        "db:seed:volume": "tsx --env-file=.env.local db/seed-volume-relatorios.ts",
         "mongo:setup": "tsx --env-file=.env.local db/mongo-setup.ts"
     },
     "dependencies": {
