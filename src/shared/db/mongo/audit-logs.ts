@@ -1,6 +1,6 @@
 import 'server-only'
 import type { Collection, Db } from 'mongodb'
-import cliente from './client'
+import { clienteMongo } from './client'
 
 /**
  * Acessor da coleção `audit_logs` (DB_SCHEMA.md §9, BR-AUD-01).
@@ -42,7 +42,7 @@ export type RegistroAuditoria = {
 export const NOME_COLECAO = 'audit_logs'
 
 function banco(): Db {
-    return cliente.db()
+    return clienteMongo().db()
 }
 
 export function colecaoAuditoria(): Collection<RegistroAuditoria> {
