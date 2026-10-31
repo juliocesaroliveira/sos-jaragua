@@ -181,7 +181,7 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 - [ ] T064 Rodar o roteiro completo de `quickstart.md` — os 15 cenários, com uma conta de cada role
 - [ ] T065 Medir o tempo de resposta de `listarCandidaturasPendentes` (`src/modules/voluntariado/presentation/queries/candidaturas.ts`) e da listagem paginada de voluntários contra a meta de 300ms (SC-006), confirmando que a decifragem não introduziu regressão
 - [ ] T066 Rodar `npm test`, `npm run test:integracao`, lint e type-check com a árvore limpa
-- [ ] T067 Avaliar, em decisão à parte desta feature, o advisory **crítico** do `next@16.3.8` (RCE não autenticado, inclusive em funções `'use cache'` que retornam typed arrays) e os advisories altos de `zod`, `vite`, `js-yaml` e `source-map-js` — cifrar campo a campo sobre um runtime com RCE conhecido não entrega a postura de segurança que motivou a 024
+- [x] T067 ~~Avaliar o advisory crítico do `next@16.3.8`~~ — **resolvido**: Next e `eslint-config-next` atualizados para 16.4.3 (commit `fix(deps)`), o advisory saiu do `npm audit`, e `npm test` (549) e `npm run build` passam. **Permanece aberto**: 1 advisory crítico em `better-auth` e altos em `zod`, `vite`, `js-yaml` e `source-map-js`, a avaliar em decisão à parte
 
 ---
 
