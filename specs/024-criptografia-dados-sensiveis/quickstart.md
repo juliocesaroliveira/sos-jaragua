@@ -8,13 +8,12 @@ esperar. Detalhes de schema estão em [data-model.md](./data-model.md); de inter
 
 ## Pré-requisitos
 
-### 0. Destravar o lockfile (antes de tudo)
+### 0. Dependências
 
-`npm ci` falha neste repositório por dessincronia pré-existente entre `package.json` e
-`package-lock.json` (`Missing: esbuild@0.28.2 from lock file`). Sem isso, nem CI nem `npm test` rodam:
+O lockfile já foi ressincronizado em commit próprio — `npm ci` funciona:
 
 ```bash
-npm install          # commit próprio, separado da feature
+npm ci               # baseline verde: 549 testes em 47 arquivos
 ```
 
 ### 1. Gerar e configurar a chave

@@ -64,11 +64,24 @@ incidentais. Ambas estão documentadas em Complexity Tracking e exigem `/speckit
 MINOR) **antes do merge da implementação**. O gate passa para seguir ao design; não passa para merge
 sem a emenda.
 
-### Bloqueio operacional pré-existente
+### Bloqueio operacional pré-existente — resolvido
 
-`npm ci` falha neste repositório: `package-lock.json` está dessincronizado de `package.json`
-(`Missing: esbuild@0.28.2 from lock file`). Não foi introduzido por esta feature, mas impede CI e
-`npm test`. Deve ser corrigido com `npm install` em um commit próprio, antes da implementação.
+`npm ci` falhava por dessincronia entre `package.json` e `package-lock.json`
+(`Missing: esbuild@0.28.2 from lock file`), impedindo CI e `npm test`. **Corrigido** em commit próprio
+(`chore: ressincroniza package-lock.json`): `npm ci` conclui com exit 0 e `npm test` passa 549 testes
+em 47 arquivos. A baseline de testes está verde, então as tarefas desta feature partem de verde.
+
+### Alerta de segurança descoberto na auditoria de dependências
+
+`npm audit` acusa **advisory crítico no `next@16.3.8`** (faixa afetada 16.0.0–16.4.0), com três itens,
+um deles diretamente ligado ao mecanismo que esta feature usa: *"Unauthenticated Remote Code Execution
+in `use cache` functions returning typed arrays"* (GHSA-673q-mjm6-r5xr), além de RCE na API de
+otimização de imagem com SVG e DoS em Server Actions. Há também advisories de severidade alta em
+`zod`, `vite`, `js-yaml` e `source-map-js`, e um crítico em `better-auth`.
+
+Atualizar o Next é **decisão à parte desta feature** — muda o framework e pede validação própria —, mas
+precede qualquer discussão sobre a postura de segurança que motivou a 024: não faz sentido cifrar
+campo a campo rodando sobre um runtime com RCE não autenticado conhecido.
 
 ## Project Structure
 

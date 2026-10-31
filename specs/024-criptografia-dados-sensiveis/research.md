@@ -5,11 +5,10 @@
 Todas as decisões abaixo foram tomadas contra o código real do repositório e a documentação do Next
 16.3.8 instalado (`node_modules/next/dist/docs/`), conforme exige `AGENTS.md`.
 
-> **Nota de ambiente**: `npm ci` falha neste repositório porque `package-lock.json` está
-> dessincronizado de `package.json` (`Missing: esbuild@0.28.2 from lock file`). É um problema
-> pré-existente, não introduzido por esta feature, mas **bloqueia CI e qualquer `npm test`** — precisa
-> ser resolvido com `npm install` em um commit próprio antes da implementação. As docs do Next foram
-> lidas a partir de uma instalação isolada da mesma versão, sem alterar o lockfile.
+> **Nota de ambiente — resolvida**: `npm ci` falhava por dessincronia pré-existente entre
+> `package.json` e `package-lock.json` (`Missing: esbuild@0.28.2 from lock file`), bloqueando CI e
+> `npm test`. Corrigido em commit próprio com `npm install` (só o lockfile mudou; `package.json`
+> intacto). Verificado: `npm ci` conclui com exit 0 e `npm test` passa 549 testes em 47 arquivos.
 
 ---
 
