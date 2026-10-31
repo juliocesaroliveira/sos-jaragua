@@ -1,7 +1,8 @@
-# Specification Quality Checklist: Criptografia e Mascaramento de Dados Sensíveis (LGPD)
+# Specification Quality Checklist: Criptografia, Mascaramento e Exclusão de Dados Sensíveis (LGPD)
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-31
+**Updated**: 2026-10-31 (após respostas de Q1, Q2 e Q3)
 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
@@ -13,10 +14,10 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — **3 perguntas abertas (Q1, Q2, Q3)**, consolidadas na
-      seção Clarifications em vez de marcadores inline. Precisam de resposta antes de `/speckit-plan`.
-- [x] Requirements are testable and unambiguous — com a ressalva de que FR-001, FR-008 e FR-012
-      dependem das respostas de Q1 e Q2 para fixar o conjunto de campos e de roles.
+- [ ] No [NEEDS CLARIFICATION] markers remain — **1 pergunta aberta (Q4)**: o alcance da exclusão
+      diante da auditoria imutável. Q1, Q2 e Q3 foram resolvidas pelo responsável em 2026-10-31.
+- [x] Requirements are testable and unambiguous — o conjunto de campos (Q1) e a matriz de
+      visibilidade (Q2) estão fixados em tabelas explícitas. FR-022 depende de Q4.
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
 - [x] All acceptance scenarios are defined
@@ -33,14 +34,35 @@
 
 ## Notes
 
-- **Bloqueador para `/speckit-plan`**: as três perguntas da seção Clarifications. Q1 define o conjunto
-  de campos sensíveis, Q2 define quais roles veem texto plano e Q3 define se o titular vê os próprios
-  dados. Nenhuma tem padrão seguro assumível sem decisão do responsável.
-- **Conflito com a Constituição v1.0.1 (Princípio IV)**: o princípio vigente determina "não introduzir
-  criptografia a nível de campo sem decisão documentada". Esta spec é essa decisão, mas a Constituição
-  precisa de emenda (bump MINOR via `/speckit-constitution`) antes do merge da implementação — a
-  revisão de conformidade da seção Governance exige verificação contra os Princípios I, IV e VI.
-- **Impacto em código existente já mapeado** (para o `/speckit-plan`, não é requisito desta spec):
-  o CPF é exibido na fila de triagem; CPF, telefone e restrições de saúde aparecem nas consultas de
-  relatórios e de candidaturas; existe índice único de CPF e busca por CPF no repositório de
-  voluntário.
+### Bloqueador para `/speckit-plan`
+
+- **Q4** — exclusão física vs. anonimização. O Princípio V da Constituição estabelece auditoria
+  imutável (BR-AUD-01); "apagar todos os dados" ao pé da letra contradiz esse princípio e abre lacuna
+  no histórico de turnos. Recomendação registrada na spec: anonimizar (opção A).
+
+### Conflitos com a Constituição v1.0.1
+
+1. **Princípio IV** — "não introduzir criptografia a nível de campo sem decisão documentada". Esta
+   spec é a decisão; a Constituição precisa de emenda (bump MINOR via `/speckit-constitution`) antes
+   do merge da implementação.
+2. **Princípio V** — auditoria imutável. Dependente da resposta de Q4: a opção B exigiria uma segunda
+   emenda, de impacto maior.
+
+### Risco de conformidade registrado na spec
+
+- `restricoesSaude` ficou fora do conjunto protegido por decisão de Q1, embora a LGPD classifique dado
+  de saúde como **dado pessoal sensível** (art. 5º, II) — categoria mais estrita que CPF e CEP, que
+  serão criptografados. A Constituição (Princípio IV) também o cita junto com `cpf`. Registrado em
+  **Riscos Conhecidos**; decisão do responsável mantida.
+
+### Impacto em código existente já mapeado (insumo para `/speckit-plan`, não requisito desta spec)
+
+- `voluntario_perfil.cpf` tem índice único e é usado em `buscarPorCpf` — a proteção precisa preservar
+  unicidade e busca por valor exato.
+- A data de nascimento é **duplicada** em `user.dataNascimento` e `voluntario_perfil.dataNascimento`,
+  sincronizadas por `definirDataNascimentoSeAusente`. Proteger só uma deixa a outra legível (FR-008).
+- A validação de maioridade (`ehMaiorDeIdade`) vive no `domain` e consome a data completa (FR-006).
+- CPF é exibido na fila de triagem (`fila-triagem.tsx`); CPF, telefone e restrições de saúde aparecem
+  nas consultas de relatórios e de candidaturas; os relatórios exportam via rota dedicada.
+- **Não existe nenhuma tela de conta ou perfil** em `app/` — a User Story 4 cria essa superfície do
+  zero, o que a torna a maior fatia de trabalho novo desta feature.
