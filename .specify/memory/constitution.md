@@ -1,19 +1,39 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.0.1 (PATCH)
-- Rationale: troca de pacote dentro da mesma capacidade (planilhas), sem mudança de princípio.
-  Feature 020-resolver-pendencias, decisão Q1 (2026-10-01): `xlsx@0.18.5` tem CVE de
-  severidade alta (prototype pollution / ReDoS) sem versão corrigida publicada no npm; o
-  responsável escolheu `exceljs`, publicado no registro público e mantido. Registrado também em
-  `spec/DESIGN.md` §16 e §19.
-- Modified principles: none
+- Version change: 1.0.1 → 1.1.0 (MINOR)
+- Rationale: expansão material de dois princípios existentes, sem remover princípio nem renomear
+  seção. Motivada pela feature 024-criptografia-dados-sensiveis (conformidade com a LGPD).
+
+  Sobre o bump ser MINOR e não MAJOR — a chamada é discutível e fica registrada:
+  o Princípio IV dizia "não introduzir criptografia a nível de campo **sem decisão
+  documentada**". A cláusula de escape era parte do princípio, e esta emenda é justamente a
+  decisão documentada que ele previa — usar o escape é cumprir o princípio, não revertê-lo.
+  O Princípio V é o caso mais próximo de MAJOR, porque abre exceção a uma invariante declarada
+  (imutabilidade da trilha); classificada como MINOR por ser **única**, limitada aos registros
+  já gravados, documentada no próprio princípio, e por a regra passar a ser mais estrita daqui
+  para frente (a trilha não recebe mais texto plano sensível). Se o responsável ler essa
+  exceção como redefinição incompatível, o bump correto é 2.0.0 e esta emenda deve ser
+  reemitida.
+
+- Modified principles (conteúdo, não títulos):
+  - "IV. Segurança e Defesa em Profundidade": a cláusula que proibia criptografia a nível de
+    campo foi substituída pela política adotada — cifra de `cpf`/`cep`/`dataNascimento`, chave
+    por variável de ambiente, recusa de boot sem chave, mascaramento por padrão, visibilidade
+    por campo e por role, proibição de texto plano em cache/log/erro/notificação, e eliminação
+    a pedido do titular por anonimização no lugar. Registra o gap aceito de `restricoesSaude` e
+    `telefone`.
+  - "V. Auditoria Não Bloqueante": acrescenta a redação de campo sensível na trilha, a exceção
+    única à imutabilidade para os snapshots já gravados, e as ações `read` e `anonimizar`.
 - Modified sections:
-  - Stack e Convenções Técnicas: "**Planilhas**: `xlsx` (SheetJS)" → "**Planilhas**: `exceljs`"
+  - "Stack e Convenções Técnicas": acrescenta `node:crypto` (AES-256-GCM, HKDF, HMAC) como a
+    escolha de criptografia, explicitando que não há dependência externa.
 - Added sections: none
 - Removed sections: none
 - Deferred/TODO placeholders: none
-- Templates requiring follow-up: none — plan/spec/tasks templates read this file at runtime and
-  do not name the spreadsheet library.
+- Templates requiring follow-up: none — plan/spec/tasks templates leem este arquivo em runtime.
+
+Previous report (1.0.1, 2026-10-01): troca de `xlsx` por `exceljs` por CVE de severidade alta
+sem correção publicada (feature 020, decisão Q1).
 
 Previous report (1.0.0, 2026-08-12): initial ratification — six Core Principles, Stack e
 Convenções Técnicas, Fluxo de Desenvolvimento and Governance added from the placeholder template.
@@ -97,14 +117,44 @@ uma única checagem.
   ambientes que não sejam localhost.
 - Timeout de inatividade para `coordenador`/`membro_defesa_civil` é aplicado no fluxo de
   autenticação (não é opcional nem contornável por essas roles).
-- Dados sensíveis (`cpf`, `restricoesSaude`) dependem da criptografia at-rest nativa do
-  provedor de banco e TLS em trânsito — não introduzir criptografia a nível de campo sem
-  decisão documentada, para não adicionar complexidade de key management sem necessidade
-  comprovada.
+- Os campos pessoais classificados como sensíveis — hoje `cpf`, `cep` e `dataNascimento` —
+  são criptografados **a nível de campo**, com a chave fornecida exclusivamente por variável
+  de ambiente, nunca versionada nem armazenada no banco. A aplicação RECUSA inicializar sem a
+  chave: não existe modo degradado que grave dado desprotegido. TLS em trânsito e a
+  criptografia at-rest do provedor continuam valendo como camadas adicionais, não como
+  substitutas.
+- Dado sensível é apresentado MASCARADO por padrão em toda superfície — tela, tooltip,
+  totalizador e arquivo exportado. O acesso ao valor completo é concedido **campo a campo e
+  role a role**, por uma matriz declarada em um único módulo, avaliada no servidor e
+  registrada em auditoria. O mascaramento acontece no servidor: o valor completo não é
+  entregue a quem não pode vê-lo, para que a máscara não seja contornável inspecionando a
+  resposta.
+- Nenhum valor sensível em texto plano entra em cache, log de aplicação, mensagem de erro,
+  trilha de depuração ou payload de notificação. Como `'use cache'` não admite leitura de
+  sessão, a consequência prática é que função cacheada só trafega a forma mascarada.
+- O titular acessa os próprios dados completos e pode pedir a eliminação. A eliminação
+  **anonimiza no lugar**, nunca apaga a linha de `user`: as chaves estrangeiras de `alocacao`,
+  `atividade` e estoque fariam um `DELETE` falhar para quem tem histórico operacional ou,
+  pior, destruir em silêncio o histórico de turnos. O histórico sobrevive à exclusão sem
+  identificar a pessoa.
+- **Gap conhecido e aceito**: `restricoesSaude` e `telefone` permanecem fora do conjunto
+  criptografado, por decisão do responsável registrada em
+  `specs/024-criptografia-dados-sensiveis/spec.md` (Q1). Fica registrado que a LGPD classifica
+  dado referente à saúde como dado pessoal **sensível** (art. 5º, II) — categoria mais estrita
+  que `cpf` e `cep`, que são dados pessoais comuns. Incluí-los exige nova decisão explícita,
+  não ajuste incidental durante outra tarefa.
 
 **Rationale**: o sistema coordena resposta a desastres e dados de voluntários/beneficiários;
 uma falha de autorização tem custo humano real, não apenas técnico. Defesa em profundidade
 (proxy + layout) cobre o caso de cookies forjados/expirados entre as duas checagens.
+
+A criptografia a nível de campo foi adotada porque a proteção nativa do provedor não cobre os
+cenários que de fato ameaçam estes dados: dump autorizado, backup extraviado, base compartilhada
+para depuração. Em todos eles o conteúdo chega legível a quem não deveria lê-lo. A LGPD exige
+medidas de segurança aptas a proteger dados pessoais (art. 46), e a chave fora do banco é o que
+torna o conteúdo do banco inútil sem a organização. O custo de key management que a versão
+anterior deste princípio queria evitar foi contido a uma única variável de ambiente, sem
+dependência externa nova.
 
 ### V. Auditoria Não Bloqueante
 
@@ -120,10 +170,29 @@ auditoria (`withAudit`) — nunca chamadas de log ad-hoc espalhadas pelas Server
 - Essa política de degradação é uma decisão final documentada — revertê-la (tornar a
   auditoria bloqueante) exige nova decisão explícita, não um ajuste incidental durante outra
   tarefa.
+- A trilha NÃO registra o **valor** de campo sensível: `withAudit` redige esses campos antes
+  de gravar, de modo que a auditoria não seja uma segunda cópia legível do que o Postgres
+  cifra. A trilha diz que o campo mudou, e qual campo foi revelado — nunca o conteúdo.
+- **Exceção única à imutabilidade**: os snapshots gravados antes da feature 024 contêm `cpf`,
+  `cep` e `dataNascimento` em texto plano, porque `withAudit` grava o registro inteiro. Uma
+  remediação **única**, executada junto da migração de proteção e registrada como evento
+  próprio, redige esses campos. Essa é a ÚNICA alteração admitida em registro já gravado;
+  qualquer outra exige nova emenda desta constituição. Redigir a cada pedido de exclusão foi
+  rejeitado justamente por abrir uma exceção recorrente — a brecha menor que resolve o
+  problema é preferível à brecha permanente.
+- O vocabulário de ações da trilha inclui `read` (revelação de dado sensível) e `anonimizar`
+  (eliminação a pedido do titular), além de `create`, `update` e `delete`. Toda revelação de
+  dado completo e todo pedido de eliminação são registrados.
 
 **Rationale**: auditoria imutável é um requisito de negócio (BR-AUD-01), mas não pode se
 tornar um ponto único de falha que impeça aprovar um voluntário ou registrar saída de
 estoque no meio de uma emergência.
+
+A imutabilidade continua sendo a regra, e daqui para frente fica mais forte: como a trilha não
+recebe mais texto plano sensível, nenhum pedido futuro de eliminação precisará tocá-la. A
+exceção pontual existe porque a alternativa era pior — manter na trilha dado que o restante do
+sistema passou a cifrar tornaria a proteção cosmética e deixaria a eliminação a pedido do
+titular incompleta na prática.
 
 ### VI. Simplicidade Operacional
 
@@ -154,6 +223,9 @@ duramente qualquer complexidade operacional que não seja estritamente necessár
   obrigatoriamente server-side para listagens.
 - **UI**: Ark UI + Tailwind CSS v4; suporte nativo a Dark/Light; interface 100% pt-BR.
 - **E-mail**: Resend. **Planilhas**: `exceljs`.
+- **Criptografia de campo**: `node:crypto` embutido — AES-256-GCM para os valores, HKDF-SHA256
+  para derivar subchaves de propósito distinto e HMAC-SHA256 para o índice cego que sustenta
+  unicidade e busca exata de CPF. Nenhuma dependência externa de cripto.
 - Novas dependências que dupliquem capacidade já coberta pela stack acima (outro ORM, outro
   client de query, outra lib de auth) exigem decisão documentada, não substituição silenciosa.
 
@@ -188,4 +260,4 @@ estilo, ou padrões de PRs anteriores que a contradigam.
   arquivos em `.claude/skills/` e `AGENTS.md` — este documento rege princípios, não mecânica
   de tooling.
 
-**Version**: 1.0.1 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-10-01
+**Version**: 1.1.0 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-10-31
