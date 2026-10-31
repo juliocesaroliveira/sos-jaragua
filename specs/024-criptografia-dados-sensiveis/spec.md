@@ -10,7 +10,9 @@
 
 **Decisões do responsável (2026-10-31)**: campos sensíveis = CPF, dia e mês da data de nascimento,
 CEP (Q1). Visibilidade por role e por campo, não global (Q2). O titular vê os próprios dados
-completos e pode solicitar a exclusão de todos os seus dados (Q3).
+completos e pode solicitar a exclusão de todos os seus dados (Q3). A exclusão se dá por
+**anonimização**: os dados pessoais são eliminados e o histórico operacional é preservado sem
+identificar a pessoa (Q4).
 
 ## Escopo dos Dados Sensíveis
 
@@ -35,6 +37,23 @@ demanda e registrado em auditoria.
 | CPF | Mascarado | Mascarado | **Completo** | Mascarado | **Completo** | **Completo** |
 | Dia/mês de nascimento | Mascarado | Mascarado | **Completo** | Mascarado | **Completo** | **Completo** |
 | CEP | Mascarado | Mascarado | **Completo** | **Completo** | **Completo** | **Completo** |
+
+## Alcance da Exclusão (Anonimização)
+
+A exclusão solicitada pelo titular elimina os dados que o identificam e preserva o registro
+operacional da resposta a desastres, sem vínculo com a pessoa.
+
+| Eliminado — não recuperável | Preservado — sem identificar o titular |
+| --------------------------- | -------------------------------------- |
+| Nome completo, CPF, data de nascimento, telefone, CEP, bairro, profissão e restrições de saúde do cadastro de voluntário | As linhas de participação em turnos, de modo que contagens de vagas e relatórios de períodos passados continuem fechando |
+| Nome, e-mail e imagem da conta de usuário | Os registros de auditoria já gravados, que permanecem imutáveis mas deixam de identificar a pessoa |
+| Habilidades declaradas pelo titular | Totalizadores e agregados históricos, que não mudam de valor |
+| Sessões ativas e vínculos com provedores de login | O registro do próprio pedido de exclusão, como prova de atendimento ao titular |
+
+**Consequência descoberta na análise do código**: o mecanismo de auditoria grava hoje o *snapshot
+inteiro* do registro alterado, o que significa que a trilha imutável contém CPF, data de nascimento e
+CEP em texto plano. Sem tratar isso, a anonimização seria incompleta — o dado continuaria legível na
+auditoria — e a feature teria um segundo armazenamento desprotegido. Ver FR-026 e FR-027.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -177,11 +196,15 @@ deixaram de ser recuperáveis pelo sistema.
 4. **Given** um voluntário confirmou a exclusão, **When** a operação conclui, **Then** a sessão dele é
    encerrada e ele não consegue mais autenticar com a conta excluída.
 5. **Given** um voluntário com alocações futuras confirmadas, **When** ele solicita a exclusão,
-   **Then** o sistema informa o impacto nas alocações antes da confirmação e trata essas alocações
-   conforme a decisão de Q4.
-6. **Given** uma exclusão foi solicitada e concluída, **When** a auditoria do período é consultada,
-   **Then** existe registro do pedido de exclusão, com titular, momento e resultado.
-7. **Given** um voluntário que não tem cadastro de voluntário, apenas conta de usuário, **When** ele
+   **Then** o sistema informa o impacto nas alocações antes da confirmação, e as vagas desses turnos
+   voltam a ficar disponíveis após a conclusão.
+6. **Given** um voluntário que cumpriu turnos no passado, **When** a exclusão conclui, **Then** os
+   relatórios de participação daqueles períodos continuam somando o mesmo total de turnos cumpridos,
+   sem identificar quem os cumpriu.
+7. **Given** uma exclusão foi solicitada e concluída, **When** a auditoria do período é consultada,
+   **Then** existe registro do pedido de exclusão, com momento e resultado, e os registros de
+   auditoria anteriores daquele titular não apresentam mais dados que o identifiquem.
+8. **Given** um voluntário que não tem cadastro de voluntário, apenas conta de usuário, **When** ele
    aciona a exclusão, **Then** a operação conclui normalmente sobre os dados que existem, sem erro.
 
 ---
@@ -205,7 +228,12 @@ deixaram de ser recuperáveis pelo sistema.
 - **Migração interrompida**: a migração dos dados existentes pode ser re-executada com segurança, sem
   proteger duas vezes o mesmo valor nem corromper linhas já migradas.
 - **Exclusão de titular com histórico operacional**: um voluntário que já cumpriu turnos deixa
-  referências no histórico de atividades e no log de auditoria imutável — ver Q4.
+  referências no histórico de atividades e na trilha de auditoria imutável. A anonimização preserva
+  essas referências e remove a identificação (FR-023 a FR-027).
+- **Trilha de auditoria com cópia legível**: os snapshots já gravados contêm os campos sensíveis em
+  texto plano; sem tratamento, a auditoria se torna o elo mais fraco da feature (FR-026, FR-027).
+- **Turno futuro perde participante por exclusão**: a vaga volta a ficar disponível e o turno não fica
+  com contagem inconsistente.
 - **Exclusão acionada duas vezes**: a segunda solicitação não gera erro nem efeito colateral.
 - **Exclusão de titular que é também staff**: uma conta com role de staff que também tem cadastro de
   voluntário — a exclusão não pode deixar a operação sem o responsável por registros que exigem ator.
@@ -280,12 +308,28 @@ deixaram de ser recuperáveis pelo sistema.
   confirmadas.
 - **FR-022**: Após a exclusão, o sistema MUST tornar os dados pessoais do titular não recuperáveis e
   MUST NOT voltar a apresentá-los em nenhuma tela, consulta ou exportação.
-- **FR-023**: Após a exclusão, o sistema MUST encerrar a sessão do titular e impedir nova autenticação
+- **FR-023**: O sistema MUST eliminar na exclusão todos os itens listados como "Eliminado" na seção
+  **Alcance da Exclusão**, incluindo os campos pessoais que não são protegidos por criptografia nesta
+  feature (nome, telefone, bairro, profissão, restrições de saúde).
+- **FR-024**: O sistema MUST preservar as linhas de participação em turnos do titular excluído,
+  desvinculadas de sua identidade, de modo que contagens e relatórios de períodos passados continuem
+  produzindo os mesmos totais.
+- **FR-025**: O sistema MUST liberar as vagas dos turnos futuros em que o titular excluído estava
+  confirmado, sem deixar a contagem de vagas do turno inconsistente.
+- **FR-026**: O sistema MUST NOT gravar, a partir desta feature, os campos sensíveis em texto plano na
+  trilha de auditoria — a trilha registra que o campo mudou, sem reproduzir o valor completo.
+- **FR-027**: O sistema MUST remover, em uma operação única de remediação executada junto da migração
+  de proteção, os campos sensíveis em texto plano já presentes nos snapshots de auditoria gravados
+  antes desta feature. Essa remediação MUST ser registrada como evento próprio, e é a **única**
+  exceção admitida à imutabilidade da trilha.
+- **FR-028**: Após a exclusão, o sistema MUST encerrar a sessão do titular e impedir nova autenticação
   com a conta excluída.
-- **FR-024**: O sistema MUST registrar na auditoria o pedido de exclusão, com titular, momento e
-  resultado.
-- **FR-025**: O sistema MUST tratar uma segunda solicitação de exclusão para o mesmo titular sem erro
+- **FR-029**: O sistema MUST registrar na auditoria o pedido de exclusão, com momento e resultado, sem
+  reintroduzir na trilha os dados pessoais que acabou de eliminar.
+- **FR-030**: O sistema MUST tratar uma segunda solicitação de exclusão para o mesmo titular sem erro
   e sem efeito colateral.
+- **FR-031**: O sistema MUST impedir que a exclusão deixe sem ator registros operacionais que exigem
+  responsável, quando o titular também possui role de staff.
 
 ### Key Entities
 
@@ -301,7 +345,11 @@ deixaram de ser recuperáveis pelo sistema.
 - **Registro de Revelação**: entrada de auditoria produzida quando alguém acessa o valor completo de
   um campo sensível. É o que permite responder a um titular quem acessou seus dados.
 - **Pedido de Exclusão**: solicitação do titular para eliminar seus dados, com o momento, o resultado
-  e o alcance do que foi eliminado. Produz registro de auditoria próprio.
+  e o alcance do que foi eliminado. Produz registro de auditoria próprio, sem reproduzir os dados
+  eliminados.
+- **Titular Anônimo**: identidade residual a que passam a apontar os registros operacionais de alguém
+  que pediu exclusão. Preserva a integridade das contagens históricas sem permitir reconstituir quem
+  era a pessoa.
 
 ## Success Criteria _(mandatory)_
 
@@ -331,7 +379,11 @@ deixaram de ser recuperáveis pelo sistema.
 - **SC-010**: Após uma exclusão solicitada pelo titular, nenhuma das superfícies de apresentação do
   sistema retorna dado pessoal daquele titular — verificado varrendo todas as telas, consultas e
   exportações que antes o apresentavam.
-- **SC-011**: Uma varredura dos logs de aplicação de um ciclo completo de cadastro, triagem, aprovação
+- **SC-011**: Após uma exclusão, os relatórios de participação dos períodos em que o titular cumpriu
+  turnos retornam exatamente os mesmos totais de antes da exclusão.
+- **SC-012**: Uma inspeção da trilha de auditoria completa não encontra CPF, data de nascimento ou CEP
+  em texto plano — nem nos registros novos, nem nos remediados.
+- **SC-013**: Uma varredura dos logs de aplicação de um ciclo completo de cadastro, triagem, aprovação
   e alocação não encontra nenhum campo sensível em texto plano.
 
 ## Clarifications
@@ -345,30 +397,15 @@ deixaram de ser recuperáveis pelo sistema.
   candidatura.
 - **Q3 — Titular**: vê os próprios dados completos e pode solicitar a exclusão de todos os seus dados
   (User Story 4).
+- **Q4 — Alcance da exclusão**: **anonimização** (opção A). Os dados pessoais são eliminados; o
+  histórico operacional e a trilha de auditoria são preservados sem identificar o titular. Ver
+  **Alcance da Exclusão (Anonimização)**. A análise do código revelou que a trilha de auditoria guarda
+  hoje os campos sensíveis em texto plano, o que exige uma remediação única dos snapshots já gravados
+  (FR-027) — detalhada em **Riscos Conhecidos**.
 
-### Q4: O que "apagar todos os dados" alcança, diante da auditoria imutável?
+### Pendentes
 
-**Context**: FR-022 e a User Story 4. O Princípio V da Constituição do projeto estabelece auditoria
-**imutável** como requisito de negócio (BR-AUD-01) — toda escrita em Voluntariado, Estoque e Atividade
-é registrada e os registros não são alterados. Além disso, um voluntário que cumpriu turnos deixa
-referências no histórico de atividades, que é o registro operacional da resposta a desastres. A LGPD
-(art. 16) permite conservar dados após o pedido de eliminação para cumprimento de obrigação legal ou
-regulatória, e o art. 18, §4º reconhece limites ao direito de eliminação.
-
-**What we need to know**: se a exclusão apaga fisicamente tudo, inclusive a trilha de auditoria e o
-histórico de participação, ou se anonimiza, preservando o histórico operacional sem identificar a
-pessoa.
-
-**Suggested Answers**:
-
-| Option | Answer | Implications |
-| ------ | ------ | ------------ |
-| A | **Anonimizar**: os dados pessoais são eliminados e as referências no histórico de atividades e na auditoria passam a apontar para um titular anônimo | Atende ao direito de eliminação sem destruir o registro operacional da resposta a desastres nem violar o Princípio V. A pessoa deixa de ser identificável, que é o efeito prático que a LGPD busca. **Recomendado.** |
-| B | **Apagar fisicamente tudo**, inclusive registros de auditoria e histórico de participação | Interpretação literal de "apagar todos os dados". Contradiz diretamente o Princípio V (auditoria imutável, BR-AUD-01) e abre um buraco no histórico de turnos — relatórios de períodos passados deixam de fechar. Exigiria emenda adicional da Constituição. |
-| C | **Apagar os dados pessoais e o cadastro, preservar a auditoria intacta** com os dados que ela já registrou | Meio-termo: o cadastro some, mas a trilha de auditoria permanece como está, inclusive com os dados pessoais que já tiver registrado. Mais simples de implementar, porém deixa dado pessoal legível na auditoria — o que enfraquece o objetivo da feature. |
-| Custom | Descreva a regra desejada | — |
-
-**Your choice**: _[Aguardando resposta]_
+Nenhuma. As quatro perguntas foram resolvidas e a spec está pronta para `/speckit-plan`.
 
 ## Assumptions
 
@@ -404,6 +441,15 @@ pessoa.
   exclusão — não é uma tela de edição de perfil.
 - **Exclusão é imediata, sem período de carência**: a confirmação efetiva a operação. Um período de
   arrependimento com exclusão agendada não faz parte desta entrega.
+- **A auditoria deixa de registrar o valor dos campos sensíveis**: por FR-026, a trilha passa a
+  registrar que o campo mudou sem reproduzir o valor. O custo aceito é perder a capacidade de
+  reconstituir, pela trilha, qual era o CPF antes de uma correção — a detecção da mudança permanece.
+  Decisão tomada por padrão razoável, não solicitada explicitamente; contestável.
+- **A anonimização não reaproveita o e-mail**: o endereço do titular excluído é liberado ou
+  neutralizado de forma que a conta não seja reativável, sem bloquear um futuro cadastro independente
+  da mesma pessoa.
+- **Sem portabilidade de dados nesta entrega**: o direito de portabilidade (LGPD art. 18, V) não faz
+  parte do escopo. A área de conta apresenta os dados, mas não os exporta em formato interoperável.
 
 ## Riscos Conhecidos
 
@@ -417,3 +463,13 @@ pessoa.
   depois. A decisão é do responsável; esta spec segue com o escopo de Q1.
 - **Telefone permanece legível**, sendo o principal vetor de contato indevido num eventual vazamento.
   Mesmo raciocínio: incluir agora é mais barato que incluir depois.
+- **A trilha de auditoria exige uma exceção pontual à imutabilidade.** O mecanismo de auditoria grava
+  o snapshot inteiro do registro alterado, de modo que a trilha já acumulada contém CPF, data de
+  nascimento e CEP em texto plano. Criptografar apenas o banco relacional deixaria a auditoria como
+  cópia legível dos mesmos dados, e a anonimização de um titular seria incompleta. O tratamento
+  previsto (FR-026 e FR-027) exige **uma** remediação única dos snapshots já gravados — a única
+  exceção admitida ao Princípio V. Isso precisa constar da emenda da Constituição, junto da emenda do
+  Princípio IV.
+- **A exclusão não alcança backups e cópias de retenção do provedor de banco.** Um titular excluído
+  pode permanecer em backups até que o ciclo de retenção expire. Tratar isso exige política de
+  retenção documentada, que não faz parte desta entrega.
