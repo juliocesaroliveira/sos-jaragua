@@ -28,9 +28,9 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 **Purpose**: configuração de ambiente e estrutura, sem lógica ainda
 
-- [ ] T001 [P] Documentar `DADOS_SENSIVEIS_CHAVE` em `.env.example`, na seção de segurança, com o comando `openssl rand -base64 32` e sem valor real (FR-002)
-- [ ] T002 [P] Definir `DADOS_SENSIVEIS_CHAVE` em `.env.local` para o ambiente de desenvolvimento (FR-002)
-- [ ] T003 [P] Criar os diretórios `src/shared/cripto/` e `src/shared/mascara/` (FR-001)
+- [x] T001 [P] Documentar `DADOS_SENSIVEIS_CHAVE` em `.env.example`, na seção de segurança, com o comando `openssl rand -base64 32` e sem valor real (FR-002)
+- [x] T002 [P] Definir `DADOS_SENSIVEIS_CHAVE` em `.env.local` para o ambiente de desenvolvimento (FR-002)
+- [x] T003 [P] Criar os diretórios `src/shared/cripto/` e `src/shared/mascara/` (FR-001)
 
 ---
 
@@ -42,23 +42,23 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 ### Testes da fundação (escrever ANTES, confirmar que falham)
 
-- [ ] T004 [P] Testes de `validarChave` em `src/shared/cripto/chave.test.ts`: chave ausente, base64 inválido, tamanho diferente de 32 bytes — todos lançam com mensagem em pt-BR nomeando a variável (FR-003)
-- [ ] T005 [P] Testes de envelope em `src/shared/cripto/envelope.test.ts`: formato `v1.<iv>.<ct>.<tag>`, versão desconhecida rejeitada, envelope malformado rejeitado (FR-001)
-- [ ] T006 [P] Testes de `cifrar`/`decifrar` em `src/shared/cripto/index.test.ts`: round-trip preserva o valor; duas cifragens do mesmo valor produzem saídas **diferentes** (IV aleatório); tag adulterada lança `ValorIlegivelError` (FR-004)
-- [ ] T007 [P] Testes de `indiceCego` em `src/shared/cripto/indice.test.ts`: determinístico para o mesmo valor; `123.456.789-01` e `12345678901` produzem o **mesmo** índice; valores distintos produzem índices distintos (FR-005)
-- [ ] T008 [P] Testes de máscara em `src/shared/mascara/index.test.ts`: `12345678901` → `12•••••••01`; `89250000` → `89••••00`; `1990-03-15` → `••/••/1990`; valor com ≤5 caracteres mascarado por inteiro; vazio → estado `ausente` (FR-010, FR-011)
-- [ ] T009 [P] Testes de `campoVisivelPara` em `src/shared/mascara/campos-sensiveis.test.ts`: as 6 colunas da Matriz de Visibilidade × 3 campos, incluindo o caso titular — `membro_defesa_civil` vê `cep` e **não** vê `cpf` (FR-015)
+- [x] T004 [P] Testes de `validarChave` em `src/shared/cripto/chave.test.ts`: chave ausente, base64 inválido, tamanho diferente de 32 bytes — todos lançam com mensagem em pt-BR nomeando a variável (FR-003)
+- [x] T005 [P] Testes de envelope em `src/shared/cripto/envelope.test.ts`: formato `v1.<iv>.<ct>.<tag>`, versão desconhecida rejeitada, envelope malformado rejeitado (FR-001)
+- [x] T006 [P] Testes de `cifrar`/`decifrar` em `src/shared/cripto/index.test.ts`: round-trip preserva o valor; duas cifragens do mesmo valor produzem saídas **diferentes** (IV aleatório); tag adulterada lança `ValorIlegivelError` (FR-004)
+- [x] T007 [P] Testes de `indiceCego` em `src/shared/cripto/indice.test.ts`: determinístico para o mesmo valor; `123.456.789-01` e `12345678901` produzem o **mesmo** índice; valores distintos produzem índices distintos (FR-005)
+- [x] T008 [P] Testes de máscara em `src/shared/mascara/index.test.ts`: `12345678901` → `12•••••••01`; `89250000` → `89••••00`; `1990-03-15` → `••/••/1990`; valor com ≤5 caracteres mascarado por inteiro; vazio → estado `ausente` (FR-010, FR-011)
+- [x] T009 [P] Testes de `campoVisivelPara` em `src/shared/mascara/campos-sensiveis.test.ts`: as 6 colunas da Matriz de Visibilidade × 3 campos, incluindo o caso titular — `membro_defesa_civil` vê `cep` e **não** vê `cpf` (FR-015)
 
 ### Implementação da fundação
 
-- [ ] T010 Implementar `src/shared/cripto/chave.ts`: leitura de `DADOS_SENSIVEIS_CHAVE`, validação, e derivação HKDF-SHA256 de duas subchaves com `info` distinto para cifra e para índice (research D3) (FR-002)
-- [ ] T011 Implementar `src/shared/cripto/envelope.ts`: serialização e parse de `v1.<iv>.<ct>.<tag>` em base64url (FR-001)
-- [ ] T012 Implementar `src/shared/cripto/index.ts`: `cifrar` (AES-256-GCM, IV de 12 bytes aleatório), `decifrar` (lança `ValorIlegivelError`) e `indiceCego` (HMAC-SHA256 sobre os dígitos) — usando apenas `node:crypto`, sem dependência nova (depende de T010, T011) (FR-001, FR-005)
-- [ ] T013 [P] Implementar `src/shared/mascara/index.ts`: `mascararCpf`, `mascararCep`, `mascararData` e a regra de exposição mínima para valores com ≤5 caracteres (FR-010, FR-011)
-- [ ] T014 [P] Implementar `src/shared/mascara/campos-sensiveis.ts`: classificação dos 3 campos e a Matriz de Visibilidade como **dado declarado**, mais `campoVisivelPara` — fonte única consumida por apresentação, exportação e redação de auditoria (FR-015)
-- [ ] T015 Criar `instrumentation.ts` na raiz exportando `register()`, que chama `validarChave()` e falha o boot — a doc do Next 16 garante que roda uma vez, antes de atender requisições (depende de T010) (FR-003)
-- [ ] T016 Estender `AcaoAuditada` em `src/shared/db/mongo/audit-logs.ts` com `'read'` e `'anonimizar'`, e atualizar `ACOES_AUDITADAS` e `ROTULO_ACAO_AUDITADA` em `src/modules/auditoria/presentation/queries/trilha.ts` com rótulos pt-BR e opções de filtro (FR-017, FR-029)
-- [ ] T017 Definir o tipo da forma de apresentação (`mascarado` | `ausente` | `ilegivel`) em `src/shared/mascara/index.ts`, conforme o contrato em `contracts/cripto-mascara.md` (FR-013, FR-014)
+- [x] T010 Implementar `src/shared/cripto/chave.ts`: leitura de `DADOS_SENSIVEIS_CHAVE`, validação, e derivação HKDF-SHA256 de duas subchaves com `info` distinto para cifra e para índice (research D3) (FR-002)
+- [x] T011 Implementar `src/shared/cripto/envelope.ts`: serialização e parse de `v1.<iv>.<ct>.<tag>` em base64url (FR-001)
+- [x] T012 Implementar `src/shared/cripto/index.ts`: `cifrar` (AES-256-GCM, IV de 12 bytes aleatório), `decifrar` (lança `ValorIlegivelError`) e `indiceCego` (HMAC-SHA256 sobre os dígitos) — usando apenas `node:crypto`, sem dependência nova (depende de T010, T011) (FR-001, FR-005)
+- [x] T013 [P] Implementar `src/shared/mascara/index.ts`: `mascararCpf`, `mascararCep`, `mascararData` e a regra de exposição mínima para valores com ≤5 caracteres (FR-010, FR-011)
+- [x] T014 [P] Implementar `src/shared/mascara/campos-sensiveis.ts`: classificação dos 3 campos e a Matriz de Visibilidade como **dado declarado**, mais `campoVisivelPara` — fonte única consumida por apresentação, exportação e redação de auditoria (FR-015)
+- [x] T015 Criar `instrumentation.ts` na raiz exportando `register()`, que chama `validarChave()` e falha o boot — a doc do Next 16 garante que roda uma vez, antes de atender requisições (depende de T010) (FR-003)
+- [x] T016 Estender `AcaoAuditada` em `src/shared/db/mongo/audit-logs.ts` com `'read'` e `'anonimizar'`, e atualizar `ACOES_AUDITADAS` e `ROTULO_ACAO_AUDITADA` em `src/modules/auditoria/presentation/queries/trilha.ts` com rótulos pt-BR e opções de filtro (FR-017, FR-029)
+- [x] T017 Definir o tipo da forma de apresentação (`mascarado` | `ausente` | `ilegivel`) em `src/shared/mascara/index.ts`, conforme o contrato em `contracts/cripto-mascara.md` (FR-013, FR-014)
 
 **Checkpoint**: cripto e máscara testados e isolados. As histórias podem começar.
 

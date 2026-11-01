@@ -21,7 +21,13 @@ import {
 
 export type { FiltrosTrilha, RegistroTrilha }
 
-export const ACOES_AUDITADAS = ['create', 'update', 'delete'] as const satisfies readonly AcaoAuditada[]
+export const ACOES_AUDITADAS = [
+    'create',
+    'update',
+    'delete',
+    'read',
+    'anonimizar'
+] as const satisfies readonly AcaoAuditada[]
 
 export { ENTIDADES_AUDITADAS }
 
@@ -37,7 +43,10 @@ export const ROTULO_ENTIDADE_AUDITADA: Record<EntidadeAuditada, string> = {
 export const ROTULO_ACAO_AUDITADA: Record<AcaoAuditada, string> = {
     create: 'Criação',
     update: 'Alteração',
-    delete: 'Exclusão'
+    delete: 'Exclusão',
+    // Feature 024: revelação de dado sensível e eliminação a pedido do titular.
+    read: 'Revelação de dado sensível',
+    anonimizar: 'Anonimização a pedido do titular'
 }
 
 const MENSAGEM_INDISPONIVEL = 'A trilha de auditoria está indisponível no momento. Tente novamente em instantes.'
