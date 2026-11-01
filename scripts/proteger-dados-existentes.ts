@@ -41,13 +41,26 @@ async function protegerPerfis(): Promise<Contagem> {
     let jaProtegidos = 0
 
     for (const linha of linhas) {
+        // Titular anonimizado: os campos pessoais foram esvaziados a pedido dele
+        // (FR-022). Não há o que proteger, e tentar cifrar nulo seria um erro.
+        if (linha.cpf === null && linha.dataNascimento === null && linha.cep === null) {
+            jaProtegidos++
+            continue
+        }
+
+        /** Cifra se houver valor em claro; devolve como está se já é envelope ou nulo. */
+        const protegido = (valor: string | null): string | null =>
+            valor === null || valor === '' || ehEnvelope(valor) ? valor : cifrar(valor)
+
+        const emClaro = (valor: string | null): boolean => valor !== null && valor !== '' && !ehEnvelope(valor)
+
         // A checagem é por campo, não por linha: uma execução interrompida no
         // meio pode ter deixado a linha parcialmente protegida.
         const precisa =
-            !ehEnvelope(linha.cpf) ||
-            !ehEnvelope(linha.dataNascimento) ||
-            !ehEnvelope(linha.cep) ||
-            linha.cpfIndice === null
+            emClaro(linha.cpf) ||
+            emClaro(linha.dataNascimento) ||
+            emClaro(linha.cep) ||
+            (linha.cpfIndice === null && emClaro(linha.cpf))
 
         if (!precisa) {
             jaProtegidos++
@@ -57,21 +70,19 @@ async function protegerPerfis(): Promise<Contagem> {
         // O índice cego vem do CPF em claro — que, se a linha já estiver
         // cifrada, não está mais disponível aqui. Por isso ele é derivado antes
         // de qualquer cifragem desta linha.
-        const cpfEmClaro = ehEnvelope(linha.cpf) ? null : linha.cpf
+        const cpfEmClaro = emClaro(linha.cpf) ? linha.cpf : null
 
         await db
             .update(voluntarioPerfil)
             .set({
-                cpf: ehEnvelope(linha.cpf) ? linha.cpf : cifrar(linha.cpf),
-                dataNascimento: ehEnvelope(linha.dataNascimento)
-                    ? linha.dataNascimento
-                    : cifrar(linha.dataNascimento),
-                cep: ehEnvelope(linha.cep) ? linha.cep : cifrar(linha.cep),
+                cpf: protegido(linha.cpf),
+                dataNascimento: protegido(linha.dataNascimento),
+                cep: protegido(linha.cep),
                 cpfIndice: linha.cpfIndice ?? (cpfEmClaro === null ? null : indiceCego(cpfEmClaro))
             })
             .where(sql`${voluntarioPerfil.id} = ${linha.id}`)
 
-        if (linha.cpfIndice === null && cpfEmClaro === null) {
+        if (linha.cpfIndice === null && cpfEmClaro === null && linha.cpf !== null) {
             console.warn(
                 `[proteger] perfil ${linha.id}: CPF já cifrado e sem cpf_indice. ` +
                     `O índice não pode ser derivado sem o valor em claro — resolva manualmente.`

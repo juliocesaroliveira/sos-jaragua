@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm'
+import { and, count, eq, gte, inArray, lt } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { cifrar, decifrar, ehEnvelope, indiceCego } from '@/src/shared/cripto'
 import { criarUsuarioRepository } from '@/src/modules/identidade/infrastructure/drizzle/usuario-repository'
-import { voluntarioHabilidade, voluntarioPerfil } from '@/db/schema/voluntariado'
+import { alocacao, turno, voluntarioHabilidade, voluntarioPerfil } from '@/db/schema/voluntariado'
 import type {
     PerfilVoluntario,
     UnidadeDeTrabalho,
@@ -159,6 +159,98 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
             // Devolve o CPF em claro: quem chamou passou o valor em claro e a
             // `application` não deve receber envelope de volta.
             return comCpfEmClaro(perfil) as PerfilVoluntario
+        },
+
+        async impactoDaExclusao(userId) {
+            const [perfil] = await executor
+                .select({ id: voluntarioPerfil.id, anonimizadoEm: voluntarioPerfil.anonimizadoEm })
+                .from(voluntarioPerfil)
+                .where(eq(voluntarioPerfil.userId, userId))
+                .limit(1)
+
+            const agora = new Date()
+
+            const [futuros] = await executor
+                .select({ total: count() })
+                .from(alocacao)
+                .innerJoin(turno, eq(turno.id, alocacao.turnoId))
+                .where(
+                    and(
+                        eq(alocacao.participanteUserId, userId),
+                        eq(alocacao.status, 'confirmado'),
+                        gte(turno.inicio, agora)
+                    )
+                )
+
+            const [passados] = await executor
+                .select({ total: count() })
+                .from(alocacao)
+                .innerJoin(turno, eq(turno.id, alocacao.turnoId))
+                .where(and(eq(alocacao.participanteUserId, userId), lt(turno.inicio, agora)))
+
+            return {
+                turnosFuturosConfirmados: futuros?.total ?? 0,
+                turnosPassados: passados?.total ?? 0,
+                temPerfilVoluntario: perfil !== undefined,
+                jaAnonimizado: perfil?.anonimizadoEm !== null && perfil?.anonimizadoEm !== undefined
+            }
+        },
+
+        async anonimizarPerfil(userId) {
+            // As alocações FUTURAS confirmadas são canceladas, liberando a vaga
+            // (FR-025). As passadas ficam intactas: são o registro operacional da
+            // resposta a desastres que FR-024 manda preservar, e é isso que faz os
+            // relatórios de períodos anteriores continuarem fechando.
+            const futuros = executor
+                .select({ id: turno.id })
+                .from(turno)
+                .where(gte(turno.inicio, new Date()))
+
+            await executor
+                .update(alocacao)
+                .set({ status: 'cancelado' })
+                .where(
+                    and(
+                        eq(alocacao.participanteUserId, userId),
+                        eq(alocacao.status, 'confirmado'),
+                        inArray(alocacao.turnoId, futuros)
+                    )
+                )
+
+            const [perfil] = await executor
+                .select({ id: voluntarioPerfil.id })
+                .from(voluntarioPerfil)
+                .where(eq(voluntarioPerfil.userId, userId))
+                .limit(1)
+
+            // Titular com conta mas sem cadastro de voluntário: nada a anonimizar
+            // aqui, e isso não é erro (US4, cenário 8).
+            if (!perfil) return null
+
+            // Habilidades declaradas são dado do titular (FR-023).
+            await executor.delete(voluntarioHabilidade).where(eq(voluntarioHabilidade.voluntarioPerfilId, perfil.id))
+
+            // `UPDATE`, nunca `DELETE`: a linha permanece para que `alocacao` não
+            // seja levada por cascade (research.md D7). `cpfIndice` a nulo libera o
+            // índice único — nulos não colidem, então vários titulares anonimizados
+            // coexistem.
+            await executor
+                .update(voluntarioPerfil)
+                .set({
+                    nomeCompleto: null,
+                    cpf: null,
+                    cpfIndice: null,
+                    dataNascimento: null,
+                    telefone: null,
+                    cep: null,
+                    bairro: null,
+                    profissao: null,
+                    restricoesSaude: null,
+                    anonimizadoEm: new Date()
+                })
+                .where(eq(voluntarioPerfil.id, perfil.id))
+
+            return { perfilId: perfil.id }
         },
 
         async aprovar({ perfilId, aprovadoPor }) {

@@ -47,6 +47,17 @@ export const atividadeCategoria = pgTable('atividade_categoria', {
 
 // -- Perfil de voluntário (DB_SCHEMA.md §4.2) ---------------------------------
 
+/**
+ * Perfil de voluntário.
+ *
+ * **Os campos pessoais são nuláveis** (feature 024, FR-022): a eliminação a
+ * pedido do titular os esvazia e marca `anonimizadoEm`, mantendo a linha. Apagar
+ * a linha não é opção — as FKs de `alocacao`, `atividade` e estoque fariam o
+ * `DELETE` falhar para quem tem histórico operacional ou destruiriam o histórico
+ * de turnos por cascade (research.md D7). Nulo aqui significa "titular
+ * anonimizado", nunca "cadastro incompleto": a candidatura valida os campos como
+ * obrigatórios no `domain`.
+ */
 export const voluntarioPerfil = pgTable(
     'voluntario_perfil',
     {
@@ -55,18 +66,18 @@ export const voluntarioPerfil = pgTable(
             .notNull()
             .unique()
             .references(() => user.id, { onDelete: 'cascade' }),
-        nomeCompleto: text().notNull(),
+        nomeCompleto: text(),
         /**
          * **Protegida** (feature 024, FR-001): guarda o envelope `v1.<iv>.<ct>.<tag>`,
          * não a data civil. `text` e não `date` porque o valor armazenado é
          * ciphertext; o domínio continua operando sobre `'YYYY-MM-DD'`, que é o
          * que a cripto recebe e devolve (research.md D6).
          */
-        dataNascimento: text().notNull(),
+        dataNascimento: text(),
         // Maioridade e dígito verificador são validados no `domain`, não no banco
         // (DESIGN.md §10.1) — mensagens de erro específicas em pt-BR.
         /** **Protegido** (FR-001): envelope, não o CPF. Busca e unicidade vão por `cpfIndice`. */
-        cpf: text().notNull(),
+        cpf: text(),
         /**
          * Índice cego do CPF — `HMAC-SHA256(subchave, cpf)` em base64url
          * (research.md D2).
@@ -81,11 +92,11 @@ export const voluntarioPerfil = pgTable(
          * anonimizados coexistem sem colidir.
          */
         cpfIndice: text(),
-        telefone: text().notNull(),
+        telefone: text(),
         /** **Protegido** (FR-001): envelope, não o CEP. */
-        cep: text().notNull(),
-        bairro: text().notNull(),
-        profissao: text().notNull(),
+        cep: text(),
+        bairro: text(),
+        profissao: text(),
         restricoesSaude: text(),
         veiculoProprio: boolean().notNull(),
         tipoVeiculo: tipoVeiculoEnum(),

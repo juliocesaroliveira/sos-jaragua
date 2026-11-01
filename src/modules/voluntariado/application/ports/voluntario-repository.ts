@@ -9,6 +9,14 @@ import type { CandidaturaValidada } from '../../domain/candidatura'
 
 export type StatusVoluntario = 'pendente' | 'aprovado' | 'rejeitado'
 
+/** Números que a confirmação de exclusão precisa mostrar (FR-021). */
+export type ImpactoExclusao = {
+    turnosFuturosConfirmados: number
+    turnosPassados: number
+    temPerfilVoluntario: boolean
+    jaAnonimizado: boolean
+}
+
 /** Valores sensíveis em claro, com o dono e o estado de anonimização. */
 export type DadosSensiveisPerfil = {
     userId: string
@@ -49,6 +57,27 @@ export interface VoluntarioRepository {
      * `status = 'pendente'` e limpando a decisão de triagem anterior.
      */
     salvarCandidatura(entrada: { userId: string; dados: CandidaturaValidada }): Promise<PerfilVoluntario>
+
+    /**
+     * Impacto da eliminação, para a confirmação exigida por FR-021.
+     *
+     * A tela precisa dizer **quantos** turnos futuros serão cancelados antes de
+     * a pessoa confirmar — "isto é irreversível" sem número não informa nada.
+     */
+    impactoDaExclusao(userId: string): Promise<ImpactoExclusao>
+
+    /**
+     * Anonimiza o perfil e trata as alocações (FR-022 a FR-025).
+     *
+     * Esvazia os campos pessoais, marca `anonimizadoEm`, remove as habilidades
+     * declaradas e cancela as alocações **futuras** confirmadas, liberando vaga.
+     * As alocações passadas ficam intactas: são o registro operacional da
+     * resposta a desastres que FR-024 manda preservar.
+     *
+     * Devolve `null` quando não há perfil — o titular pode ter conta sem
+     * cadastro de voluntário (FR-025, cenário 7 da US4).
+     */
+    anonimizarPerfil(userId: string): Promise<{ perfilId: string } | null>
 
     /** Transição de status da triagem, dentro de uma transação. */
     aprovar(entrada: { perfilId: string; aprovadoPor: string }): Promise<void>

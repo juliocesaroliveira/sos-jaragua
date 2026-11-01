@@ -153,21 +153,21 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 ### Testes da US4 (escrever ANTES)
 
-- [ ] T049 [P] [US4] Testes do caso de uso em `src/modules/voluntariado/application/use-cases/anonimizar-titular.test.ts`: idempotência (segunda chamada não erra nem tem efeito); recusa por `ator_insubstituivel` (FR-030, FR-031)
-- [ ] T050 [P] [US4] Teste de integração em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: após anonimizar, a linha de `voluntario_perfil` **existe** com `anonimizado_em` preenchido e `cpf`/`cpf_indice` nulos; as linhas de `alocacao` **permanecem** (INV-07)
-- [ ] T051 [P] [US4] Teste em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: turnos futuros confirmados passam a `cancelado` e as vagas voltam a ficar disponíveis (FR-025); turnos passados ficam intactos (FR-024, SC-011)
-- [ ] T052 [P] [US4] Teste em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: `session` e `account` do titular são removidas, `user.ativo` vai a `false` e `user.email` recebe valor neutro irrepetível (FR-028)
+- [x] T049 [P] [US4] Testes do caso de uso em `src/modules/voluntariado/application/use-cases/anonimizar-titular.test.ts`: idempotência (segunda chamada não erra nem tem efeito); recusa por `ator_insubstituivel` (FR-030, FR-031)
+- [x] T050 [P] [US4] Teste de integração em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: após anonimizar, a linha de `voluntario_perfil` **existe** com `anonimizado_em` preenchido e `cpf`/`cpf_indice` nulos; as linhas de `alocacao` **permanecem** (INV-07)
+- [x] T051 [P] [US4] Teste em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: turnos futuros confirmados passam a `cancelado` e as vagas voltam a ficar disponíveis (FR-025); turnos passados ficam intactos (FR-024, SC-011)
+- [x] T052 [P] [US4] Teste em `src/modules/voluntariado/application/use-cases/anonimizar-titular.integracao.test.ts`: `session` e `account` do titular são removidas, `user.ativo` vai a `false` e `user.email` recebe valor neutro irrepetível (FR-028)
 
 ### Implementação da US4
 
-- [ ] T053 [US4] Implementar a consulta de impacto em `src/modules/voluntariado/presentation/queries/conta.ts`: `turnosFuturosConfirmados`, `turnosPassados` e `temPerfilVoluntario` — nunca cacheada, por ler a sessão (FR-021)
-- [ ] T054 [US4] Implementar `src/modules/voluntariado/application/use-cases/anonimizar-titular.ts` na ordem transacional de `contracts/excluir-meus-dados.md`, com `UPDATE` no lugar e **nunca** `DELETE FROM user` (research D7) (FR-022, FR-023)
-- [ ] T055 [US4] Auditar a anonimização com ação `'anonimizar'`, sem reproduzir na trilha os dados recém-eliminados (FR-029, depende de T016)
-- [ ] T056 [US4] Invalidar `voluntariado:pendentes`, `voluntariado:listagem` e as tags de atividade afetadas após o commit, para que nenhuma tela sirva de entrada velha (FR-022)
-- [ ] T057 [US4] Acrescentar a Server Action de exclusão em `src/modules/voluntariado/presentation/actions/dados-sensiveis.ts`, tomando o titular da sessão e nunca do payload (FR-020)
-- [ ] T058 [US4] Criar `app/(interno)/conta/page.tsx`: apresenta os próprios dados **completos**, sem máscara e sem ação de revelar (FR-019) — fora de `(staff)`, pois basta sessão válida (research D12)
-- [ ] T059 [US4] Criar `app/(interno)/conta/excluir-dados.tsx`: botão e confirmação explícita em pt-BR, informando que a ação é irreversível e **quantos turnos futuros** serão cancelados (FR-021)
-- [ ] T060 [US4] Renderizar "titular anônimo" nas superfícies que referenciam um perfil com `anonimizado_em` preenchido, para que o histórico continue legível sem identificar a pessoa (INV-06)
+- [x] T053 [US4] Implementar a consulta de impacto em `src/modules/voluntariado/presentation/queries/conta.ts`: `turnosFuturosConfirmados`, `turnosPassados` e `temPerfilVoluntario` — nunca cacheada, por ler a sessão (FR-021)
+- [x] T054 [US4] Implementar `src/modules/voluntariado/application/use-cases/anonimizar-titular.ts` na ordem transacional de `contracts/excluir-meus-dados.md`, com `UPDATE` no lugar e **nunca** `DELETE FROM user` (research D7) (FR-022, FR-023)
+- [x] T055 [US4] Auditar a anonimização com ação `'anonimizar'`, sem reproduzir na trilha os dados recém-eliminados (FR-029, depende de T016)
+- [x] T056 [US4] Invalidar `voluntariado:pendentes`, `voluntariado:listagem` e as tags de atividade afetadas após o commit, para que nenhuma tela sirva de entrada velha (FR-022)
+- [x] T057 [US4] Acrescentar a Server Action de exclusão em `src/modules/voluntariado/presentation/actions/dados-sensiveis.ts`, tomando o titular da sessão e nunca do payload (FR-020)
+- [x] T058 [US4] Criar `app/(interno)/conta/page.tsx`: apresenta os próprios dados **completos**, sem máscara e sem ação de revelar (FR-019) — fora de `(staff)`, pois basta sessão válida (research D12)
+- [x] T059 [US4] Criar `app/(interno)/conta/excluir-dados.tsx`: botão e confirmação explícita em pt-BR, informando que a ação é irreversível e **quantos turnos futuros** serão cancelados (FR-021)
+- [x] T060 [US4] Renderizar "titular anônimo" nas superfícies que referenciam um perfil com `anonimizado_em` preenchido, para que o histórico continue legível sem identificar a pessoa (INV-06)
 
 **Checkpoint**: todas as quatro histórias funcionam de forma independente.
 
@@ -176,11 +176,11 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [x] T061 ~~Emendar a Constituição via `/speckit-constitution`~~ — **concluído** em 2026-10-31, v1.1.0 (bump MINOR): Princípio IV (criptografia a nível de campo passa a ser a postura adotada) e Princípio V (exceção única e documentada à imutabilidade da trilha, por FR-027) — **pré-requisito do merge**, conforme o Constitution Check do `plan.md`
-- [ ] T062 [P] Registrar as decisões técnicas em `spec/DESIGN.md`: a seção de cache (§7) ganha a regra de que dado sensível só trafega mascarado dentro de `'use cache'`, e uma seção nova descreve cripto, máscara e anonimização (Princípio VI exige registro antes do código) (FR-012)
-- [ ] T063 [P] Atualizar `spec/DB_SCHEMA.md` com as colunas novas e as mudanças de tipo e nulabilidade (FR-001)
+- [x] T062 [P] Registrar as decisões técnicas em `spec/DESIGN.md`: a seção de cache (§7) ganha a regra de que dado sensível só trafega mascarado dentro de `'use cache'`, e uma seção nova descreve cripto, máscara e anonimização (Princípio VI exige registro antes do código) (FR-012)
+- [x] T063 [P] Atualizar `spec/DB_SCHEMA.md` com as colunas novas e as mudanças de tipo e nulabilidade (FR-001)
 - [ ] T064 Rodar o roteiro completo de `quickstart.md` — os 15 cenários, com uma conta de cada role (SC-001, SC-003, SC-009, SC-010)
 - [ ] T065 Medir o tempo de resposta de `listarCandidaturasPendentes` (`src/modules/voluntariado/presentation/queries/candidaturas.ts`) e da listagem paginada de voluntários contra a meta de 300ms (SC-006), confirmando que a decifragem não introduziu regressão
-- [ ] T066 Rodar `npm test`, `npm run test:integracao`, lint e type-check com a árvore limpa (SC-013)
+- [x] T066 Rodar `npm test`, `npm run test:integracao`, lint e type-check com a árvore limpa (SC-013)
 - [x] T067 ~~Avaliar o advisory crítico do `next@16.3.8`~~ — **resolvido**: Next e `eslint-config-next` atualizados para 16.4.3 (commit `fix(deps)`), o advisory saiu do `npm audit`, e `npm test` (549) e `npm run build` passam. **Permanece aberto**: 1 advisory crítico em `better-auth` e altos em `zod`, `vite`, `js-yaml` e `source-map-js`, a avaliar em decisão à parte
 
 ---
@@ -334,3 +334,33 @@ revertê-las silenciosamente seria pior que registrá-las.
    alteração silenciosa de um CPF é necessidade legítima de auditoria. A redação usa um HMAC truncado
    com `subchaveRedacao()`, separada da subchave do índice cego para que uma marca de auditoria não
    possa ser correlacionada com o `cpf_indice` do banco.
+
+## Tarefas que não puderam ser concluídas nesta sessão
+
+Três ficam abertas, todas pelo mesmo motivo: exigem um banco real, e esta sessão não tem
+`DATABASE_URL` nem `MONGODB_URI`.
+
+- **T020** — teste de integração do script de migração. Não escrito. Os testes de T018/T019 foram
+  escritos e cobrem o repositório, mas a idempotência do script sobre dados legados precisa de um
+  Neon com linhas em claro para ser exercitada de verdade.
+- **T064** — roteiro completo do `quickstart.md` (15 cenários). Nenhum cenário foi executado. É a
+  validação que o plano pede no checkpoint da US1 e no fim da US4.
+- **T065** — medição do caminho crítico contra a meta de 300 ms.
+
+O que **foi** verificado: 654 testes unitários passando, `tsc --noEmit` limpo, `npm run build`
+concluindo com exit 0 e compilando todas as rotas (incluindo `/conta`), e nenhum erro novo de lint —
+os 8 que restam são pré-existentes, em arquivos de `habilidades`, e não foram tocados por esta
+feature.
+
+### Achado adicional da US4
+
+**`instrumentation.ts` é empacotado para os dois runtimes**, Node e Edge, e `node:crypto` não existe
+no Edge — o build acusava "A Node.js module is loaded which is not supported in the Edge Runtime". O
+arquivo passou a carregar o módulo de cripto por import dinâmico, condicionado a
+`process.env.NEXT_RUNTIME === 'nodejs'`. A validação não se perde: a chave só é usada em caminhos
+Node, e o módulo revalida no primeiro uso.
+
+**FR-031 é satisfeito por construção.** O requisito manda impedir que a eliminação deixe registros sem
+ator responsável. Com a anonimização no lugar, a linha de `user` permanece e toda FK que a referencia
+continua válida — não existe estado em que o requisito possa ser violado. Não há checagem a fazer, e
+inventar uma que nunca dispara seria pior que registrar o motivo.

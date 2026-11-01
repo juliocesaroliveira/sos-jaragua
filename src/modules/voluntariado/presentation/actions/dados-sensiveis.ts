@@ -3,7 +3,10 @@
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { obterSessao } from '@/src/shared/auth/sessao'
 import { CAMPOS_SENSIVEIS } from '@/src/shared/mascara/campos-sensiveis'
-import { criarVoluntarioRepository } from '../../infrastructure/drizzle/voluntario-repository'
+import { updateTag } from 'next/cache'
+import { CACHE_TAGS } from '@/src/shared/cache'
+import { criarVoluntarioRepository, unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
+import { AnonimizarTitularUseCase } from '../../application/use-cases/anonimizar-titular'
 import { RevelarDadoSensivelUseCase } from '../../application/use-cases/revelar-dado-sensivel'
 
 /**
@@ -52,4 +55,37 @@ export async function revelarDadoSensivel(entrada: unknown): Promise<RespostaRev
 
     if (r.ok) return { ok: true, valor: r.valor }
     return { ok: false, erro: MENSAGENS[r.erro] ?? MENSAGENS.nao_encontrado! }
+}
+
+/**
+ * Elimina todos os dados do titular autenticado (FR-020 a FR-030).
+ *
+ * O titular vem **da sessão**, nunca do payload: ninguém elimina a conta de
+ * outra pessoa por este caminho. A confirmação explícita é exigida pelo contrato
+ * (FR-021) e a interface precisa tê-la obtido antes de chamar.
+ */
+const esquemaExclusao = z.object({ confirmacao: z.boolean() })
+
+export type RespostaExclusao = { ok: true; jaAnonimizado: boolean } | { ok: false; erro: string }
+
+export async function excluirMeusDados(entrada: unknown): Promise<RespostaExclusao> {
+    const parse = esquemaExclusao.safeParse(entrada)
+    // A confirmação explícita é parte do contrato (FR-021): sem ela, a ação é
+    // recusada aqui também, não só na interface.
+    if (!parse.success || parse.data.confirmacao !== true) {
+        return { ok: false, erro: MENSAGENS.entrada_invalida! }
+    }
+
+    const ator = await obterSessao()
+    if (!ator) return { ok: false, erro: MENSAGENS.nao_autenticado! }
+
+    const caso = new AnonimizarTitularUseCase(unidadeDeTrabalho, criarVoluntarioRepository())
+    const r = await caso.executar({ titular: { userId: ator.userId, role: ator.role } })
+
+    // As telas que mostram dados deste titular precisam deixar de mostrá-los
+    // imediatamente (FR-022) — por isso `updateTag`, não `revalidateTag`.
+    updateTag(CACHE_TAGS.voluntariadoPendentes)
+    updateTag(CACHE_TAGS.voluntariadoListagem)
+
+    return { ok: true, jaAnonimizado: r.jaAnonimizado }
 }

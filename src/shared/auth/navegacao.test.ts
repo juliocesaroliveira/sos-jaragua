@@ -102,17 +102,24 @@ describe('INV-03 — todo destino existe', () => {
 })
 
 describe('INV-04 — matriz de visibilidade por perfil', () => {
-    /** Fonte: specs/002-role-based-app-shell/data-model.md. */
+    /**
+     * Fonte: specs/002-role-based-app-shell/data-model.md, mais `/conta`
+     * (specs/024-criptografia-dados-sensiveis) — disponível a **todas** as roles,
+     * porque o direito de acesso aos próprios dados e o de pedir a eliminação
+     * (LGPD art. 18, II e VI) não dependem do papel da pessoa.
+     */
     const MATRIZ: Record<Role, string[]> = {
-        usuario: ['/', '/voluntariado/candidatura'],
+        usuario: ['/', '/conta', '/voluntariado/candidatura'],
         voluntario: [
             '/',
+            '/conta',
             '/voluntariado/candidatura',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         membro_defesa_civil: [
             '/',
+            '/conta',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -128,6 +135,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         ],
         coordenador: [
             '/',
+            '/conta',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -144,6 +152,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         ],
         administrador: [
             '/',
+            '/conta',
             '/admin',
             '/dashboard',
             '/cadastros-pendentes',
@@ -224,13 +233,15 @@ describe('atalhos — cards de acesso rápido da home', () => {
 
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const ATALHOS: Record<Role, string[]> = {
-        usuario: ['/voluntariado/candidatura'],
+        usuario: ['/conta', '/voluntariado/candidatura'],
         voluntario: [
+            '/conta',
             '/voluntariado/candidatura',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         membro_defesa_civil: [
+            '/conta',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',
@@ -241,6 +252,7 @@ describe('atalhos — cards de acesso rápido da home', () => {
             '/estoque/saida'
         ],
         coordenador: [
+            '/conta',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',
@@ -250,6 +262,7 @@ describe('atalhos — cards de acesso rápido da home', () => {
             '/convocacao'
         ],
         administrador: [
+            '/conta',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades',
             '/dashboard',

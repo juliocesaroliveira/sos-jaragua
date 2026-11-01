@@ -66,9 +66,9 @@ describe('proteção no armazenamento (FR-001, FR-004)', () => {
             .from(voluntarioPerfil)
             .where(eq(voluntarioPerfil.userId, userId))
 
-        expect(ehEnvelope(linha!.cpf)).toBe(true)
-        expect(ehEnvelope(linha!.dataNascimento)).toBe(true)
-        expect(ehEnvelope(linha!.cep)).toBe(true)
+        expect(ehEnvelope(linha!.cpf!)).toBe(true)
+        expect(ehEnvelope(linha!.dataNascimento!)).toBe(true)
+        expect(ehEnvelope(linha!.cep!)).toBe(true)
         // Nenhum dos valores informados aparece legível no que foi armazenado.
         const armazenado = JSON.stringify(linha)
         expect(armazenado).not.toContain('11144477735')

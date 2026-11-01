@@ -11,7 +11,7 @@ import {
     voluntarioPerfil
 } from '@/db/schema/voluntariado'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
-import { cpfMascaradoParaRelatorio } from './apresentar-sensiveis'
+import { cpfMascaradoParaRelatorio, nomeParaExibicao, textoOuAnonimizado } from './apresentar-sensiveis'
 
 /**
  * Leituras de Voluntariado para a central de relatórios
@@ -126,7 +126,14 @@ export async function voluntariosRelatorio(
         .limit(janela.limite)
         .offset(janela.deslocamento)
 
-    return linhas.map((l) => ({ ...l, cpf: cpfMascaradoParaRelatorio(l.cpf) }))
+    return linhas.map((l) => ({
+        ...l,
+        cpf: cpfMascaradoParaRelatorio(l.cpf),
+        nomeCompleto: nomeParaExibicao(l.nomeCompleto),
+        telefone: textoOuAnonimizado(l.telefone),
+        bairro: textoOuAnonimizado(l.bairro),
+        profissao: textoOuAnonimizado(l.profissao)
+    }))
 }
 
 export async function contarVoluntariosRelatorio(filtros: FiltrosVoluntarios): Promise<number> {
@@ -171,7 +178,7 @@ const COLUNAS_TRIAGEM = {
 
 /** Pendentes primeiro, da mais antiga para a mais nova (FR-025); depois as decididas. */
 export async function triagemRelatorio(intervalo: Intervalo, janela: Janela): Promise<LinhaTriagem[]> {
-    return db
+    const linhas = await db
         .select(COLUNAS_TRIAGEM)
         .from(voluntarioPerfil)
         .where(condicoesTriagem(intervalo))
@@ -183,7 +190,15 @@ export async function triagemRelatorio(intervalo: Intervalo, janela: Janela): Pr
         )
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({
+        ...l,
+        nomeCompleto: nomeParaExibicao(l.nomeCompleto),
+        telefone: textoOuAnonimizado(l.telefone),
+        bairro: textoOuAnonimizado(l.bairro)
+    }))
 }
+
 
 export async function contarTriagem(intervalo: Intervalo): Promise<number> {
     const [linha] = await db.select({ total: count() }).from(voluntarioPerfil).where(condicoesTriagem(intervalo))

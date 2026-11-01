@@ -68,3 +68,28 @@ export function cpfMascaradoParaRelatorio(cpf: string | null): string {
     if (r.estado === 'mascarado') return r.exibicao
     return r.estado === 'ilegivel' ? '[ilegível]' : '—'
 }
+
+/** Rótulo de um titular que pediu a eliminação dos próprios dados (FR-022). */
+export const TITULAR_ANONIMO = 'Titular anônimo'
+
+/** Marcador dos demais campos pessoais de um titular anonimizado. */
+export const CAMPO_ANONIMIZADO = '—'
+
+/**
+ * Nome do voluntário para exibição, ou o rótulo de titular anônimo
+ * (feature 024, FR-022 e INV-06).
+ *
+ * Fica nas queries, e não nas telas, de propósito: é o que permite os tipos
+ * públicos continuarem `string` e as dezenas de superfícies existentes seguirem
+ * renderizando sem cada uma precisar tratar nulo. O histórico continua legível —
+ * um turno cumprido aparece com todos os dados do turno — sem identificar quem
+ * cumpriu.
+ */
+export function nomeParaExibicao(nome: string | null): string {
+    return nome ?? TITULAR_ANONIMO
+}
+
+/** Idem, para os campos pessoais que não são o nome. */
+export function textoOuAnonimizado(valor: string | null): string {
+    return valor ?? CAMPO_ANONIMIZADO
+}

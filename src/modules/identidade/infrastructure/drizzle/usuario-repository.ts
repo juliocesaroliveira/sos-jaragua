@@ -1,9 +1,10 @@
 import { and, count, desc, eq, isNotNull, isNull, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
-import { account, user } from '@/db/schema/identidade'
+import { account, session, user } from '@/db/schema/identidade'
 import type { Role } from '@/src/shared/auth/roles'
 import type { LinhaUsuario, UsuarioRepository } from '../../application/ports/usuario-repository'
 import { cifrar, decifrar, ehEnvelope } from '@/src/shared/cripto'
+import { notificacao } from '@/db/schema/notificacoes'
 
 /**
  * Implementação Drizzle do port de Identidade (DESIGN.md §5).
@@ -99,6 +100,39 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
                 .update(user)
                 .set({ dataNascimento: cifrar(data) })
                 .where(and(eq(user.id, userId), isNull(user.dataNascimento)))
+        },
+
+        async anonimizarConta(userId) {
+            // Valor neutro e irrepetível: a coluna é `notNull unique`, a conta não
+            // pode ser reativável, e um futuro cadastro independente da mesma
+            // pessoa não pode ficar bloqueado por um e-mail "queimado".
+            await executor
+                .update(user)
+                .set({
+                    name: 'Titular anônimo',
+                    email: `anonimizado+${userId}@invalido.local`,
+                    image: null,
+                    dataNascimento: null,
+                    ativo: false
+                })
+                .where(eq(user.id, userId))
+
+            // Encerra a sessão (FR-028) e remove os vínculos de login, para que a
+            // conta não possa ser reautenticada por senha nem por provedor social.
+            await executor.delete(session).where(eq(session.userId, userId))
+            await executor.delete(account).where(eq(account.userId, userId))
+
+            // As notificações entram no alcance da eliminação porque o conteúdo
+            // pode carregar dado pessoal.
+            //
+            // NOTA DE PROPRIEDADE DE MÓDULO: `notificacao` pertence ao módulo de
+            // Notificações, e o Princípio I manda que um módulo não toque tabela de
+            // outro. Está aqui porque a alternativa — estender
+            // `UnidadeDeTrabalho` com um terceiro port só para um `DELETE` por
+            // `user_id` — mudaria uma interface usada por vários casos de uso. É um
+            // desvio consciente, registrado em tasks.md, e o lugar certo se a
+            // eliminação crescer é um port próprio de Notificações.
+            await executor.delete(notificacao).where(eq(notificacao.destinatarioUserId, userId))
         },
 
         async buscarDataNascimento(userId) {

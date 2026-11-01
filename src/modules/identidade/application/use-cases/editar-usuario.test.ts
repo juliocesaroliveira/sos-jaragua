@@ -30,7 +30,8 @@ function repositorioComConta(roleAtual: Role | null, temSenhaPropria = true) {
         buscarRole,
         possuiSenhaPropria,
         definirDataNascimentoSeAusente: vi.fn(),
-        buscarDataNascimento: vi.fn()
+        buscarDataNascimento: vi.fn(),
+        anonimizarConta: vi.fn()
     }
     return { usuarios, buscarRole, atualizarNomeERole, possuiSenhaPropria }
 }
