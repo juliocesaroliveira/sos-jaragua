@@ -42,8 +42,8 @@ Oculta dia e mês, preserva o ano. `1990-03-15` → `••/••/1990`.
 
 ### Regra de exposição mínima
 Para as máscaras de 2+2: se o valor tiver **5 caracteres ou menos**, mascarar por inteiro — expor 2 no
-início e 2 no fim revelaria praticamente o valor completo (FR-008). Vale para qualquer campo que venha
-a entrar na classificação, não só os três atuais.
+início e 2 no fim revelaria praticamente o valor completo (**FR-010**). Vale para qualquer campo que
+venha a entrar na classificação, não só os três atuais.
 
 ### `campoVisivelPara(campo: CampoSensivel, role: Role, ehTitular: boolean): boolean`
 Única leitura autorizada da Matriz de Visibilidade. Pura. **Nunca chamada dentro de escopo

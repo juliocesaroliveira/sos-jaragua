@@ -48,6 +48,7 @@ operacional da resposta a desastres, sem vínculo com a pessoa.
 | Nome completo, CPF, data de nascimento, telefone, CEP, bairro, profissão e restrições de saúde do cadastro de voluntário | As linhas de participação em turnos, de modo que contagens de vagas e relatórios de períodos passados continuem fechando |
 | Nome, e-mail e imagem da conta de usuário | Os registros de auditoria já gravados, que permanecem imutáveis mas deixam de identificar a pessoa |
 | Habilidades declaradas pelo titular | Totalizadores e agregados históricos, que não mudam de valor |
+| Notificações recebidas, cujo conteúdo pode carregar dado pessoal | — |
 | Sessões ativas e vínculos com provedores de login | O registro do próprio pedido de exclusão, como prova de atendimento ao titular |
 
 **Consequência descoberta na análise do código**: o mecanismo de auditoria grava hoje o *snapshot
@@ -116,6 +117,10 @@ no armazenamento.
 `membro_defesa_civil` e confirmar que CPF e data de nascimento aparecem mascarados e o CEP aparece
 completo, em todas as telas e também nos arquivos exportados.
 
+> **Depende da US1.** Diferente das outras três, esta história não é entregável sozinha: a apresentação
+> mascarada decifra antes de mascarar, então sem a US1 no lugar o resultado é máscara sobre texto
+> plano — cosmético, sem ganho de segurança. A ordem US1 → US2 é obrigatória.
+
 **Acceptance Scenarios**:
 
 1. **Given** um voluntário com CPF `12345678901`, **When** o CPF é exibido mascarado, **Then**
@@ -125,6 +130,9 @@ completo, em todas as telas e também nos arquivos exportados.
    **Then** o dia e o mês aparecem ocultos e o ano `1990` aparece legível.
 3. **Given** um CEP `89250000`, **When** ele é exibido mascarado, **Then** aparecem `89` no início e
    `00` no fim, com os dígitos intermediários substituídos por marcadores.
+4. **Given** um campo sujeito à máscara de 2+2 cujo valor tenha 5 caracteres ou menos, **When** ele é
+   exibido mascarado, **Then** nenhum caractere original é revelado — o valor aparece inteiramente
+   mascarado.
 4. **Given** uma pessoa autenticada, **When** ela acessa qualquer tela que apresenta dados de
    voluntários, **Then** cada campo sensível aparece mascarado ou completo conforme a Matriz de
    Visibilidade, inclusive em listagens, detalhes, totalizadores e tooltips.
@@ -273,7 +281,10 @@ deixaram de ser recuperáveis pelo sistema.
 **Mascaramento na apresentação**
 
 - **FR-010**: O sistema MUST mascarar o CPF e o CEP preservando os 2 primeiros e os 2 últimos dígitos
-  e substituindo os intermediários por marcadores.
+  e substituindo os intermediários por marcadores. **Regra de exposição mínima**: quando um campo
+  sujeito a esta máscara tiver 5 caracteres ou menos, o sistema MUST mascará-lo por inteiro — expor 2
+  no início e 2 no fim revelaria praticamente o valor completo. A regra vale para qualquer campo que
+  venha a entrar na classificação, não apenas CPF e CEP.
 - **FR-011**: O sistema MUST mascarar a data de nascimento ocultando o dia e o mês e mantendo o ano
   legível.
 - **FR-012**: O sistema MUST mascarar os dados sensíveis por padrão em todas as superfícies de
@@ -374,8 +385,9 @@ deixaram de ser recuperáveis pelo sistema.
 - **SC-007**: Uma busca de voluntário por CPF completo continua encontrando o cadastro existente em
   100% dos casos, preservando o fluxo de reenvio de candidatura.
 - **SC-008**: A recusa de candidatura de menor de 18 anos continua ocorrendo em 100% dos casos.
-- **SC-009**: Os relatórios que usam faixa etária continuam produzindo os mesmos resultados de antes
-  da feature, para a mesma base de voluntários.
+- **SC-009**: Nenhum relatório ou agregação do sistema depende do dia ou do mês de nascimento —
+  verificado por varredura das consultas de relatório. O ano permanece legível pela máscara, de modo
+  que uma agregação futura por faixa etária continue possível sem reverter a proteção.
 - **SC-010**: Após uma exclusão solicitada pelo titular, nenhuma das superfícies de apresentação do
   sistema retorna dado pessoal daquele titular — verificado varrendo todas as telas, consultas e
   exportações que antes o apresentavam.

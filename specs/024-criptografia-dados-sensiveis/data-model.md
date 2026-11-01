@@ -111,7 +111,7 @@ Uma revelação é leitura; uma anonimização não é nenhum dos três (D8). Ta
 ```
 
 **Irreversível e idempotente**: uma segunda solicitação encontra `anonimizado_em` preenchido e conclui
-sem erro nem efeito (FR-025, FR-030).
+sem erro nem efeito (FR-030).
 
 ### O que a anonimização faz, por tabela
 

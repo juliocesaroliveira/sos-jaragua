@@ -24,7 +24,7 @@ A abordagem técnica se apoia em quatro decisões (detalhadas em [research.md](.
 
 ## Technical Context
 
-**Language/Version**: TypeScript estrito, Next.js 16.3.8 (App Router, Turbopack), React 19
+**Language/Version**: TypeScript estrito, Next.js 16.4.3 (App Router, Turbopack), React 19
 
 **Primary Dependencies**: `node:crypto` (embutido — **nenhuma dependência nova**), Drizzle ORM,
 better-auth, MongoDB driver, Ark UI + Tailwind v4, TanStack Query/Table
@@ -55,14 +55,19 @@ _GATE: avaliado contra `.specify/memory/constitution.md` v1.0.1._
 | **I — Clean Architecture por Módulo** | ✅ Passa | Cripto em `src/shared/cripto/` (infra transversal, no precedente de `shared/db` e `shared/auth`); máscara em `src/shared/mascara/` como funções puras, sem import de Next/Drizzle/Mongo. O `domain/` não ganha dependência de infraestrutura (D10). |
 | **II — Tipagem Estrita e pt-BR** | ✅ Passa | Sem `any`; textos e rótulos novos em pt-BR; Conventional Commits. |
 | **III — Testes em Regras de Negócio** | ✅ Passa | Máscara, classificação de campos e matriz de visibilidade são puros → unitários rápidos. Round-trip de cripto → unitário. Migração, unicidade de CPF e anonimização tocam o Neon → `test:integracao`. |
-| **IV — Segurança e Defesa em Profundidade** | ⚠️ **Viola — exige emenda** | O princípio determina hoje *"não introduzir criptografia a nível de campo sem decisão documentada"*. Esta feature é a decisão. Ver Complexity Tracking. |
-| **V — Auditoria Não Bloqueante / Imutável** | ⚠️ **Viola — exige emenda** | FR-027 abre uma exceção única à imutabilidade: remediar os snapshots já gravados que contêm dado sensível em texto plano. Ver Complexity Tracking. |
+| **IV — Segurança e Defesa em Profundidade** | ✅ Passa (desde v1.1.0) | O princípio **exigia** a decisão documentada para introduzir cripto de campo; a emenda v1.1.0 a registrou e passou a mandatar esta política. Histórico em Complexity Tracking. |
+| **V — Auditoria Não Bloqueante / Imutável** | ✅ Passa (desde v1.1.0) | A exceção única de FR-027 — remediar os snapshots já gravados — está agora escrita no próprio princípio. Histórico em Complexity Tracking. |
 | **VI — Simplicidade Operacional** | ✅ Passa | Nenhuma dependência nova, nenhum serviço novo, nenhum banco novo. As decisões arquiteturais ficam registradas aqui e em `research.md` antes do código, como o princípio exige. |
 
-**Gate**: as duas violações são **conscientes, justificadas e inerentes ao pedido** — não são desvios
-incidentais. Ambas estão documentadas em Complexity Tracking e exigem `/speckit-constitution` (bump
-MINOR) **antes do merge da implementação**. O gate passa para seguir ao design; não passa para merge
-sem a emenda.
+**Gate**: ✅ **passa**. As duas divergências que este plano registrou foram resolvidas pela emenda
+**v1.1.0** da Constituição (2026-10-31), que adotou a cripto a nível de campo no Princípio IV e
+inscreveu a exceção única de FR-027 no Princípio V. O histórico da justificativa fica em Complexity
+Tracking, como registro de por que a emenda foi necessária.
+
+**Ressalva de transição**: a emenda descreve o estado final da política — mascaramento, visibilidade
+por role e direitos do titular. Isso só existe em código ao fim da US4. Entre a emenda e essa entrega,
+o repositório declara política que ainda não cumpre. Decisão consciente: a v1.1.0 vale como alvo
+durante a implementação, e a conformidade plena é verificada no checkpoint da US4.
 
 ### Bloqueio operacional pré-existente — resolvido
 
@@ -73,15 +78,16 @@ em 47 arquivos. A baseline de testes está verde, então as tarefas desta featur
 
 ### Alerta de segurança descoberto na auditoria de dependências
 
-`npm audit` acusa **advisory crítico no `next@16.3.8`** (faixa afetada 16.0.0–16.4.0), com três itens,
-um deles diretamente ligado ao mecanismo que esta feature usa: *"Unauthenticated Remote Code Execution
-in `use cache` functions returning typed arrays"* (GHSA-673q-mjm6-r5xr), além de RCE na API de
-otimização de imagem com SVG e DoS em Server Actions. Há também advisories de severidade alta em
-`zod`, `vite`, `js-yaml` e `source-map-js`, e um crítico em `better-auth`.
+**Resolvido**: o `npm audit` acusava advisory **crítico** no `next@16.3.8` (faixa 16.0.0–16.4.0), um
+dos itens diretamente ligado ao mecanismo que esta feature usa — *"Unauthenticated Remote Code
+Execution in `use cache` functions returning typed arrays"* (GHSA-673q-mjm6-r5xr) —, além de RCE na API
+de otimização de imagem com SVG e DoS em Server Actions. O Next e o `eslint-config-next` foram
+atualizados para **16.4.3**; o advisory saiu do `npm audit`, `npm test` passa 549 testes e
+`npm run build` conclui com exit 0.
 
-Atualizar o Next é **decisão à parte desta feature** — muda o framework e pede validação própria —, mas
-precede qualquer discussão sobre a postura de segurança que motivou a 024: não faz sentido cifrar
-campo a campo rodando sobre um runtime com RCE não autenticado conhecido.
+**Permanece aberto, em decisão à parte**: 1 advisory crítico em `better-auth` (aprovação de login de
+dispositivo) e altos em `zod`, `vite`, `js-yaml` e `source-map-js`. O `better-auth` é o núcleo da
+autenticação e um bump ali exige validar os fluxos de login — não cabe nesta feature.
 
 ## Project Structure
 
@@ -158,6 +164,9 @@ conforme o Princípio I. A única superfície nova de UI é `app/(interno)/conta
 `(staff)` (D12).
 
 ## Complexity Tracking
+
+> **Status**: as duas primeiras linhas são **histórico** — resolvidas pela emenda v1.1.0 da
+> Constituição. Ficam registradas porque a justificativa é o que sustenta a emenda.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 | --------- | ---------- | ------------------------------------ |

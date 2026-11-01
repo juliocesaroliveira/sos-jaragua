@@ -3,7 +3,9 @@
 **Feature**: `024-criptografia-dados-sensiveis` | **Data**: 2026-10-31
 
 Todas as decisões abaixo foram tomadas contra o código real do repositório e a documentação do Next
-16.3.8 instalado (`node_modules/next/dist/docs/`), conforme exige `AGENTS.md`.
+instalado (`node_modules/next/dist/docs/`), conforme exige `AGENTS.md`. As docs foram lidas na
+**16.3.8**, versão vigente na época; o projeto está hoje na **16.4.3** (upgrade de CVE), sem mudança
+nas diretivas de cache que sustentam a decisão D4.
 
 > **Nota de ambiente — resolvida**: `npm ci` falhava por dessincronia pré-existente entre
 > `package.json` e `package-lock.json` (`Missing: esbuild@0.28.2 from lock file`), bloqueando CI e
@@ -126,8 +128,10 @@ o ano na máscara é mais simples que fatiar a coluna em duas, e não deixa nada
 **Achado que corrige a spec**: a spec previu em SC-009 que "os relatórios que usam faixa etária
 continuam produzindo os mesmos resultados". **Não existe hoje nenhum relatório por faixa etária ou
 idade** no repositório — conferido nas definições de contingência e nas queries de relatórios. SC-009
-é, portanto, vacuamente verdadeiro, e nenhuma coluna `ano_nascimento` em texto plano é necessária. Se
-um relatório assim surgir e precisar agregar por ano no SQL, aí será o momento de adicioná-la.
+era, portanto, vacuamente verdadeiro, e nenhuma coluna `ano_nascimento` em texto plano é necessária.
+Se um relatório assim surgir e precisar agregar por ano no SQL, aí será o momento de adicioná-la.
+**O SC-009 foi reescrito na spec** (2026-11-01) para afirmar o que é verificável: que nenhuma
+agregação do sistema depende do dia ou do mês de nascimento.
 
 **Consequência de tipo**: `voluntario_perfil.dataNascimento` e `user.dataNascimento` deixam de ser
 `date` e passam a `text` (ciphertext). O domínio já trabalha com string `'YYYY-MM-DD'`
