@@ -9,6 +9,15 @@ import type { CandidaturaValidada } from '../../domain/candidatura'
 
 export type StatusVoluntario = 'pendente' | 'aprovado' | 'rejeitado'
 
+/** Valores sensíveis em claro, com o dono e o estado de anonimização. */
+export type DadosSensiveisPerfil = {
+    userId: string
+    cpf: string | null
+    dataNascimento: string | null
+    cep: string | null
+    anonimizadoEm: Date | null
+}
+
 export type PerfilVoluntario = {
     id: string
     userId: string
@@ -23,6 +32,17 @@ export interface VoluntarioRepository {
     buscarPorId(id: string): Promise<PerfilVoluntario | null>
     /** Perfil do usuário, se houver — elegibilidade da inscrição própria (FR-011). */
     buscarPorUserId(userId: string): Promise<PerfilVoluntario | null>
+
+    /**
+     * Valores sensíveis **em claro** de um perfil, para o caminho de revelação
+     * (feature 024, FR-016).
+     *
+     * Devolve em claro porque decifrar é responsabilidade de `infrastructure`; a
+     * autorização — quem pode ver qual campo — é decidida no caso de uso, contra
+     * a Matriz de Visibilidade. Pode lançar `ValorIlegivelError` quando a chave
+     * não confere ou o dado foi alterado (FR-014).
+     */
+    buscarDadosSensiveis(perfilId: string): Promise<DadosSensiveisPerfil | null>
 
     /**
      * Cria ou atualiza o perfil do usuário, sempre deixando

@@ -11,6 +11,7 @@ import {
     voluntarioPerfil
 } from '@/db/schema/voluntariado'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
+import { cpfMascaradoParaRelatorio } from './apresentar-sensiveis'
 
 /**
  * Leituras de Voluntariado para a central de relatórios
@@ -62,6 +63,16 @@ export type FiltrosVoluntarios = {
 export type LinhaVoluntarioRelatorio = {
     id: string
     nomeCompleto: string
+    /**
+     * **Sempre mascarado** (feature 024, FR-012 e FR-018).
+     *
+     * Relatório alimenta tela e planilha com o mesmo dado. Um arquivo exportado
+     * com milhares de CPFs em claro é o pior vetor de vazamento que esta feature
+     * existe para fechar — então a exportação não acompanha a Matriz de
+     * Visibilidade: ela mascara para todos, inclusive `coordenador` e
+     * `administrador`. Quem precisa do documento completo usa a revelação
+     * auditada, um campo por vez, na tela de triagem.
+     */
     cpf: string
     status: StatusVoluntario
     telefone: string
@@ -92,7 +103,7 @@ export async function voluntariosRelatorio(
     filtros: FiltrosVoluntarios,
     janela: Janela
 ): Promise<LinhaVoluntarioRelatorio[]> {
-    return db
+    const linhas = await db
         .select({
             id: voluntarioPerfil.id,
             nomeCompleto: voluntarioPerfil.nomeCompleto,
@@ -114,6 +125,8 @@ export async function voluntariosRelatorio(
         .orderBy(asc(voluntarioPerfil.nomeCompleto), asc(voluntarioPerfil.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({ ...l, cpf: cpfMascaradoParaRelatorio(l.cpf) }))
 }
 
 export async function contarVoluntariosRelatorio(filtros: FiltrosVoluntarios): Promise<number> {
@@ -356,7 +369,7 @@ function condicoesParticipacao(intervalo: Intervalo): SQL | undefined {
  */
 export async function participacaoRelatorio(intervalo: Intervalo, janela: Janela): Promise<LinhaParticipacao[]> {
     const segundos = sql<number>`coalesce(sum(extract(epoch from ${turno.fim} - ${turno.inicio})), 0)`.mapWith(Number)
-    return db
+    const linhas = await db
         .select({
             participanteUserId: alocacao.participanteUserId,
             cpf: sql<string | null>`max(${voluntarioPerfil.cpf})`,
@@ -372,6 +385,8 @@ export async function participacaoRelatorio(intervalo: Intervalo, janela: Janela
         .orderBy(desc(segundos), asc(alocacao.participanteUserId))
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({ ...l, cpf: l.cpf === null ? null : cpfMascaradoParaRelatorio(l.cpf) }))
 }
 
 export async function contarParticipacao(intervalo: Intervalo): Promise<number> {

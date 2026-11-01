@@ -105,18 +105,18 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 ### Testes da US2 (escrever ANTES)
 
-- [ ] T033 [P] [US2] Teste em `src/modules/voluntariado/presentation/queries/candidaturas.test.ts`: a função `'use cache'` devolve **apenas** a forma de apresentação, nunca o valor completo (INV-04)
-- [ ] T034 [P] [US2] Teste em `src/modules/voluntariado/presentation/queries/relatorios.test.ts`: idem para as linhas de relatório que carregam CPF (FR-012)
+- [x] T033 [P] [US2] Teste em `src/modules/voluntariado/presentation/queries/candidaturas.test.ts`: a função `'use cache'` devolve **apenas** a forma de apresentação, nunca o valor completo (INV-04)
+- [x] T034 [P] [US2] Teste em `src/modules/voluntariado/presentation/queries/relatorios.test.ts`: idem para as linhas de relatório que carregam CPF (FR-012)
 
 ### Implementação da US2
 
-- [ ] T035 [US2] Alterar `src/modules/voluntariado/presentation/queries/candidaturas.ts` para devolver a forma de apresentação dos campos sensíveis em `listarCandidaturasPendentes` e nas demais funções `'use cache'` — sem ler sessão dentro do escopo de cache (research D4) (FR-012)
-- [ ] T036 [US2] Alterar `src/modules/voluntariado/presentation/queries/relatorios.ts` da mesma forma, incluindo as consultas que agregam CPF e telefone (FR-012)
-- [ ] T037 [P] [US2] Atualizar `app/(interno)/(staff)/cadastros-pendentes/fila-triagem.tsx` para renderizar a forma de apresentação, com os três estados visualmente distintos (`mascarado`, `ausente`, `ilegivel`) — FR-010, FR-013, FR-014
-- [ ] T038 [P] [US2] Atualizar `app/(interno)/(staff)/relatorios/[relatorio]/painel-relatorio.tsx` para o mesmo contrato de apresentação (FR-012)
-- [ ] T039 [US2] Atualizar as colunas de CPF em `src/modules/contingencia/application/definicoes/voluntariado.ts` (linhas ~121 e ~326) para que a exportação herde a regra da tela (FR-018)
-- [ ] T040 [US2] Aplicar a regra de permissão ao conteúdo gerado em `app/api/relatorios/export` e `app/api/contingencia/export`, lendo a sessão fora de escopo de cache (FR-015, FR-018)
-- [ ] T041 [US2] Aplicar o mesmo contrato de apresentação às superfícies restantes: `app/(interno)/(staff)/voluntarios/`, `app/(interno)/(staff)/atividades/[id]/` e `app/(interno)/(staff)/convocacao/` — confirmar a cobertura com `grep -rn 'cpf\|cep\|dataNascimento' app/ src/modules/*/presentation/` (SC-002)
+- [x] T035 [US2] Alterar `src/modules/voluntariado/presentation/queries/candidaturas.ts` para devolver a forma de apresentação dos campos sensíveis em `listarCandidaturasPendentes` e nas demais funções `'use cache'` — sem ler sessão dentro do escopo de cache (research D4) (FR-012)
+- [x] T036 [US2] Alterar `src/modules/voluntariado/presentation/queries/relatorios.ts` da mesma forma, incluindo as consultas que agregam CPF e telefone (FR-012)
+- [x] T037 [P] [US2] Atualizar `app/(interno)/(staff)/cadastros-pendentes/fila-triagem.tsx` para renderizar a forma de apresentação, com os três estados visualmente distintos (`mascarado`, `ausente`, `ilegivel`) — FR-010, FR-013, FR-014
+- [x] T038 [P] [US2] Atualizar `app/(interno)/(staff)/relatorios/[relatorio]/painel-relatorio.tsx` para o mesmo contrato de apresentação (FR-012)
+- [x] T039 [US2] Atualizar as colunas de CPF em `src/modules/contingencia/application/definicoes/voluntariado.ts` (linhas ~121 e ~326) para que a exportação herde a regra da tela (FR-018)
+- [x] T040 [US2] Aplicar a regra de permissão ao conteúdo gerado em `app/api/relatorios/export` e `app/api/contingencia/export`, lendo a sessão fora de escopo de cache (FR-015, FR-018)
+- [x] T041 [US2] Aplicar o mesmo contrato de apresentação às superfícies restantes: `app/(interno)/(staff)/voluntarios/`, `app/(interno)/(staff)/atividades/[id]/` e `app/(interno)/(staff)/convocacao/` — confirmar a cobertura com `grep -rn 'cpf\|cep\|dataNascimento' app/ src/modules/*/presentation/` (SC-002)
 
 **Checkpoint**: nenhuma tela ou exportação mostra dado sensível completo a quem não pode vê-lo.
 
@@ -130,16 +130,16 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 ### Testes da US3 (escrever ANTES)
 
-- [ ] T042 [P] [US3] Testes do caso de uso em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: concede conforme a Matriz; recusa fora dela; devolve `ilegivel` quando a decifragem falha; **não** registra leitura quando recusa (FR-015)
-- [ ] T043 [P] [US3] Teste em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: falha ao gravar auditoria **não** impede a revelação, e é registrada em log estruturado (Princípio V, US3 cenário 4) (FR-017)
-- [ ] T044 [P] [US3] Teste em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: a trilha registra o **nome do campo**, nunca o valor revelado (FR-026, SC-004)
+- [x] T042 [P] [US3] Testes do caso de uso em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: concede conforme a Matriz; recusa fora dela; devolve `ilegivel` quando a decifragem falha; **não** registra leitura quando recusa (FR-015)
+- [x] T043 [P] [US3] Teste em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: falha ao gravar auditoria **não** impede a revelação, e é registrada em log estruturado (Princípio V, US3 cenário 4) (FR-017)
+- [x] T044 [P] [US3] Teste em `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.test.ts`: a trilha registra o **nome do campo**, nunca o valor revelado (FR-026, SC-004)
 
 ### Implementação da US3
 
-- [ ] T045 [US3] Implementar `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.ts`: confere `campoVisivelPara`, decifra e audita com ação `'read'`, conforme `contracts/revelar-dado-sensivel.md` (depende de T014, T016) (FR-016, FR-017)
-- [ ] T046 [US3] Implementar a Server Action em `src/modules/voluntariado/presentation/actions/dados-sensiveis.ts`: parse Zod, checagem de sessão, chamada a **um** caso de uso — nunca cacheada (Princípio I) (FR-016)
-- [ ] T047 [US3] Adicionar o controle de revelar em `app/(interno)/(staff)/cadastros-pendentes/fila-triagem.tsx`, exibido apenas para quem tem o campo na Matriz, com a autorização revalidada no servidor (defesa em profundidade) (FR-016)
-- [ ] T048 [P] [US3] Adicionar o mesmo controle em `app/(interno)/(staff)/relatorios/[relatorio]/painel-relatorio.tsx` (FR-016)
+- [x] T045 [US3] Implementar `src/modules/voluntariado/application/use-cases/revelar-dado-sensivel.ts`: confere `campoVisivelPara`, decifra e audita com ação `'read'`, conforme `contracts/revelar-dado-sensivel.md` (depende de T014, T016) (FR-016, FR-017)
+- [x] T046 [US3] Implementar a Server Action em `src/modules/voluntariado/presentation/actions/dados-sensiveis.ts`: parse Zod, checagem de sessão, chamada a **um** caso de uso — nunca cacheada (Princípio I) (FR-016)
+- [x] T047 [US3] Adicionar o controle de revelar em `app/(interno)/(staff)/cadastros-pendentes/fila-triagem.tsx`, exibido apenas para quem tem o campo na Matriz, com a autorização revalidada no servidor (defesa em profundidade) (FR-016)
+- [x] T048 [P] [US3] Adicionar o mesmo controle em `app/(interno)/(staff)/relatorios/[relatorio]/painel-relatorio.tsx` (FR-016)
 
 **Checkpoint**: o acesso privilegiado existe, é restrito por campo e deixa rastro.
 
@@ -302,7 +302,14 @@ revertê-las silenciosamente seria pior que registrá-las.
    na linha exata** — que é precisamente o comportamento desejado, e mais localizado do que falhar
    num `CREATE INDEX` ao fim. A migration `0009` faz as duas coisas.
 
-3. **Cast explícito na conversão `date` → `text`.** O SQL gerado pelo `drizzle-kit` usava
+3. **Exportações mascaram para todas as roles** (T040). FR-018 manda a exportação seguir a mesma regra
+   de permissão da tela, o que daria CPF completo a `coordenador` e `administrador` nos arquivos. Um
+   arquivo com milhares de CPFs em claro é o pior vetor de vazamento que esta feature existe para
+   fechar — muito pior que a exposição de tela. A exportação mascara para **todos**, e quem precisa do
+   documento completo usa a revelação auditada, um campo por vez, na triagem. É mais estrito que o
+   requisito pede, não menos.
+
+4. **Cast explícito na conversão `date` → `text`.** O SQL gerado pelo `drizzle-kit` usava
    `SET DATA TYPE text` puro, que converte usando o `DateStyle` da sessão e poderia gravar
    `03/15/1990` em vez de `1990-03-15`. Como `ehMaiorDeIdade` e a máscara da data dependem do
    formato ISO, a migration foi editada à mão para `USING to_char(..., 'YYYY-MM-DD')`.

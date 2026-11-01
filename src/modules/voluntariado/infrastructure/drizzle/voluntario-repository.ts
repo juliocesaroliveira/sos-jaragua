@@ -82,6 +82,36 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
             return comCpfEmClaro(linha) as PerfilVoluntario | null
         },
 
+        async buscarDadosSensiveis(perfilId) {
+            const [linha] = await executor
+                .select({
+                    userId: voluntarioPerfil.userId,
+                    cpf: voluntarioPerfil.cpf,
+                    dataNascimento: voluntarioPerfil.dataNascimento,
+                    cep: voluntarioPerfil.cep,
+                    anonimizadoEm: voluntarioPerfil.anonimizadoEm
+                })
+                .from(voluntarioPerfil)
+                .where(eq(voluntarioPerfil.id, perfilId))
+                .limit(1)
+
+            if (!linha) return null
+
+            // Decifra aqui porque a cripto não atravessa para a `application`
+            // (Princípio I). Um `ValorIlegivelError` propaga: o caso de uso o
+            // traduz para o estado "ilegível" da apresentação (FR-014).
+            const emClaro = (valor: string | null): string | null =>
+                valor === null || valor === '' ? null : ehEnvelope(valor) ? decifrar(valor) : valor
+
+            return {
+                userId: linha.userId,
+                cpf: emClaro(linha.cpf),
+                dataNascimento: emClaro(linha.dataNascimento),
+                cep: emClaro(linha.cep),
+                anonimizadoEm: linha.anonimizadoEm
+            }
+        },
+
         async salvarCandidatura({ userId, dados }) {
             const valores = {
                 userId,
