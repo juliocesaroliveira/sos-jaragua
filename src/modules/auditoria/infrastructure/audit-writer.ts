@@ -32,6 +32,13 @@ export async function registrarAuditoria(registro: RegistroAuditoria): Promise<b
 
             // Log estruturado com o registro completo: é o que permite
             // reconstruir a lacuna manualmente depois.
+            //
+            // Seguro quanto a FR-009 (nenhum dado sensível em log): a redação
+            // acontece em `withAudit`, **antes** de chamar `registrarAuditoria`,
+            // então o `registro` que chega aqui já vem com os campos sensíveis
+            // substituídos pela marca de mudança. Redigir no ponto de passagem,
+            // e não na gravação, é o que faz este log de contingência herdar a
+            // proteção de graça.
             console.error('[auditoria] falha ao gravar audit_log — operação de negócio NÃO foi desfeita', {
                 entidade: registro.entidade,
                 entidadeId: registro.entidadeId,

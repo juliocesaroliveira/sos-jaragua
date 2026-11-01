@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
+import { cifrar, decifrar, ehEnvelope, indiceCego } from '@/src/shared/cripto'
 import { criarUsuarioRepository } from '@/src/modules/identidade/infrastructure/drizzle/usuario-repository'
 import { voluntarioHabilidade, voluntarioPerfil } from '@/db/schema/voluntariado'
 import type {
@@ -14,6 +15,11 @@ import type {
  * O port `usuarios` (leitura/escrita de `user.role`) não é implementado
  * aqui — vem de `identidade`, o módulo dono da tabela `user`
  * (006-user-management-page, research.md D6).
+ *
+ * **Fronteira da criptografia** (feature 024): esta camada é a única que conhece
+ * o envelope. A `application` e o `domain` continuam recebendo e entregando
+ * `cpf`, `cep` e `dataNascimento` em claro — cifrar é uma preocupação de
+ * persistência, e o Princípio I manda que ela não atravesse para dentro.
  */
 type Executor = typeof db | Transacao
 
@@ -25,15 +31,37 @@ const COLUNAS_PERFIL = {
     status: voluntarioPerfil.status
 }
 
+type LinhaPerfil = { cpf: string | null }
+
+/**
+ * Traduz a linha do banco para o perfil de domínio, decifrando o CPF.
+ *
+ * Linhas gravadas antes da migração de proteção ainda estão em claro — ler as
+ * duas formas mantém a aplicação funcional durante a janela da migração, e o
+ * script `proteger-dados-existentes` fecha essa janela.
+ *
+ * Uma falha de decifragem **propaga** de propósito: significa chave trocada ou
+ * dado corrompido, e seguir em frente arriscaria criar um cadastro duplicado por
+ * não ter conseguido ler o existente.
+ */
+function comCpfEmClaro<T extends LinhaPerfil>(linha: T | undefined): T | null {
+    if (!linha) return null
+    if (linha.cpf === null) return linha
+    return { ...linha, cpf: ehEnvelope(linha.cpf) ? decifrar(linha.cpf) : linha.cpf }
+}
+
 export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRepository {
     return {
         async buscarPorCpf(cpf) {
+            // Busca pelo índice cego, não pela coluna cifrada: com IV aleatório, o
+            // mesmo CPF gera ciphertexts diferentes e a igualdade sobre `cpf` nunca
+            // casaria (research.md D2).
             const [linha] = await executor
                 .select(COLUNAS_PERFIL)
                 .from(voluntarioPerfil)
-                .where(eq(voluntarioPerfil.cpf, cpf))
+                .where(eq(voluntarioPerfil.cpfIndice, indiceCego(cpf)))
                 .limit(1)
-            return (linha as PerfilVoluntario) ?? null
+            return comCpfEmClaro(linha) as PerfilVoluntario | null
         },
 
         async buscarPorId(id) {
@@ -42,7 +70,7 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
                 .from(voluntarioPerfil)
                 .where(eq(voluntarioPerfil.id, id))
                 .limit(1)
-            return (linha as PerfilVoluntario) ?? null
+            return comCpfEmClaro(linha) as PerfilVoluntario | null
         },
 
         async buscarPorUserId(userId) {
@@ -51,17 +79,21 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
                 .from(voluntarioPerfil)
                 .where(eq(voluntarioPerfil.userId, userId))
                 .limit(1)
-            return (linha as PerfilVoluntario) ?? null
+            return comCpfEmClaro(linha) as PerfilVoluntario | null
         },
 
         async salvarCandidatura({ userId, dados }) {
             const valores = {
                 userId,
                 nomeCompleto: dados.nomeCompleto,
-                dataNascimento: dados.dataNascimento,
-                cpf: dados.cpf,
+                // Os três campos sensíveis são cifrados na fronteira de escrita
+                // (FR-001). `cpfIndice` é gravado junto, porque é o que sustenta
+                // unicidade e `buscarPorCpf` depois que o CPF deixa de ser legível.
+                dataNascimento: cifrar(dados.dataNascimento),
+                cpf: cifrar(dados.cpf),
+                cpfIndice: indiceCego(dados.cpf),
                 telefone: dados.telefone,
-                cep: dados.cep,
+                cep: cifrar(dados.cep),
                 bairro: dados.bairro,
                 profissao: dados.profissao,
                 restricoesSaude: dados.restricoesSaude ?? null,
@@ -94,7 +126,9 @@ export function criarVoluntarioRepository(executor: Executor = db): VoluntarioRe
                 )
             }
 
-            return perfil as PerfilVoluntario
+            // Devolve o CPF em claro: quem chamou passou o valor em claro e a
+            // `application` não deve receber envelope de volta.
+            return comCpfEmClaro(perfil) as PerfilVoluntario
         },
 
         async aprovar({ perfilId, aprovadoPor }) {

@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { boolean, date, index, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { boolean, index, pgEnum, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 /**
  * Módulo Identidade (DB_SCHEMA.md §4).
@@ -43,12 +43,20 @@ export const user = pgTable(
          * A conta nasce com o campo nulo e ele é gravado no primeiro envio de
          * candidatura, via `UsuarioRepository.definirDataNascimentoSeAusente`.
          *
-         * `date` e não `timestamp`: o domínio compara datas civis
-         * (`ehMaiorDeIdade`) e o `DatePicker` compartilhado já fala
-         * `YYYY-MM-DD` justamente para casar com esta coluna. Hora aqui só
-         * traria fuso onde não existe.
+         * **Protegida** (feature 024, FR-008): guarda o envelope
+         * `v1.<iv>.<ct>.<tag>`, não a data civil.
+         *
+         * Era `date`. Virou `text` porque o valor armazenado é ciphertext — e
+         * esta coluna **precisa** ser protegida junto da de `voluntario_perfil`:
+         * a data de nascimento vive nos dois lugares, sincronizada por
+         * `definirDataNascimentoSeAusente`, e cifrar só uma deixaria o dia e o
+         * mês legíveis na outra.
+         *
+         * O domínio continua comparando datas civis em `'YYYY-MM-DD'`
+         * (`ehMaiorDeIdade`), que é o formato que a cripto recebe e devolve, e o
+         * `DatePicker` compartilhado segue falando o mesmo formato.
          */
-        dataNascimento: date(),
+        dataNascimento: text(),
         createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp({ withTimezone: true })
             .notNull()

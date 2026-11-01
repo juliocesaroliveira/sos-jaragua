@@ -3,6 +3,7 @@ import { db, type Transacao } from '@/src/shared/db/postgres'
 import { account, user } from '@/db/schema/identidade'
 import type { Role } from '@/src/shared/auth/roles'
 import type { LinhaUsuario, UsuarioRepository } from '../../application/ports/usuario-repository'
+import { cifrar, decifrar, ehEnvelope } from '@/src/shared/cripto'
 
 /**
  * Implementação Drizzle do port de Identidade (DESIGN.md §5).
@@ -90,9 +91,13 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
             // `isNull` no WHERE, e não um `select` antes: é o que torna a
             // escrita idempotente e imune a corrida entre dois envios
             // simultâneos, sem precisar de lock explícito.
+            //
+            // Cifrado aqui (feature 024, FR-008): esta é a cópia da data que vive
+            // em `user`, e protegê-la junto da de `voluntario_perfil` é o que
+            // impede que o dia e o mês continuem legíveis em um dos dois lugares.
             await executor
                 .update(user)
-                .set({ dataNascimento: data })
+                .set({ dataNascimento: cifrar(data) })
                 .where(and(eq(user.id, userId), isNull(user.dataNascimento)))
         },
 
@@ -103,7 +108,13 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
                 .where(eq(user.id, userId))
                 .limit(1)
 
-            return linha?.dataNascimento ?? null
+            const armazenado = linha?.dataNascimento ?? null
+            if (armazenado === null) return null
+
+            // Linhas gravadas antes da migração de proteção ainda estão em claro;
+            // o script `proteger-dados-existentes` as converte. Ler as duas formas
+            // mantém a aplicação funcional durante a janela da migração.
+            return ehEnvelope(armazenado) ? decifrar(armazenado) : armazenado
         }
     }
 }

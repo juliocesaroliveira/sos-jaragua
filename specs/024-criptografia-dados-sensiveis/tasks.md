@@ -72,24 +72,24 @@ Monolito modular Next.js: `src/shared/` (infra transversal), `src/modules/<modul
 
 ### Testes da US1 (escrever ANTES)
 
-- [ ] T018 [P] [US1] Teste de integração em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.integracao.test.ts`: gravar e reler um perfil devolve os três campos idênticos aos originais (FR-004)
-- [ ] T019 [P] [US1] Teste de integração de unicidade em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.integracao.test.ts`: dois perfis com o mesmo CPF violam o índice único de `cpf_indice`; `buscarPorCpf` encontra pelo valor completo (FR-005, SC-007)
+- [x] T018 [P] [US1] Teste de integração em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.integracao.test.ts`: gravar e reler um perfil devolve os três campos idênticos aos originais (FR-004)
+- [x] T019 [P] [US1] Teste de integração de unicidade em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.integracao.test.ts`: dois perfis com o mesmo CPF violam o índice único de `cpf_indice`; `buscarPorCpf` encontra pelo valor completo (FR-005, SC-007)
 - [ ] T020 [P] [US1] Teste de integração em `scripts/proteger-dados-existentes.integracao.test.ts`: idempotência — rodar duas vezes não re-cifra o que já tem prefixo `v1.` nem corrompe linha migrada (FR-007, SC-005)
-- [ ] T021 [P] [US1] Teste em `src/modules/auditoria/redacao.test.ts`: o snapshot entregue a `registrarAuditoria` não contém CPF, data de nascimento nem CEP em claro (FR-026, SC-012)
-- [ ] T022 [P] [US1] Teste em `src/modules/voluntariado/application/use-cases/submeter-candidatura.test.ts`: a recusa por maioridade continua ocorrendo com o campo protegido (regressão de FR-006, SC-008)
+- [x] T021 [P] [US1] Teste em `src/modules/auditoria/redacao.test.ts`: o snapshot entregue a `registrarAuditoria` não contém CPF, data de nascimento nem CEP em claro (FR-026, SC-012)
+- [x] T022 [P] [US1] Teste em `src/modules/voluntariado/application/use-cases/submeter-candidatura.test.ts`: a recusa por maioridade continua ocorrendo com o campo protegido (regressão de FR-006, SC-008)
 
 ### Implementação da US1
 
-- [ ] T023 [US1] Migration Drizzle (estrutura) em `db/migrations/`: adicionar `cpf_indice` e `anonimizado_em` a `voluntario_perfil`; relaxar `notNull` em `cpf`, `data_nascimento`, `cep`, `nome_completo`, `telefone`, `bairro`, `profissao`; **manter** os valores atuais em claro nesta etapa (FR-001)
-- [ ] T024 [US1] Atualizar `db/schema/voluntariado.ts`: `cpf` e `cep` para `text` nulável, `data_nascimento` de `date` para `text` nulável, nova coluna `cpf_indice`, nova `anonimizado_em` (FR-001)
-- [ ] T025 [US1] Atualizar `db/schema/identidade.ts`: `user.dataNascimento` de `date` para `text` nulável — é a cópia que FR-008 exige proteger
-- [ ] T026 [US1] Ajustar os consumidores de `dataNascimentoDaConta` em `src/modules/voluntariado/application/use-cases/submeter-candidatura.ts` e `src/modules/identidade/infrastructure/drizzle/usuario-repository.ts` para o novo tipo string cifrada (depende de T025) (FR-006, FR-008)
-- [ ] T027 [US1] Cifrar na escrita e decifrar na leitura em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.ts`, e reescrever `buscarPorCpf` para consultar por `cpf_indice` (depende de T012, T024) (FR-001, FR-005)
-- [ ] T028 [US1] Implementar `scripts/proteger-dados-existentes.ts`: para cada linha, cifra os três campos, calcula `cpf_indice` e grava; **idempotente**, reconhecendo o prefixo `v1.` para saltar o que já está protegido (FR-007)
-- [ ] T029 [US1] Migration Drizzle (índices) em `db/migrations/`: criar `voluntario_perfil_cpf_indice_idx` único em `cpf_indice` e remover `voluntario_perfil_cpf_idx` — **só depois** de T028, para que uma colisão real de CPF duplicado apareça no script em vez de ficar escondida (depende de T028) (FR-005)
-- [ ] T030 [US1] Implementar a redação dos campos sensíveis em `src/modules/auditoria/index.ts`, dentro de `withAudit`, imediatamente antes de `registrarAuditoria`, usando a classificação de `campos-sensiveis.ts` (FR-026, depende de T014)
-- [ ] T031 [US1] Implementar `scripts/remediar-auditoria.ts`: varrer `audit_logs` e redigir os campos sensíveis nos snapshots de `voluntario_perfil` e `user` gravados antes da feature; idempotente; registrar evento próprio da remediação (FR-027)
-- [ ] T032 [US1] Garantir que nenhum campo sensível apareça em log, mensagem de erro ou payload de notificação — varrer `console.error`/`console.log` nos caminhos tocados e os templates de notificação (FR-009)
+- [x] T023 [US1] Migration Drizzle (estrutura) em `db/migrations/`: adicionar `cpf_indice` e `anonimizado_em` a `voluntario_perfil`; relaxar `notNull` em `cpf`, `data_nascimento`, `cep`, `nome_completo`, `telefone`, `bairro`, `profissao`; **manter** os valores atuais em claro nesta etapa (FR-001)
+- [x] T024 [US1] Atualizar `db/schema/voluntariado.ts`: `cpf` e `cep` para `text` nulável, `data_nascimento` de `date` para `text` nulável, nova coluna `cpf_indice`, nova `anonimizado_em` (FR-001)
+- [x] T025 [US1] Atualizar `db/schema/identidade.ts`: `user.dataNascimento` de `date` para `text` nulável — é a cópia que FR-008 exige proteger
+- [x] T026 [US1] Ajustar os consumidores de `dataNascimentoDaConta` em `src/modules/voluntariado/application/use-cases/submeter-candidatura.ts` e `src/modules/identidade/infrastructure/drizzle/usuario-repository.ts` para o novo tipo string cifrada (depende de T025) (FR-006, FR-008)
+- [x] T027 [US1] Cifrar na escrita e decifrar na leitura em `src/modules/voluntariado/infrastructure/drizzle/voluntario-repository.ts`, e reescrever `buscarPorCpf` para consultar por `cpf_indice` (depende de T012, T024) (FR-001, FR-005)
+- [x] T028 [US1] Implementar `scripts/proteger-dados-existentes.ts`: para cada linha, cifra os três campos, calcula `cpf_indice` e grava; **idempotente**, reconhecendo o prefixo `v1.` para saltar o que já está protegido (FR-007)
+- [x] T029 [US1] ~~Migration Drizzle (índices) separada~~ — **consolidada na 0009**, ver nota de desvio ao fim deste arquivo. Original: Migration Drizzle (índices) em `db/migrations/`: criar `voluntario_perfil_cpf_indice_idx` único em `cpf_indice` e remover `voluntario_perfil_cpf_idx` — **só depois** de T028, para que uma colisão real de CPF duplicado apareça no script em vez de ficar escondida (depende de T028) (FR-005)
+- [x] T030 [US1] Implementar a redação dos campos sensíveis em `src/modules/auditoria/index.ts`, dentro de `withAudit`, imediatamente antes de `registrarAuditoria`, usando a classificação de `campos-sensiveis.ts` (FR-026, depende de T014)
+- [x] T031 [US1] Implementar `scripts/remediar-auditoria.ts`: varrer `audit_logs` e redigir os campos sensíveis nos snapshots de `voluntario_perfil` e `user` gravados antes da feature; idempotente; registrar evento próprio da remediação (FR-027)
+- [x] T032 [US1] Garantir que nenhum campo sensível apareça em log, mensagem de erro ou payload de notificação — varrer `console.error`/`console.log` nos caminhos tocados e os templates de notificação (FR-009)
 
 **Checkpoint**: nada sensível em texto plano no Postgres nem no Mongo. A US1 entrega valor sozinha.
 
@@ -278,3 +278,52 @@ fim da US4. A conformidade plena é verificada no checkpoint da US4, não no MVP
 - Commits em Conventional Commits (Princípio II)
 - Textos de interface e mensagens de erro estritamente em pt-BR
 - Parar em qualquer checkpoint para validar a história isoladamente
+
+
+---
+
+## Desvios do plano registrados durante a implementação
+
+Três decisões divergiram do que `plan.md` e `tasks.md` previam. Ficam aqui porque
+revertê-las silenciosamente seria pior que registrá-las.
+
+1. **Nulabilidade movida da US1 para a US4** (T023, T024). O plano mandava relaxar `notNull` de
+   `cpf`, `cep`, `data_nascimento`, `nome_completo`, `telefone`, `bairro` e `profissao` já na US1.
+   Fazer isso agora forçaria alargar o port `PerfilVoluntario` para `string | null` e tocar todos os
+   consumidores por causa de uma capacidade — a anonimização — que só chega na US4. As colunas
+   seguem `notNull`; a migration que as relaxa é parte da US4. `cpf_indice` já nasceu nulável,
+   porque nulável **é** seu estado final (a anonimização o esvazia) e o índice único do Postgres
+   admite múltiplos nulos.
+
+2. **Migrations de estrutura e de índice consolidadas em uma** (T029). O plano previa três etapas
+   (estrutura → dados → índices) para que uma duplicata real de CPF aparecesse no script em vez de
+   ficar escondida. Na prática o índice único sobre `cpf_indice` pode ser criado junto da estrutura:
+   a coluna nasce inteiramente nula, nulos não colidem, e a duplicata estoura **no script de dados,
+   na linha exata** — que é precisamente o comportamento desejado, e mais localizado do que falhar
+   num `CREATE INDEX` ao fim. A migration `0009` faz as duas coisas.
+
+3. **Cast explícito na conversão `date` → `text`.** O SQL gerado pelo `drizzle-kit` usava
+   `SET DATA TYPE text` puro, que converte usando o `DateStyle` da sessão e poderia gravar
+   `03/15/1990` em vez de `1990-03-15`. Como `ehMaiorDeIdade` e a máscara da data dependem do
+   formato ISO, a migration foi editada à mão para `USING to_char(..., 'YYYY-MM-DD')`.
+
+## Achados da implementação não previstos no plano
+
+1. **O `better-auth` lê `user.data_nascimento` pelo próprio adapter**, sem passar pelos repositórios
+   do projeto. Cifrar a coluna fazia a sessão carregar o envelope e o formulário de candidatura
+   exibi-lo ao usuário no lugar da data. Resolvido em `src/shared/auth/sessao.ts`, em
+   `normalizarDataNascimento`, que é o ponto de passagem único da sessão.
+
+2. **`AcaoAuditoria` é duplicado em `contingencia/domain`** porque o Princípio I proíbe `domain`
+   importar Mongo. Estender `AcaoAuditada` quebrou o `tsc` no ponto de chamada. O tipo local foi
+   alargado com nota explicando a duplicação deliberada.
+
+3. **A redação em `withAudit` protege de graça o log de contingência** do `audit-writer`, que loga o
+   registro inteiro quando a gravação no Mongo falha. Como a redação acontece antes de
+   `registrarAuditoria`, esse log já recebe o dado redigido — FR-009 atendido sem código extra.
+
+4. **A marca de mudança da redação precisou de subchave própria.** Substituir todo campo sensível por
+   um `[redigido]` fixo faria o diff da trilha deixar de mostrar que o campo mudou — e detectar
+   alteração silenciosa de um CPF é necessidade legítima de auditoria. A redação usa um HMAC truncado
+   com `subchaveRedacao()`, separada da subchave do índice cego para que uma marca de auditoria não
+   possa ser correlacionada com o `cpf_indice` do banco.

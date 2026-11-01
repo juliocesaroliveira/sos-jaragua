@@ -3,6 +3,9 @@ import type { UsuarioRepository } from '@/src/modules/identidade/application/por
 import type { PerfilVoluntario, UnidadeDeTrabalho, VoluntarioRepository } from '../ports/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from './submeter-candidatura'
 import type { DadosCandidatura } from '../../domain/candidatura'
+import { randomBytes } from 'node:crypto'
+import { cifrar, decifrar } from '@/src/shared/cripto'
+import { ehMaiorDeIdade } from '@/src/modules/identidade/domain/maioridade'
 
 /**
  * BR-VOL-01 + 011-auto-cadastro-provedor (FR-016/FR-017,
@@ -194,5 +197,43 @@ describe('SubmeterCandidaturaUseCase — regras preservadas', () => {
 
         expect(resultado.ok).toBe(true)
         expect(salvarCandidatura).toHaveBeenCalledTimes(1)
+    })
+})
+
+/**
+ * Regressão de FR-006 (feature 024).
+ *
+ * O teste de maioridade acima usa repositórios falsos, então não passa pela
+ * criptografia — e isso é correto por desenho: cifrar é preocupação de
+ * `infrastructure`, e o Princípio I impede que ela atravesse para o domínio.
+ *
+ * O que ainda precisava de cobertura é a emenda entre as duas peças: que o
+ * formato devolvido por `decifrar` é exatamente o que `ehMaiorDeIdade` e
+ * `validarCandidatura` esperam. Se a cripto alterasse o valor — truncando,
+ * normalizando fuso, mudando separador —, a recusa de menor de idade passaria a
+ * falhar silenciosamente em produção, com o dado já cifrado no banco.
+ */
+describe('maioridade sobre o valor decifrado (FR-006)', () => {
+    beforeEach(() => {
+        process.env.DADOS_SENSIVEIS_CHAVE = randomBytes(32).toString('base64')
+    })
+
+    it('o round-trip da cripto preserva o formato que o domínio valida', () => {
+        for (const data of ['1990-03-15', '2010-12-31', '1954-01-01']) {
+            expect(decifrar(cifrar(data))).toBe(data)
+            expect(decifrar(cifrar(data))).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+        }
+    })
+
+    it('recusa menor de idade a partir da data decifrada', () => {
+        const hoje = new Date('2026-11-01T00:00:00Z')
+        const menor = decifrar(cifrar('2015-06-10'))
+        expect(ehMaiorDeIdade(menor, hoje)).toBe(false)
+    })
+
+    it('aceita maior de idade a partir da data decifrada', () => {
+        const hoje = new Date('2026-11-01T00:00:00Z')
+        const maior = decifrar(cifrar('1990-03-15'))
+        expect(ehMaiorDeIdade(maior, hoje)).toBe(true)
     })
 })

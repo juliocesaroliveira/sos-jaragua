@@ -29,6 +29,7 @@ const SALT = Buffer.from('sos-jaragua:dados-sensiveis:v1')
 /** Propósitos distintos: a mesma chave jamais cifra e autentica ao mesmo tempo. */
 const INFO_CIFRA = 'sos:cripto:campo:v1'
 const INFO_INDICE = 'sos:indice:cpf:v1'
+const INFO_REDACAO = 'sos:redacao:auditoria:v1'
 
 function lerChaveMestra(): Buffer {
     const bruto = process.env[VARIAVEL_CHAVE]
@@ -76,4 +77,16 @@ export function subchaveCifra(): Buffer {
 /** Subchave usada apenas para o índice cego (busca e unicidade de CPF). */
 export function subchaveIndice(): Buffer {
     return derivar(INFO_INDICE)
+}
+
+/**
+ * Subchave usada apenas para a marca de mudança da trilha de auditoria
+ * (FR-026).
+ *
+ * Tem subchave própria, em vez de reaproveitar a do índice, pela mesma razão que
+ * separa cifra de índice: um propósito por chave. Reusar a do índice permitiria
+ * correlacionar uma marca de auditoria com o `cpf_indice` do banco.
+ */
+export function subchaveRedacao(): Buffer {
+    return derivar(INFO_REDACAO)
 }
