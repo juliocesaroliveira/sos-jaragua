@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { boolean, date, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { user } from './identidade'
 
 /**
@@ -47,6 +47,17 @@ export const atividadeCategoria = pgTable('atividade_categoria', {
 
 // -- Perfil de voluntário (DB_SCHEMA.md §4.2) ---------------------------------
 
+/**
+ * Perfil de voluntário.
+ *
+ * **Os campos pessoais são nuláveis** (feature 024, FR-022): a eliminação a
+ * pedido do titular os esvazia e marca `anonimizadoEm`, mantendo a linha. Apagar
+ * a linha não é opção — as FKs de `alocacao`, `atividade` e estoque fariam o
+ * `DELETE` falhar para quem tem histórico operacional ou destruiriam o histórico
+ * de turnos por cascade (research.md D7). Nulo aqui significa "titular
+ * anonimizado", nunca "cadastro incompleto": a candidatura valida os campos como
+ * obrigatórios no `domain`.
+ */
 export const voluntarioPerfil = pgTable(
     'voluntario_perfil',
     {
@@ -55,15 +66,37 @@ export const voluntarioPerfil = pgTable(
             .notNull()
             .unique()
             .references(() => user.id, { onDelete: 'cascade' }),
-        nomeCompleto: text().notNull(),
-        dataNascimento: date().notNull(),
+        nomeCompleto: text(),
+        /**
+         * **Protegida** (feature 024, FR-001): guarda o envelope `v1.<iv>.<ct>.<tag>`,
+         * não a data civil. `text` e não `date` porque o valor armazenado é
+         * ciphertext; o domínio continua operando sobre `'YYYY-MM-DD'`, que é o
+         * que a cripto recebe e devolve (research.md D6).
+         */
+        dataNascimento: text(),
         // Maioridade e dígito verificador são validados no `domain`, não no banco
         // (DESIGN.md §10.1) — mensagens de erro específicas em pt-BR.
-        cpf: text().notNull(),
-        telefone: text().notNull(),
-        cep: text().notNull(),
-        bairro: text().notNull(),
-        profissao: text().notNull(),
+        /** **Protegido** (FR-001): envelope, não o CPF. Busca e unicidade vão por `cpfIndice`. */
+        cpf: text(),
+        /**
+         * Índice cego do CPF — `HMAC-SHA256(subchave, cpf)` em base64url
+         * (research.md D2).
+         *
+         * Existe porque a cifra é aleatorizada: o mesmo CPF gera ciphertexts
+         * diferentes, então nem índice único nem `buscarPorCpf` funcionariam sobre
+         * `cpf`. O HMAC **com chave** é o ponto: um hash simples de 11 dígitos cai
+         * por força bruta em segundos.
+         *
+         * Nulável porque a anonimização a pedido do titular o esvazia (FR-022) — e
+         * o índice único do Postgres admite múltiplos nulos, então vários titulares
+         * anonimizados coexistem sem colidir.
+         */
+        cpfIndice: text(),
+        telefone: text(),
+        /** **Protegido** (FR-001): envelope, não o CEP. */
+        cep: text(),
+        bairro: text(),
+        profissao: text(),
         restricoesSaude: text(),
         veiculoProprio: boolean().notNull(),
         tipoVeiculo: tipoVeiculoEnum(),
@@ -72,6 +105,15 @@ export const voluntarioPerfil = pgTable(
         aprovadoPor: text().references(() => user.id, { onDelete: 'set null' }),
         aprovadoEm: timestamp({ withTimezone: true }),
         motivoRejeicao: text(),
+        /**
+         * Marca o titular que pediu a eliminação dos próprios dados (FR-022).
+         *
+         * A linha **permanece** e é sobrescrita, nunca apagada: as FKs de
+         * `alocacao`, `atividade` e estoque fariam um `DELETE` falhar para quem tem
+         * histórico operacional ou destruir o histórico de turnos (research.md D7).
+         * É este campo que a apresentação consulta para renderizar "titular anônimo".
+         */
+        anonimizadoEm: timestamp({ withTimezone: true }),
         criadoEm: timestamp({ withTimezone: true }).notNull().defaultNow(),
         atualizadoEm: timestamp({ withTimezone: true })
             .notNull()
@@ -81,7 +123,10 @@ export const voluntarioPerfil = pgTable(
     (t) => [
         // CPF único: um documento por voluntário; também é a chave de
         // reaproveitamento da linha no reenvio de candidatura (BR-VOL-01).
-        uniqueIndex('voluntario_perfil_cpf_idx').on(t.cpf),
+        //
+        // O índice migrou de `cpf` para `cpfIndice` com a feature 024: com a cifra
+        // aleatorizada, um índice sobre `cpf` não detectaria duplicata alguma.
+        uniqueIndex('voluntario_perfil_cpf_indice_idx').on(t.cpfIndice),
         // Fila de Cadastros Pendentes (DB_SCHEMA.md §12)
         index('voluntario_perfil_status_idx').on(t.status)
     ]

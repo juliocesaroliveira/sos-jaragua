@@ -431,6 +431,8 @@ estratégia via `'use cache'` (`cacheComponents: true` em `next.config.ts`).
 | Listagem paginada de voluntários                     | Sim, por página+filtro                                                                  | médio (`'hours'`)   | `voluntariado:listagem`    | aprovação/rejeição, edição de perfil                                                                |
 | Shell estático do formulário de candidatura          | Sim                                                                                     | longo (`'days'`)    | —                          | raramente (deploy)                                                                                  |
 | Dados derivados de sessão (`cookies()`/`headers()`)  | **Nunca**                                                                               | —                   | —                          | —                                                                                                   |
+| Área de conta do titular (`/conta`, 024)             | **Nunca** — lê a sessão e exibe os dados completos do próprio titular                   | —                   | —                          | —                                                                                                     |
+| Revelação de dado sensível (Server Action, 024)      | **Nunca** — único caminho pelo qual texto plano sensível chega ao cliente               | —                   | —                          | —                                                                                                     |
 | Checagem final de saldo dentro da transação de saída | **Nunca** — `SELECT` (ou `FOR UPDATE`) fresco na mesma transação que deduz o estoque    | —                   | —                          | correção > performance: evita corrida entre duas saídas concorrentes                                |
 
 Invalidação: mutações que precisam refletir imediatamente na mesma resposta (ex.: aprovar
@@ -448,6 +450,43 @@ lookups (`habilidade`, `atividade_categoria`), catálogo de itens, kits com rece
 leitores do painel de crise (`projecaoDeCrise`, `historicoDaCrise`, `metricasConfiguradas`).
 As listagens paginadas ficam no `'use cache'` padrão: têm uma chave por página/filtro, e o cache
 remoto consome cota da plataforma por entrada. A invalidação por tag é a mesma nos dois.
+
+### Dado sensível dentro de `'use cache'` (feature 024)
+
+Função cacheada **só trafega a forma mascarada** dos campos sensíveis (`cpf`, `cep`,
+`dataNascimento`). Não é preferência de estilo: `'use cache'` não admite `cookies()` nem `headers()`
+no Next 16, então não há como decidir por role ali — e se houvesse, a entrada de cache de um
+`coordenador` serviria a um `membro_defesa_civil`. A consequência que vale declarar é que **nenhum
+texto plano sensível entra em cache algum**, de servidor ou de navegador.
+
+O valor completo sai por um único caminho: a Server Action de revelação, que lê a sessão fora de
+cache, confere a Matriz de Visibilidade campo a campo e registra em auditoria.
+
+---
+
+## 7.1 Criptografia a nível de campo e anonimização (feature 024)
+
+- **Cifra**: AES-256-GCM pelo `node:crypto` embutido — sem dependência externa. Envelope
+  `v1.<iv>.<ct>.<tag>` em base64url; o prefixo de versão também é a marca de idempotência do script
+  de migração.
+- **Chave**: `DADOS_SENSIVEIS_CHAVE`, base64 de 32 bytes, só em variável de ambiente. A aplicação
+  recusa iniciar sem ela (`instrumentation.ts`, guardado por `NEXT_RUNTIME` porque `node:crypto` não
+  existe no Edge). Três subchaves por HKDF-SHA256, com `info` distinto: cifra, índice cego e marca de
+  redação da auditoria. A mesma chave nunca serve a dois propósitos.
+- **Busca e unicidade de CPF**: coluna `cpf_indice` com `HMAC-SHA256(subchave, cpf)`. Com cifra
+  aleatorizada, um índice sobre `cpf` não detectaria duplicata alguma. O HMAC **com chave** é
+  essencial: um `SHA-256` puro de 11 dígitos cai por força bruta em segundos.
+- **Fronteira**: `infrastructure` é a única camada que conhece o envelope. `application` e `domain`
+  recebem e entregam valores em claro — cifrar é preocupação de persistência (Princípio I).
+- **Auditoria**: `withAudit` redige os campos sensíveis antes de gravar. A marca de redação é um HMAC
+  truncado, não uma constante, para que a trilha continue mostrando *que* o campo mudou sem reproduzir
+  o conteúdo. Ações `read` e `anonimizar` entraram no vocabulário da trilha.
+- **Eliminação a pedido do titular**: **anonimiza no lugar**, nunca apaga.
+  `alocacao.participante_user_id` é cascade e um `DELETE` destruiria o histórico de turnos;
+  `alocacao.alocado_por`, `atividade.criado_por` e as tabelas de estoque não declaram `onDelete`,
+  então o `DELETE` falharia para quem tem histórico operacional.
+- **Exportações** mascaram para **todas** as roles, inclusive `coordenador` e `administrador`: um
+  arquivo com milhares de CPFs em claro é o pior vetor de vazamento que a feature existe para fechar.
 
 ---
 

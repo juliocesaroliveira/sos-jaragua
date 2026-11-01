@@ -118,7 +118,7 @@ const voluntarios = definirRelatorio({
     }),
     colunas: [
         { cabecalho: 'Nome', valor: (l: LinhaVoluntarioRelatorio) => l.nomeCompleto, largura: 30 },
-        { cabecalho: 'CPF', valor: (l) => l.cpf, largura: 14 },
+        { cabecalho: 'CPF', valor: (l) => l.cpf, largura: 14 } /* já mascarado na query (FR-018) */,
         { cabecalho: 'Situação', valor: (l) => ROTULO_STATUS_VOLUNTARIO[l.status], largura: 12 },
         { cabecalho: 'Telefone', valor: (l) => l.telefone, largura: 16 },
         { cabecalho: 'Bairro', valor: (l) => l.bairro, largura: 20 },
@@ -323,7 +323,7 @@ const participacao = definirRelatorio({
     esquemaFiltros: z.object({}),
     colunas: [
         { cabecalho: 'Participante', valor: (l: LinhaParticipacaoComNome) => l.participante, largura: 30 },
-        { cabecalho: 'CPF', valor: (l) => l.cpf, largura: 14 },
+        { cabecalho: 'CPF', valor: (l) => l.cpf, largura: 14 } /* já mascarado na query (FR-018) */,
         { cabecalho: 'Telefone', valor: (l) => l.telefone, largura: 16 },
         { cabecalho: 'Turnos confirmados', valor: (l) => l.turnos, largura: 18 },
         { cabecalho: 'Horas escaladas', valor: (l) => horasDeSegundos(l.segundos), largura: 16 }

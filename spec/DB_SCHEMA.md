@@ -468,3 +468,35 @@ criptografia de campo exigiria.
   necessário (valores literais do BRD).
 - Um usuário `administrador` inicial (bootstrap), criado fora do fluxo de candidatura
   pública, para a primeira configuração do sistema.
+
+---
+
+## Feature 024 — colunas protegidas e anonimização
+
+Alterações aplicadas pelas migrations `0009` e `0010`.
+
+### `voluntario_perfil`
+
+| Coluna | Antes | Depois | Observação |
+| ------ | ----- | ------ | ---------- |
+| `cpf` | `text notNull`, índice único | `text` nulável | Guarda o envelope `v1.…`, não o CPF |
+| `cpf_indice` | — | `text` nulável, **índice único** | `HMAC-SHA256(subchave, cpf)`; sustenta unicidade e busca exata |
+| `data_nascimento` | `date notNull` | `text` nulável | Envelope. Convertida com `USING to_char(..., 'YYYY-MM-DD')` para não depender do `DateStyle` da sessão |
+| `cep` | `text notNull` | `text` nulável | Envelope |
+| `nome_completo`, `telefone`, `bairro`, `profissao` | `text notNull` | `text` nulável | Não cifrados, mas eliminados na anonimização |
+| `anonimizado_em` | — | `timestamptz` nulável | Marca o titular que pediu a eliminação |
+
+O índice `voluntario_perfil_cpf_idx` foi substituído por `voluntario_perfil_cpf_indice_idx`.
+
+### `user`
+
+| Coluna | Antes | Depois | Observação |
+| ------ | ----- | ------ | ---------- |
+| `data_nascimento` | `date` nulável | `text` nulável | Envelope. É a cópia que FR-008 exige proteger junto da de `voluntario_perfil` |
+
+### Nulo significa "titular anonimizado"
+
+Nos campos pessoais, nulo **não** é "cadastro incompleto": a obrigatoriedade continua valendo na
+validação da candidatura, no `domain`. Nulo é o estado de quem pediu a eliminação. A linha permanece
+porque apagá-la faria o `DELETE` falhar para quem tem histórico operacional, ou destruiria o histórico
+de turnos por cascade em `alocacao`.
