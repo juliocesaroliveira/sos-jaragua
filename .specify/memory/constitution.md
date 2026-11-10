@@ -1,19 +1,24 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.0.1 (PATCH)
-- Rationale: troca de pacote dentro da mesma capacidade (planilhas), sem mudança de princípio.
-  Feature 020-resolver-pendencias, decisão Q1 (2026-10-01): `xlsx@0.18.5` tem CVE de
-  severidade alta (prototype pollution / ReDoS) sem versão corrigida publicada no npm; o
-  responsável escolheu `exceljs`, publicado no registro público e mantido. Registrado também em
-  `spec/DESIGN.md` §16 e §19.
+- Version change: 1.0.1 → 1.0.2 (PATCH)
+- Rationale: registro de um provedor de integração na lista da stack, sem mudança de princípio.
+  Feature 024-notificacoes-whatsapp (2026-10-14): o WhatsApp entra como canal de notificação
+  adicional ao e-mail, pela WhatsApp Cloud API oficial da Meta, chamada por HTTP (`fetch`) sem
+  pacote npm novo. O desvio do Princípio VI (serviço externo novo) está justificado em
+  `specs/024-notificacoes-whatsapp/plan.md` (Complexity Tracking) e registrado em
+  `spec/DESIGN.md` §12 e §19.
 - Modified principles: none
 - Modified sections:
-  - Stack e Convenções Técnicas: "**Planilhas**: `xlsx` (SheetJS)" → "**Planilhas**: `exceljs`"
+  - Stack e Convenções Técnicas: acrescentado "**Mensageria**: WhatsApp Cloud API (Meta), via
+    HTTP (`fetch`), sem SDK."
 - Added sections: none
 - Removed sections: none
 - Deferred/TODO placeholders: none
 - Templates requiring follow-up: none — plan/spec/tasks templates read this file at runtime and
-  do not name the spreadsheet library.
+  do not name integration providers.
+
+Previous report (1.0.1, 2026-10-01): `xlsx` (SheetJS) → `exceljs` em Stack e Convenções
+Técnicas (feature 020, decisão Q1: CVE alto sem correção no npm).
 
 Previous report (1.0.0, 2026-08-12): initial ratification — six Core Principles, Stack e
 Convenções Técnicas, Fluxo de Desenvolvimento and Governance added from the placeholder template.
@@ -153,7 +158,8 @@ duramente qualquer complexidade operacional que não seja estritamente necessár
 - **Client-side data**: TanStack Query + Server Actions; TanStack Table com paginação
   obrigatoriamente server-side para listagens.
 - **UI**: Ark UI + Tailwind CSS v4; suporte nativo a Dark/Light; interface 100% pt-BR.
-- **E-mail**: Resend. **Planilhas**: `exceljs`.
+- **E-mail**: Resend. **Planilhas**: `exceljs`. **Mensageria**: WhatsApp Cloud API (Meta), via
+  HTTP (`fetch`), sem SDK.
 - Novas dependências que dupliquem capacidade já coberta pela stack acima (outro ORM, outro
   client de query, outra lib de auth) exigem decisão documentada, não substituição silenciosa.
 
@@ -188,4 +194,4 @@ estilo, ou padrões de PRs anteriores que a contradigam.
   arquivos em `.claude/skills/` e `AGENTS.md` — este documento rege princípios, não mecânica
   de tooling.
 
-**Version**: 1.0.1 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-10-01
+**Version**: 1.0.2 | **Ratified**: 2026-08-12 | **Last Amended**: 2026-10-14

@@ -65,7 +65,17 @@ export type EntradaBroadcast = z.infer<typeof esquemaBroadcast>
  * aproximar do limite de duração de função da Vercel. Mitigado pelos chunks;
  * migrar para fan-out fica para depois do MVP.
  */
-export async function enviarBroadcast(entrada: EntradaBroadcast): Promise<ResultadoAction<{ destinatarios: number }>> {
+export type ResultadoBroadcast = {
+    destinatarios: number
+    /**
+     * Alcance do WhatsApp no momento do disparo (024, FR-024): para quantos a
+     * convocação foi encaminhada e quantos não puderam recebê-la por esse canal.
+     * A entrega de cada um fica no relatório de envio de notificações.
+     */
+    whatsapp: { elegiveis: number; naoAlcancaveis: number }
+}
+
+export async function enviarBroadcast(entrada: EntradaBroadcast): Promise<ResultadoAction<ResultadoBroadcast>> {
     const ator = await obterSessao()
     if (!ator || !ROLES_COORDENACAO.includes(ator.role)) {
         return erroAction('nao_autorizado', 'Somente coordenação pode enviar convocações em massa.')
@@ -79,7 +89,7 @@ export async function enviarBroadcast(entrada: EntradaBroadcast): Promise<Result
         return erroAction('sem_destinatarios', 'Nenhum voluntário aprovado corresponde a este filtro.')
     }
 
-    await notificacaoService.enviarEmLote(
+    const resumo = await notificacaoService.enviarEmLoteComResumo(
         destinatarios.map((userId) => ({
             evento: 'broadcast_urgencia' as const,
             destinatarioUserId: userId,
@@ -89,7 +99,7 @@ export async function enviarBroadcast(entrada: EntradaBroadcast): Promise<Result
         }))
     )
 
-    return { ok: true, valor: { destinatarios: destinatarios.length } }
+    return { ok: true, valor: { destinatarios: destinatarios.length, whatsapp: resumo.whatsapp } }
 }
 
 /** Voluntários aprovados e ativos, opcionalmente filtrados por habilidade. */

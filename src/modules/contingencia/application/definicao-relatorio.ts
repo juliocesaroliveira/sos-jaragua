@@ -42,6 +42,12 @@ export type ConsultaRelatorio<F> = {
     /** Data civil de hoje em Brasília — base de validades e prazos. */
     hoje: string
     agora: Date
+    /**
+     * Papel de quem consulta, para colunas que dependem dele (024, FR-025: o
+     * destino do WhatsApp aparece inteiro só para o administrador). `null`
+     * quando o chamador não informa — e então vale a forma mais restrita.
+     */
+    papel: string | null
 }
 
 export type Janela = { limite: number; deslocamento: number }
@@ -97,7 +103,11 @@ export type ConsultaPreparada = {
 export type RelatorioRegistrado = DescricaoRelatorio & {
     camposFiltro: readonly CampoFiltro[]
     colunas: readonly { cabecalho: string; largura?: number }[]
-    preparar(parametros: Record<string, string | undefined>, agora: Date): Result<ConsultaPreparada, ValidacaoError>
+    preparar(
+        parametros: Record<string, string | undefined>,
+        agora: Date,
+        papel?: string | null
+    ): Result<ConsultaPreparada, ValidacaoError>
     opcoesFiltros(): Promise<Record<string, OpcaoFiltro[]>>
 }
 
@@ -115,7 +125,7 @@ export function registrar<F, L>(definicao: DefinicaoRelatorio<F, L>): RelatorioR
         camposFiltro: definicao.camposFiltro,
         colunas: definicao.colunas.map(({ cabecalho, largura }) => ({ cabecalho, largura })),
 
-        preparar(parametros, agora) {
+        preparar(parametros, agora, papel = null) {
             let periodo: Periodo | null = null
             if (descricao.usaPeriodo) {
                 const resultado = validarPeriodo({ de: parametros.de, ate: parametros.ate }, agora)
@@ -140,7 +150,8 @@ export function registrar<F, L>(definicao: DefinicaoRelatorio<F, L>): RelatorioR
                 periodo,
                 intervalo: periodo ? intervaloUtc(periodo) : null,
                 hoje: hojeEmSaoPaulo(agora),
-                agora
+                agora,
+                papel
             }
 
             return ok({

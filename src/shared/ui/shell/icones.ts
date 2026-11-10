@@ -1,4 +1,5 @@
 import {
+    BellRing,
     Boxes,
     CalendarCheck,
     CalendarPlus,
@@ -44,5 +45,6 @@ export const ICONES: Readonly<Record<NomeIcone, LucideIcon>> = {
     Trash2,
     Megaphone,
     FileSpreadsheet,
-    Wrench
+    Wrench,
+    BellRing
 }

@@ -104,15 +104,18 @@ describe('INV-03 — todo destino existe', () => {
 describe('INV-04 — matriz de visibilidade por perfil', () => {
     /** Fonte: specs/002-role-based-app-shell/data-model.md. */
     const MATRIZ: Record<Role, string[]> = {
-        usuario: ['/', '/voluntariado/candidatura'],
+        // `/conta/notificacoes` (024) é visível a todos os perfis.
+        usuario: ['/', '/voluntariado/candidatura', '/conta/notificacoes'],
         voluntario: [
             '/',
             '/voluntariado/candidatura',
+            '/conta/notificacoes',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         membro_defesa_civil: [
             '/',
+            '/conta/notificacoes',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -128,6 +131,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         ],
         coordenador: [
             '/',
+            '/conta/notificacoes',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -144,6 +148,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         ],
         administrador: [
             '/',
+            '/conta/notificacoes',
             '/admin',
             '/dashboard',
             '/cadastros-pendentes',

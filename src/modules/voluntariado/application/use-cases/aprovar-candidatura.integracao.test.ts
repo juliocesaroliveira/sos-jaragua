@@ -27,6 +27,10 @@ const notificacoesFake: NotificacaoService = {
     },
     async enviarEmLote(ns) {
         notificacoesEnviadas.push(...ns)
+    },
+    async enviarEmLoteComResumo(ns) {
+        notificacoesEnviadas.push(...ns)
+        return { whatsapp: { elegiveis: 0, naoAlcancaveis: 0 } }
     }
 }
 

@@ -225,10 +225,14 @@ entrada explícita em nenhum mapa. Responsabilidades:
 
 4. Para roles `membro_defesa_civil`/`coordenador`, atualiza `session.lastActivityAt` a cada
    requisição autenticada (§6.3).
-5. `config.matcher` exclui `/api/auth/*`, `/api/notificacoes`, assets estáticos e **requisições
-   de prefetch** (`missing: next-router-prefetch / purpose=prefetch`) — prefetch não é atividade
-   do usuário, e o render que ele pede passa pela checagem autoritativa dos layouts. Não exclui
-   nenhuma navegação real; a landing (`/`) exige sessão junto com o restante da aplicação.
+5. `config.matcher` exclui `/api/auth/*`, `/api/notificacoes`, `/api/webhooks/*`, assets
+   estáticos e **requisições de prefetch** (`missing: next-router-prefetch / purpose=prefetch`)
+   — prefetch não é atividade do usuário, e o render que ele pede passa pela checagem
+   autoritativa dos layouts. Não exclui nenhuma navegação real; a landing (`/`) exige sessão
+   junto com o restante da aplicação. `/api/webhooks/*` (feature 024) recebe chamadas de
+   serviços externos, que não têm sessão: o proxy as redirecionaria para `/login`. Cada
+   webhook se autentica pela **assinatura** do provedor (HMAC), e recusa tudo quando o segredo
+   não está configurado.
 6. **Mantém o cookie cache de sessão vivo** (§6.2.1).
 
 Um usuário já autenticado que acessa `/login` diretamente é redirecionado para a área padrão
@@ -581,9 +585,40 @@ condicional que possa ser esquecido em um novo relatório).
 
 ## 12. Sistema de Notificações
 
-- Interface `NotificacaoService` (em `application/ports`) com dois adapters em
-  `infrastructure`: e-mail (Resend) e in-plataforma (grava em `notificacao`). **Sem push
-  real no MVP** — decisão confirmada; lembretes/alertas são e-mail + sino in-app.
+- Interface `NotificacaoService` (em `application/ports`) com três adapters em
+  `infrastructure`: in-plataforma (grava em `notificacao`), e-mail (Resend) e WhatsApp (Cloud
+  API da Meta, feature 024). **Sem push do navegador** — decisão confirmada; quem está com o
+  sistema fechado é alcançado por e-mail e, com opt-in, por WhatsApp.
+- **WhatsApp** (`specs/024-notificacoes-whatsapp`): canal **adicional** aos que cada evento já
+  usa, nunca substituto. Cobre `triagem_concluida`, `atividade_atribuida`,
+  `alteracao_atividade`, `broadcast_urgencia` e `lembrete_turno`; os alertas da gestão ficam só
+  na plataforma.
+    - **Integração**: WhatsApp Cloud API (Graph API) por `fetch`, sem SDK. Mensagens iniciadas
+      pelo sistema usam **modelos Utility aprovados pela Meta**, um por evento (texto fixo +
+      título e mensagem da notificação como variáveis). Variáveis sem quebra de linha; a
+      mensagem é limitada a 700 caracteres — acima disso o WhatsApp leva uma versão encurtada
+      com aviso prévio ao coordenador, e e-mail/sino levam o texto inteiro.
+    - **Consentimento**: opt-in explícito, desligado para todos por padrão
+      (`preferencia_whatsapp`; ausência de linha = desligado), com histórico append-only em
+      `consentimento_whatsapp`. Ativado na candidatura (caixa desmarcada) ou em Minha conta →
+      Notificações (`/conta/notificacoes`); revogado ali ou respondendo "SAIR".
+    - **Envio**: dentro de `enviarEmLote`, depois do sino e do e-mail. A elegibilidade (usuário
+      ativo + opt-in + celular) é resolvida na hora e grava **uma** linha `notificacao_envio`
+      por notificação no canal `whatsapp` (`pendente` ou `nao_enviado` com motivo), sob índice
+      único `(notificacao_id, canal)` — o que impede envio duplo. A chamada HTTP à Meta roda em `after()`, com
+      concorrência 10, para não atrasar a ação que notificou. Sem credenciais, tudo vira
+      `nao_enviado`/`nao_configurado` e o sistema segue como antes.
+    - **Webhook** `POST /api/webhooks/whatsapp`: público, autenticado pela assinatura
+      `X-Hub-Signature-256` (HMAC-SHA256 do corpo bruto com o app secret). Atualiza a situação
+      do envio sem nunca regredir (`pendente → enviado → entregue → lido`, ou `falhou`) e trata
+      respostas: palavra de descadastro revoga o opt-in; qualquer outra mensagem recebe uma
+      resposta automática, no máximo uma por número a cada 24h. Ler no WhatsApp **não** marca
+      a notificação como lida no sino.
+    - **Telefone**: lido de `voluntario_perfil.telefone` pelo port `ContatosWhatsapp`,
+      implementado no Voluntariado. Só celular (11 dígitos com 9) é elegível; respostas
+      recebidas casam também a forma sem o 9º dígito, que a Meta usa para contas antigas.
+    - **Limites da Meta**: portfólio novo começa em 250 destinatários únicos por 24h. Recusas
+      por limite ficam como `falhou`/`limite_envio`, sem retentativa automática.
 - Catálogo de eventos espelha 1:1 a matriz de comunicação do BRD §6: `triagem_concluida`,
   `atividade_atribuida`, `alteracao_atividade`, `lembrete_turno`, `broadcast_urgencia`,
   `cadastros_acumulados`, `estoque_critico`, `deficit_atendimento`, `inscricao_turno`
@@ -712,6 +747,12 @@ agrupados em Estoque, Voluntariado, Crise, Comunicação e Auditoria.
 | `FACEBOOK_CLIENT_ID` / `FACEBOOK_CLIENT_SECRET` | Login social Facebook                                                                                                            |
 | `RESEND_API_KEY`                                | Envio de e-mail transacional                                                                                                     |
 | `RESEND_FROM`                                   | Remetente dos e-mails transacionais (domínio verificado no Resend)                                                               |
+| `WHATSAPP_ACCESS_TOKEN`                         | Token permanente de usuário do sistema da Meta (envio pela Cloud API). Ausente = canal não configurado                           |
+| `WHATSAPP_PHONE_NUMBER_ID`                      | ID do número de envio na Cloud API. Ausente = canal não configurado                                                              |
+| `WHATSAPP_APP_SECRET`                           | Segredo do app Meta; valida `X-Hub-Signature-256` do webhook. Ausente = webhook recusa tudo                                      |
+| `WHATSAPP_VERIFY_TOKEN`                         | Token do handshake `GET` do webhook                                                                                              |
+| `WHATSAPP_GRAPH_VERSION`                        | Versão da Graph API (ex.: `v23.0`)                                                                                               |
+| `WHATSAPP_TEMPLATE_LANG`                        | Idioma dos modelos (default `pt_BR`)                                                                                             |
 | `CRON_SECRET`                                   | Autenticação do Vercel Cron nas rotas `/api/cron/*`                                                                              |
 | `STAFF_INACTIVITY_TIMEOUT_MINUTES`              | Timeout de inatividade para Coordenador/Membro (default sugerido: 15)                                                            |
 | `ALERTA_CADASTROS_PENDENTES`                    | Nº de candidaturas pendentes que dispara `cadastros_acumulados` (default 10). **Provisório até confirmação da Defesa Civil**     |
@@ -744,10 +785,11 @@ com o usuário, sem pendências para a implementação:
 | Login social                             | Google + Facebook no MVP; Instagram adiado para v2                                                                                                                                                                                                                                                                    |
 | Modelo de estoque                        | Ledger de movimentos + saldo materializado (não rastreamento por lote/FEFO)                                                                                                                                                                                                                                           |
 | "Destinação (Kit)" na Entrada            | Apenas informativo, sem reserva rígida de saldo                                                                                                                                                                                                                                                                       |
-| Notificações push                        | Somente in-app + e-mail no MVP (sem Web Push/VAPID)                                                                                                                                                                                                                                                                   |
+| Notificações push                        | Somente in-app + e-mail + WhatsApp com opt-in (feature 024); sem Web Push/VAPID                                                                                                                                                                                                                                       |
 | Falha na escrita de auditoria            | Degrada graciosamente (operação original prossegue)                                                                                                                                                                                                                                                                   |
 | Categoria de Atividade / Habilidade      | Tabelas lookup livres e extensíveis (sem enum fixo)                                                                                                                                                                                                                                                                   |
 | Provedor de e-mail                       | Resend                                                                                                                                                                                                                                                                                                                |
+| Provedor de WhatsApp                     | WhatsApp Cloud API (Meta), oficial, via `fetch` sem SDK; modelos Utility por evento (feature 024). Descartados: BSP intermediário e bibliotecas não oficiais de WhatsApp Web                                                                                                                                          |
 | Biblioteca XLSX                          | `exceljs` (2026-10-01, feature 020 Q1: `xlsx@0.18.5` tem CVE alto sem correção no npm)                                                                                                                                                                                                                                |
 | Reenvio de candidatura rejeitada         | Permitido, reaproveitando a mesma linha                                                                                                                                                                                                                                                                               |
 | Timeout de inatividade (staff)           | Mecanismo customizado `lastActivityAt`, escopado a Coordenador/Membro Defesa Civil                                                                                                                                                                                                                                    |

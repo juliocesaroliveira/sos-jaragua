@@ -17,6 +17,33 @@ Para desenvolver com a auditoria funcionando, use uma das opções:
   com os três hosts do shard explícitos (`mongodb://host1,host2,host3/?replicaSet=...&tls=true`),
   copiada em _Connect → Drivers_ no painel do Atlas escolhendo uma versão antiga do driver.
 
+### Notificações pelo WhatsApp
+
+O WhatsApp é um canal opcional, somado ao sino e ao e-mail (`specs/024-notificacoes-whatsapp`).
+Sem as variáveis abaixo o canal fica "não configurado": o sistema funciona normalmente e os
+envios aparecem como _Não enviado — WhatsApp não configurado no sistema_ no relatório de envio
+de notificações.
+
+| Variável                   | Onde obter                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| `WHATSAPP_ACCESS_TOKEN`    | Token permanente de um usuário do sistema no Business Manager da Meta           |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp Manager → API Setup (ID do número de envio)                            |
+| `WHATSAPP_APP_SECRET`      | App da Meta → Configurações → Básico (valida a assinatura do webhook)           |
+| `WHATSAPP_VERIFY_TOKEN`    | Texto livre, o mesmo informado ao cadastrar o webhook                           |
+| `WHATSAPP_GRAPH_VERSION`   | Versão da Graph API (ex.: `v23.0`)                                              |
+| `WHATSAPP_TEMPLATE_LANG`   | Idioma em que os modelos foram aprovados (padrão `pt_BR`)                       |
+
+Antes de ativar em produção:
+
+1. Aprovar na Meta os 5 modelos de mensagem (categoria _Utility_) descritos em
+   `specs/024-notificacoes-whatsapp/contracts/modelos-whatsapp.md`. O nome de cada modelo é a
+   chave usada pelo código.
+2. Cadastrar o webhook `https://<domínio>/api/webhooks/whatsapp` com o `WHATSAPP_VERIFY_TOKEN`
+   e assinar o campo `messages` — é por ele que chegam as confirmações de entrega e os pedidos de
+   descadastro ("SAIR").
+
+O roteiro de validação ponta a ponta está em `specs/024-notificacoes-whatsapp/quickstart.md`.
+
 ## Example app using MongoDB
 
 [MongoDB](https://www.mongodb.com/) is a general purpose, document-based, distributed database built for modern application developers and for the cloud era. This example will show you how to connect to and use MongoDB as your backend for your Next.js app.
