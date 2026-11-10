@@ -6,6 +6,7 @@ import { CACHE_TAGS, PERFIL_REVALIDACAO } from '@/src/shared/cache'
 import { erroAction, serializar, type ResultadoAction } from '@/src/shared/kernel'
 import { comAtorDaSessao, obterSessao } from '@/src/shared/auth/sessao'
 import { agendarAlertaDeCadastros } from '@/src/modules/notificacoes/presentation/alertas'
+import { consentimentoWhatsapp } from '@/src/modules/notificacoes/infrastructure/consentimento-whatsapp'
 import { unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from '../../application/use-cases/submeter-candidatura'
 import { DISPONIBILIDADES, TIPOS_VEICULO } from '../../domain/candidatura'
@@ -36,7 +37,9 @@ const esquema = z.object({
     veiculoProprio: z.boolean(),
     tipoVeiculo: z.enum(TIPOS_VEICULO).optional().nullable(),
     disponibilidade: z.array(z.enum(DISPONIBILIDADES)),
-    habilidadeIds: z.array(z.uuid())
+    habilidadeIds: z.array(z.uuid()),
+    /** Opt-in do WhatsApp (024, FR-012) — desmarcado por padrão. */
+    aceitaWhatsapp: z.boolean().default(false)
 })
 
 export type EntradaFormularioCandidatura = z.infer<typeof esquema>
@@ -52,11 +55,13 @@ export async function submeterCandidatura(
     const parse = esquema.safeParse(entrada)
     if (!parse.success) return erroAction('validacao', 'Revise os campos do formulário.')
 
-    const useCase = new SubmeterCandidaturaUseCase(unidadeDeTrabalho)
+    const { aceitaWhatsapp, ...dados } = parse.data
+    const useCase = new SubmeterCandidaturaUseCase(unidadeDeTrabalho, consentimentoWhatsapp)
     const resultado = await comAtorDaSessao(ator, () =>
         useCase.executar({
             userId: ator.userId,
-            dados: { ...parse.data, dataNascimento: parse.data.dataNascimento ?? '' },
+            dados: { ...dados, dataNascimento: dados.dataNascimento ?? '' },
+            aceitaWhatsapp,
             // Da **sessão**, nunca do corpo do POST: é o que impede que um
             // campo desabilitado adulterado no navegador mude a data de
             // nascimento de uma conta (FR-017).

@@ -10,7 +10,7 @@ import { AnonimizarTitularUseCase } from '../../application/use-cases/anonimizar
 import { RevelarDadoSensivelUseCase } from '../../application/use-cases/revelar-dado-sensivel'
 
 /**
- * Server Actions dos dados sensíveis de voluntário (feature 024).
+ * Server Actions dos dados sensíveis de voluntário (feature 025).
  *
  * Camada fina, como o Princípio I exige: parse com Zod, leitura da sessão,
  * chamada a **um** caso de uso. Nenhuma regra de autorização aqui — a Matriz de

@@ -1,6 +1,6 @@
 # Tasks: Criptografia, Mascaramento e Exclusão de Dados Sensíveis (LGPD)
 
-**Input**: Design documents from `/specs/024-criptografia-dados-sensiveis/`
+**Input**: Design documents from `/specs/025-criptografia-dados-sensiveis/`
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
 
@@ -334,6 +334,17 @@ revertê-las silenciosamente seria pior que registrá-las.
    alteração silenciosa de um CPF é necessidade legítima de auditoria. A redação usa um HMAC truncado
    com `subchaveRedacao()`, separada da subchave do índice cego para que uma marca de auditoria não
    possa ser correlacionada com o `cpf_indice` do banco.
+
+5. **Integração com o canal WhatsApp (feature 024-notificacoes-whatsapp, desenvolvida em paralelo).**
+   No merge com `develop`, a eliminação não alcançava o telefone que o canal WhatsApp grava. Agora
+   `anonimizarConta` (`src/modules/identidade/infrastructure/drizzle/usuario-repository.ts`) apaga
+   `preferencia_whatsapp` e as linhas de `whatsapp_resposta_automatica` dos números conhecidos do
+   titular, e anula `consentimento_whatsapp.telefone`. A evidência de consentimento (quem, quando,
+   ação, origem) é mantida, mesma lógica da exceção da trilha de auditoria. `notificacao_envio.destino`
+   já saía por cascade de `notificacao`. Coberto por
+   `usuario-repository.integracao.test.ts`. A feature foi renumerada de 024 para 025 para não colidir
+   com a do WhatsApp. As migrations viraram `0010_wooden_gorilla_man` e `0011_busy_sleeper`, depois
+   da `0009_closed_toro`.
 
 ## Tarefas que não puderam ser concluídas nesta sessão
 

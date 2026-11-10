@@ -5,7 +5,7 @@ import { ValorIlegivelError } from './erros'
 
 /**
  * Criptografia a nível de campo dos dados sensíveis de voluntário
- * (feature 024 — `cpf`, `cep`, `dataNascimento`).
+ * (feature 025 — `cpf`, `cep`, `dataNascimento`).
  *
  * AES-256-GCM pelo `node:crypto` embutido: nenhuma dependência nova, o que
  * atende ao Princípio VI. GCM é AEAD — detecta adulteração do ciphertext, e é

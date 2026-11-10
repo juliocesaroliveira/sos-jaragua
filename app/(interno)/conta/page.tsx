@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 }
 
 /**
- * Área de conta do titular (feature 024, US4) — LGPD art. 18, II e VI.
+ * Área de conta do titular (feature 025, US4) — LGPD art. 18, II e VI.
  *
  * Fica **fora de `(staff)`** de propósito: qualquer pessoa autenticada acessa a
  * sua, e o gate de `(interno)/layout.tsx` já exige sessão válida. Rotas ausentes

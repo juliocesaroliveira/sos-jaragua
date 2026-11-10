@@ -3,7 +3,7 @@ import { subchaveRedacao } from '@/src/shared/cripto/chave'
 
 /**
  * Redação dos campos sensíveis antes de a trilha ser gravada
- * (feature 024, FR-026).
+ * (feature 025, FR-026).
  *
  * **O problema que isto resolve**: `withAudit` grava o snapshot *inteiro* do
  * registro alterado. Sem redigir, a trilha imutável no Mongo seria uma segunda

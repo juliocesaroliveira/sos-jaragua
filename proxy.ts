@@ -161,7 +161,7 @@ async function registrarAtividade(token: string, cabecalhos: Headers): Promise<s
 
 export const config = {
     matcher: [
-        // Tudo, exceto o handler do better-auth, a leitura periódica do sino,
+        // Tudo, exceto o handler do better-auth, a leitura periódica do sino, os webhooks,
         // assets estáticos e arquivos de metadata (DESIGN.md §6.2, item 4). A
         // única rota de navegação isenta de sessão é `/login` (`ehRotaPublica`,
         // checado no corpo).
@@ -174,6 +174,13 @@ export const config = {
         // que o Princípio IV declara não contornável. A rota faz sua própria
         // checagem autoritativa com `resolverSessao()`, que também devolve o
         // cookie cache renovado ao navegador.
+        //
+        // `api/webhooks` (024-notificacoes-whatsapp) recebe chamadas de serviços
+        // externos — hoje a Meta, com confirmações de entrega e respostas do
+        // WhatsApp. Eles não têm sessão: o proxy as redirecionaria para `/login`
+        // e a Meta veria o webhook como quebrado. Cada webhook se autentica pela
+        // **assinatura** do provedor (HMAC do corpo) e recusa tudo quando o
+        // segredo não está configurado.
         //
         // `webmanifest` entra na mesma classe de `favicon.ico`/`robots.txt`:
         // metadata pública, sem dado de sessão. Sem a isenção, o navegador
@@ -188,7 +195,7 @@ export const config = {
         // rápido: o render que ele pede passa pela checagem autoritativa dos
         // layouts e páginas, e a navegação real passa pelo proxy normalmente.
         {
-            source: '/((?!api/auth|api/notificacoes|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|webmanifest)$).*)',
+            source: '/((?!api/auth|api/notificacoes|api/webhooks|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|webmanifest)$).*)',
             missing: [
                 { type: 'header', key: 'next-router-prefetch' },
                 { type: 'header', key: 'purpose', value: 'prefetch' }

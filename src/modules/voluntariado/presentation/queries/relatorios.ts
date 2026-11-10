@@ -64,7 +64,7 @@ export type LinhaVoluntarioRelatorio = {
     id: string
     nomeCompleto: string
     /**
-     * **Sempre mascarado** (feature 024, FR-012 e FR-018).
+     * **Sempre mascarado** (feature 025, FR-012 e FR-018).
      *
      * Relatório alimenta tela e planilha com o mesmo dado. Um arquivo exportado
      * com milhares de CPFs em claro é o pior vetor de vazamento que esta feature

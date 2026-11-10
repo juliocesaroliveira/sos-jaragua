@@ -5,7 +5,7 @@ import type { Role } from '@/src/shared/auth/roles'
 import type { VoluntarioRepository } from '../ports/voluntario-repository'
 
 /**
- * Revelação do valor completo de um campo sensível (feature 024, FR-015 a
+ * Revelação do valor completo de um campo sensível (feature 025, FR-015 a
  * FR-017).
  *
  * É o **único** caminho pelo qual dado sensível em texto plano chega ao cliente.

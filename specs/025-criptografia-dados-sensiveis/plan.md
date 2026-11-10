@@ -2,7 +2,7 @@
 
 **Branch**: `ccr-2279b88f-ml8sxo` | **Date**: 2026-10-31 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/024-criptografia-dados-sensiveis/spec.md`
+**Input**: Feature specification from `/specs/025-criptografia-dados-sensiveis/spec.md`
 
 ## Summary
 
@@ -94,7 +94,7 @@ autenticação e um bump ali exige validar os fluxos de login — não cabe nest
 ### Documentation (this feature)
 
 ```text
-specs/024-criptografia-dados-sensiveis/
+specs/025-criptografia-dados-sensiveis/
 ├── spec.md              # Especificação (4 histórias, 31 FRs, 13 SCs)
 ├── plan.md              # Este arquivo
 ├── research.md          # Fase 0 — 12 decisões técnicas

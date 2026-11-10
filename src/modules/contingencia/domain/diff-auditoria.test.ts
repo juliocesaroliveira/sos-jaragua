@@ -92,7 +92,7 @@ describe('resumoAlteracoes', () => {
     })
 })
 
-describe('ações introduzidas pela feature 024', () => {
+describe('ações introduzidas pela feature 025', () => {
     it('revelação (read) não produz diff — não houve alteração de estado', () => {
         expect(diferencaAuditoria('read', null, null)).toEqual([])
         expect(diferencaAuditoria('read', { cpf: 'x' }, { cpf: 'x' })).toEqual([])

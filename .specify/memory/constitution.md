@@ -1,8 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.1 → 1.1.0 (MINOR)
+- Version change: 1.0.2 → 1.1.0 (MINOR)
 - Rationale: expansão material de dois princípios existentes, sem remover princípio nem renomear
-  seção. Motivada pela feature 024-criptografia-dados-sensiveis (conformidade com a LGPD).
+  seção. Motivada pela feature 025-criptografia-dados-sensiveis (conformidade com a LGPD).
 
   Sobre o bump ser MINOR e não MAJOR — a chamada é discutível e fica registrada:
   o Princípio IV dizia "não introduzir criptografia a nível de campo **sem decisão
@@ -31,6 +31,13 @@ Sync Impact Report
 - Removed sections: none
 - Deferred/TODO placeholders: none
 - Templates requiring follow-up: none — plan/spec/tasks templates leem este arquivo em runtime.
+
+Previous report (1.0.2, 2026-10-14): registro de provedor de integração na stack, sem mudança
+de princípio. Feature 024-notificacoes-whatsapp: o WhatsApp entra como canal de notificação
+adicional ao e-mail, pela WhatsApp Cloud API oficial da Meta, via HTTP (`fetch`) sem pacote npm
+novo; desvio do Princípio VI justificado em `specs/024-notificacoes-whatsapp/plan.md` (Complexity
+Tracking) e registrado em `spec/DESIGN.md` §12 e §19. Seção "Stack e Convenções Técnicas"
+acrescida de "**Mensageria**".
 
 Previous report (1.0.1, 2026-10-01): troca de `xlsx` por `exceljs` por CVE de severidade alta
 sem correção publicada (feature 020, decisão Q1).
@@ -139,7 +146,7 @@ uma única checagem.
   identificar a pessoa.
 - **Gap conhecido e aceito**: `restricoesSaude` e `telefone` permanecem fora do conjunto
   criptografado, por decisão do responsável registrada em
-  `specs/024-criptografia-dados-sensiveis/spec.md` (Q1). Fica registrado que a LGPD classifica
+  `specs/025-criptografia-dados-sensiveis/spec.md` (Q1). Fica registrado que a LGPD classifica
   dado referente à saúde como dado pessoal **sensível** (art. 5º, II) — categoria mais estrita
   que `cpf` e `cep`, que são dados pessoais comuns. Incluí-los exige nova decisão explícita,
   não ajuste incidental durante outra tarefa.
@@ -173,7 +180,7 @@ auditoria (`withAudit`) — nunca chamadas de log ad-hoc espalhadas pelas Server
 - A trilha NÃO registra o **valor** de campo sensível: `withAudit` redige esses campos antes
   de gravar, de modo que a auditoria não seja uma segunda cópia legível do que o Postgres
   cifra. A trilha diz que o campo mudou, e qual campo foi revelado — nunca o conteúdo.
-- **Exceção única à imutabilidade**: os snapshots gravados antes da feature 024 contêm `cpf`,
+- **Exceção única à imutabilidade**: os snapshots gravados antes da feature 025 contêm `cpf`,
   `cep` e `dataNascimento` em texto plano, porque `withAudit` grava o registro inteiro. Uma
   remediação **única**, executada junto da migração de proteção e registrada como evento
   próprio, redige esses campos. Essa é a ÚNICA alteração admitida em registro já gravado;
@@ -222,7 +229,8 @@ duramente qualquer complexidade operacional que não seja estritamente necessár
 - **Client-side data**: TanStack Query + Server Actions; TanStack Table com paginação
   obrigatoriamente server-side para listagens.
 - **UI**: Ark UI + Tailwind CSS v4; suporte nativo a Dark/Light; interface 100% pt-BR.
-- **E-mail**: Resend. **Planilhas**: `exceljs`.
+- **E-mail**: Resend. **Planilhas**: `exceljs`. **Mensageria**: WhatsApp Cloud API (Meta), via
+  HTTP (`fetch`), sem SDK.
 - **Criptografia de campo**: `node:crypto` embutido — AES-256-GCM para os valores, HKDF-SHA256
   para derivar subchaves de propósito distinto e HMAC-SHA256 para o índice cego que sustenta
   unicidade e busca exata de CPF. Nenhuma dependência externa de cripto.

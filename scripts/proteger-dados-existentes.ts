@@ -5,7 +5,7 @@ import { voluntarioPerfil } from '@/db/schema/voluntariado'
 import { cifrar, ehEnvelope, indiceCego, validarChave } from '@/src/shared/cripto'
 
 /**
- * Migração de dados da feature 024 (FR-007): protege os cadastros gravados antes
+ * Migração de dados da feature 025 (FR-007): protege os cadastros gravados antes
  * da criptografia a nível de campo.
  *
  * Rode **depois** da migration de estrutura (`0009`), que converteu

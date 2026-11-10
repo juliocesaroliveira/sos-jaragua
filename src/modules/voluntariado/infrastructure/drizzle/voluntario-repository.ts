@@ -16,7 +16,7 @@ import type {
  * aqui — vem de `identidade`, o módulo dono da tabela `user`
  * (006-user-management-page, research.md D6).
  *
- * **Fronteira da criptografia** (feature 024): esta camada é a única que conhece
+ * **Fronteira da criptografia** (feature 025): esta camada é a única que conhece
  * o envelope. A `application` e o `domain` continuam recebendo e entregando
  * `cpf`, `cep` e `dataNascimento` em claro — cifrar é uma preocupação de
  * persistência, e o Princípio I manda que ela não atravesse para dentro.

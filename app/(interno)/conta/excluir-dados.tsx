@@ -9,7 +9,7 @@ import { Dialog } from '@/src/shared/ui/dialog/dialog'
 import { excluirMeusDados } from '@/src/modules/voluntariado/presentation/actions/dados-sensiveis'
 
 /**
- * Eliminação dos próprios dados (feature 024, FR-020 e FR-021) — LGPD art. 18,
+ * Eliminação dos próprios dados (feature 025, FR-020 e FR-021) — LGPD art. 18,
  * VI.
  *
  * A confirmação **informa o impacto em números** antes de qualquer coisa

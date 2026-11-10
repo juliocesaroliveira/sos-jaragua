@@ -36,7 +36,7 @@ export type CandidaturaPendente = {
     nomeCompleto: string
     email: string
     /**
-     * Campos sensíveis chegam **sempre mascarados** (feature 024, FR-012).
+     * Campos sensíveis chegam **sempre mascarados** (feature 025, FR-012).
      *
      * Esta função é `'use cache'`, e `'use cache'` não admite `cookies()` nem
      * `headers()` no Next 16 — logo não há como decidir por role aqui, e se

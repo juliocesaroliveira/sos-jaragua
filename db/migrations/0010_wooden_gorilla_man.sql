@@ -1,4 +1,4 @@
--- Feature 024 — proteção dos dados sensíveis (ETAPA 1 de 2: estrutura).
+-- Feature 025 — proteção dos dados sensíveis (ETAPA 1 de 2: estrutura).
 --
 -- Depois desta migration, rode o script de dados ANTES de considerar a feature
 -- aplicada:   npx tsx --env-file=.env.local scripts/proteger-dados-existentes.ts

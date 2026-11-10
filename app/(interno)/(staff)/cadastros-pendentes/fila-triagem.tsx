@@ -182,7 +182,7 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                         <Campo rotulo="E-mail" valor={detalhe.email} />
                         {/*
                             Os três campos sensíveis chegam mascarados da query e são
-                            revelados sob demanda (feature 024, FR-012 e FR-016). A
+                            revelados sob demanda (feature 025, FR-012 e FR-016). A
                             autorização real está no caso de uso, no servidor: o botão
                             aparecer não concede acesso.
                         */}

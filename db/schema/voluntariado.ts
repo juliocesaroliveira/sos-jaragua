@@ -50,7 +50,7 @@ export const atividadeCategoria = pgTable('atividade_categoria', {
 /**
  * Perfil de voluntário.
  *
- * **Os campos pessoais são nuláveis** (feature 024, FR-022): a eliminação a
+ * **Os campos pessoais são nuláveis** (feature 025, FR-022): a eliminação a
  * pedido do titular os esvazia e marca `anonimizadoEm`, mantendo a linha. Apagar
  * a linha não é opção — as FKs de `alocacao`, `atividade` e estoque fariam o
  * `DELETE` falhar para quem tem histórico operacional ou destruiriam o histórico
@@ -68,7 +68,7 @@ export const voluntarioPerfil = pgTable(
             .references(() => user.id, { onDelete: 'cascade' }),
         nomeCompleto: text(),
         /**
-         * **Protegida** (feature 024, FR-001): guarda o envelope `v1.<iv>.<ct>.<tag>`,
+         * **Protegida** (feature 025, FR-001): guarda o envelope `v1.<iv>.<ct>.<tag>`,
          * não a data civil. `text` e não `date` porque o valor armazenado é
          * ciphertext; o domínio continua operando sobre `'YYYY-MM-DD'`, que é o
          * que a cripto recebe e devolve (research.md D6).
@@ -124,7 +124,7 @@ export const voluntarioPerfil = pgTable(
         // CPF único: um documento por voluntário; também é a chave de
         // reaproveitamento da linha no reenvio de candidatura (BR-VOL-01).
         //
-        // O índice migrou de `cpf` para `cpfIndice` com a feature 024: com a cifra
+        // O índice migrou de `cpf` para `cpfIndice` com a feature 025: com a cifra
         // aleatorizada, um índice sobre `cpf` não detectaria duplicata alguma.
         uniqueIndex('voluntario_perfil_cpf_indice_idx').on(t.cpfIndice),
         // Fila de Cadastros Pendentes (DB_SCHEMA.md §12)

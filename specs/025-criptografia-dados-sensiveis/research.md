@@ -1,6 +1,6 @@
 # Phase 0 — Research: Criptografia, Mascaramento e Exclusão de Dados Sensíveis
 
-**Feature**: `024-criptografia-dados-sensiveis` | **Data**: 2026-10-31
+**Feature**: `025-criptografia-dados-sensiveis` | **Data**: 2026-10-31
 
 Todas as decisões abaixo foram tomadas contra o código real do repositório e a documentação do Next
 instalado (`node_modules/next/dist/docs/`), conforme exige `AGENTS.md`. As docs foram lidas na

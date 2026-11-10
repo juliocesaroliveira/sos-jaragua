@@ -1,6 +1,6 @@
 # Phase 1 — Data Model: Criptografia, Mascaramento e Exclusão
 
-**Feature**: `024-criptografia-dados-sensiveis` | **Data**: 2026-10-31
+**Feature**: `025-criptografia-dados-sensiveis` | **Data**: 2026-10-31
 
 ## 1. Mudanças de schema
 

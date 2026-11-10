@@ -2,7 +2,7 @@ import { hkdfSync } from 'node:crypto'
 
 /**
  * Chave mestra da criptografia a nível de campo (Princípio IV da Constituição,
- * feature 024 / research.md D1 e D3).
+ * feature 025 / research.md D1 e D3).
  *
  * A chave vive **exclusivamente** em variável de ambiente: nunca no banco, nunca
  * versionada. É o que torna o conteúdo do Postgres inútil para quem obteve um

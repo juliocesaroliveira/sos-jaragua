@@ -7,7 +7,7 @@ import type { CampoSensivel as Campo } from '@/src/shared/mascara/campos-sensive
 import { cn } from '../cn'
 
 /**
- * Exibição de um dado sensível de voluntário (feature 024, FR-010 a FR-016).
+ * Exibição de um dado sensível de voluntário (feature 025, FR-010 a FR-016).
  *
  * Renderiza os **três estados** que a query entrega, e é por eles serem
  * distintos na tela que a operação não confunde "não deu para ler" com "campo

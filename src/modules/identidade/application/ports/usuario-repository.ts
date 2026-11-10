@@ -80,7 +80,7 @@ export interface UsuarioRepository {
     possuiSenhaPropria(userId: string): Promise<boolean>
 
     /**
-     * Anonimiza a conta a pedido do titular (feature 024, FR-022 a FR-028).
+     * Anonimiza a conta a pedido do titular (feature 025, FR-022 a FR-028).
      *
      * Sobrescreve nome, e-mail e data de nascimento, desativa a conta e remove
      * sessões e vínculos de login. A **linha permanece**: apagá-la faria o

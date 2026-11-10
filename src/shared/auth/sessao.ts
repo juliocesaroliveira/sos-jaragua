@@ -34,7 +34,7 @@ export type SessaoAtor = {
 /**
  * Normaliza a data de nascimento vinda da sessão.
  *
- * **Decifra quando necessário** (feature 024, FR-008): `user.data_nascimento`
+ * **Decifra quando necessário** (feature 025, FR-008): `user.data_nascimento`
  * passou a guardar o envelope `v1.…`, e o better-auth seleciona essa coluna pelo
  * próprio adapter — sem passar pelos repositórios do projeto. Sem decifrar aqui,
  * a sessão carregaria o ciphertext e o formulário de candidatura o exibiria ao

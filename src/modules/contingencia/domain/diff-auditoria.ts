@@ -16,7 +16,7 @@
  * ação lá, acrescente aqui — o `tsc` acusa a divergência no ponto de chamada
  * (`contingencia/application/definicoes/auditoria.ts`).
  *
- * `read` e `anonimizar` entraram com a feature 024.
+ * `read` e `anonimizar` entraram com a feature 025.
  */
 export type AcaoAuditoria = 'create' | 'update' | 'delete' | 'read' | 'anonimizar'
 
@@ -36,7 +36,7 @@ export function diferencaAuditoria(acao: AcaoAuditoria, antes: Snapshot, depois:
     if (acao === 'delete') return campos(antes).map(([campo, valor]) => removido(campo, valor))
 
     // Uma revelação de dado sensível não altera estado: registra quem leu qual
-    // campo, sem "antes" e "depois" para comparar (feature 024, FR-017). Cair no
+    // campo, sem "antes" e "depois" para comparar (feature 025, FR-017). Cair no
     // caminho de `update` daria o mesmo resultado hoje, mas deixaria implícito
     // algo que é uma propriedade do evento, não um acidente dos snapshots.
     if (acao === 'read') return []

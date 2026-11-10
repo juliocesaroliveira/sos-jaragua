@@ -4,7 +4,7 @@ import { redigirCamposSensiveis } from '@/src/modules/auditoria/redacao'
 import { validarChave } from '@/src/shared/cripto'
 
 /**
- * Remediação **única** da trilha de auditoria (feature 024, FR-027).
+ * Remediação **única** da trilha de auditoria (feature 025, FR-027).
  *
  *     npx tsx --env-file=.env.local scripts/remediar-auditoria.ts
  *
@@ -65,14 +65,14 @@ async function principal(): Promise<void> {
     await colecao.insertOne({
         timestamp: new Date(),
         entidade: 'Voluntario',
-        entidadeId: 'remediacao-lgpd-024',
+        entidadeId: 'remediacao-lgpd-025',
         acao: 'update',
         userId: 'sistema',
         userRole: 'sistema',
         tabela: NOME_COLECAO,
         dadosAnteriores: null,
         dadosNovos: {
-            motivo: 'Remediação única da trilha (feature 024, FR-027): campos sensíveis redigidos.',
+            motivo: 'Remediação única da trilha (feature 025, FR-027): campos sensíveis redigidos.',
             tabelasAfetadas: TABELAS_AFETADAS,
             examinados,
             remediados

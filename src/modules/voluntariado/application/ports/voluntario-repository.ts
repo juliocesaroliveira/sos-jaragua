@@ -43,7 +43,7 @@ export interface VoluntarioRepository {
 
     /**
      * Valores sensíveis **em claro** de um perfil, para o caminho de revelação
-     * (feature 024, FR-016).
+     * (feature 025, FR-016).
      *
      * Devolve em claro porque decifrar é responsabilidade de `infrastructure`; a
      * autorização — quem pode ver qual campo — é decidida no caso de uso, contra

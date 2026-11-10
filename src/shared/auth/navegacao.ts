@@ -122,6 +122,17 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         atalho: { descricao: 'Veja seus dados cadastrados e gerencie a exclusão deles.' }
     },
     {
+        href: '/conta/notificacoes',
+        rotulo: 'Notificações',
+        icone: 'BellRing',
+        grupo: 'pessoal',
+        // Sem regra em REGRAS_DE_ROTA: só sessão. Visível a todos os papéis
+        // porque há equipe com perfil de voluntário que recebe convocação e
+        // precisa poder ativar o WhatsApp (024); quem não tem perfil vê o
+        // estado "disponível depois do cadastro".
+        roles: [...ROLES]
+    },
+    {
         href: '/voluntariado/atividades-abertas',
         rotulo: 'Atividades abertas',
         icone: 'CalendarPlus',

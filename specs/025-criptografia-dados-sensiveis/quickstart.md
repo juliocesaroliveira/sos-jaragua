@@ -1,6 +1,6 @@
 # Quickstart — Validação de ponta a ponta
 
-**Feature**: `024-criptografia-dados-sensiveis` | **Data**: 2026-10-31
+**Feature**: `025-criptografia-dados-sensiveis` | **Data**: 2026-10-31
 
 Roteiro para provar que a feature funciona. Não contém implementação — apenas o que rodar e o que
 esperar. Detalhes de schema estão em [data-model.md](./data-model.md); de interface, em

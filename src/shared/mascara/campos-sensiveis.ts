@@ -3,7 +3,7 @@ import { mascararCep, mascararCpf, mascararData } from './index'
 
 /**
  * Fonte **única** de verdade sobre quais campos são sensíveis, como cada um é
- * mascarado e quem pode ver seu valor completo (feature 024, decisões Q1 e Q2).
+ * mascarado e quem pode ver seu valor completo (feature 025, decisões Q1 e Q2).
  *
  * Existe um módulo só para isso porque três consumidores precisam concordar:
  * a apresentação (FR-012), a exportação de relatórios (FR-018) e a redação da

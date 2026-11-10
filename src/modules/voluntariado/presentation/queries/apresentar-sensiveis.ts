@@ -5,7 +5,7 @@ import { MASCARA_DO_CAMPO, type CampoSensivel } from '@/src/shared/mascara/campo
 
 /**
  * Converte os campos sensíveis de uma linha do banco na forma de apresentação
- * mascarada (feature 024, FR-012).
+ * mascarada (feature 025, FR-012).
  *
  * É daqui que vem a propriedade estrutural que FR-012 pede: uma tela nova que
  * consuma a query recebe o mascarado **por construção**, sem precisar saber que
@@ -77,7 +77,7 @@ export const CAMPO_ANONIMIZADO = '—'
 
 /**
  * Nome do voluntário para exibição, ou o rótulo de titular anônimo
- * (feature 024, FR-022 e INV-06).
+ * (feature 025, FR-022 e INV-06).
  *
  * Fica nas queries, e não nas telas, de propósito: é o que permite os tipos
  * públicos continuarem `string` e as dezenas de superfícies existentes seguirem

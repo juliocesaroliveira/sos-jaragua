@@ -104,22 +104,25 @@ describe('INV-03 — todo destino existe', () => {
 describe('INV-04 — matriz de visibilidade por perfil', () => {
     /**
      * Fonte: specs/002-role-based-app-shell/data-model.md, mais `/conta`
-     * (specs/024-criptografia-dados-sensiveis) — disponível a **todas** as roles,
+     * (specs/025-criptografia-dados-sensiveis) — disponível a **todas** as roles,
      * porque o direito de acesso aos próprios dados e o de pedir a eliminação
      * (LGPD art. 18, II e VI) não dependem do papel da pessoa.
      */
     const MATRIZ: Record<Role, string[]> = {
-        usuario: ['/', '/conta', '/voluntariado/candidatura'],
+        // `/conta/notificacoes` (024) é visível a todos os perfis.
+        usuario: ['/', '/conta', '/voluntariado/candidatura', '/conta/notificacoes'],
         voluntario: [
             '/',
             '/conta',
             '/voluntariado/candidatura',
+            '/conta/notificacoes',
             '/voluntariado/atividades-abertas',
             '/voluntariado/minhas-atividades'
         ],
         membro_defesa_civil: [
             '/',
             '/conta',
+            '/conta/notificacoes',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -136,6 +139,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         coordenador: [
             '/',
             '/conta',
+            '/conta/notificacoes',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',
@@ -153,6 +157,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
         administrador: [
             '/',
             '/conta',
+            '/conta/notificacoes',
             '/admin',
             '/dashboard',
             '/cadastros-pendentes',

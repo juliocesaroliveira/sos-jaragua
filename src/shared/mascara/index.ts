@@ -1,5 +1,5 @@
 /**
- * Máscaras dos dados sensíveis (feature 024, FR-010 e FR-011).
+ * Máscaras dos dados sensíveis (feature 025, FR-010 e FR-011).
  *
  * Funções **puras**: sem I/O e sem import de Next, Drizzle ou Mongo. Ficam
  * separadas da cripto de propósito — concentram regra, então o Princípio III

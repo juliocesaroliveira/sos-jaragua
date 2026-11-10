@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UsuarioRepository } from '@/src/modules/identidade/application/ports/usuario-repository'
 import type { PerfilVoluntario, UnidadeDeTrabalho, VoluntarioRepository } from '../ports/voluntario-repository'
+import type { ConsentimentoWhatsappPort } from '@/src/modules/notificacoes/application/ports/consentimento-whatsapp'
 import { SubmeterCandidaturaUseCase } from './submeter-candidatura'
 import type { DadosCandidatura } from '../../domain/candidatura'
 import { randomBytes } from 'node:crypto'
@@ -201,7 +202,7 @@ describe('SubmeterCandidaturaUseCase — regras preservadas', () => {
 })
 
 /**
- * Regressão de FR-006 (feature 024).
+ * Regressão de FR-006 (feature 025).
  *
  * O teste de maioridade acima usa repositórios falsos, então não passa pela
  * criptografia — e isso é correto por desenho: cifrar é preocupação de
@@ -235,5 +236,74 @@ describe('maioridade sobre o valor decifrado (FR-006)', () => {
         const hoje = new Date('2026-11-01T00:00:00Z')
         const maior = decifrar(cifrar('1990-03-15'))
         expect(ehMaiorDeIdade(maior, hoje)).toBe(true)
+    })
+})
+
+describe('SubmeterCandidaturaUseCase — opt-in do WhatsApp (024, FR-012)', () => {
+    beforeEach(() => vi.clearAllMocks())
+
+    function consentimentoFalso() {
+        return { registrar: vi.fn<ConsentimentoWhatsappPort['registrar']>(async () => {}) }
+    }
+
+    it('caixa marcada e candidatura aceita registram a concessão com origem cadastro', async () => {
+        const { uow } = montarCenario()
+        const consentimento = consentimentoFalso()
+
+        const resultado = await new SubmeterCandidaturaUseCase(uow, consentimento).executar({
+            userId: USER_ID,
+            dados: DADOS,
+            dataNascimentoDaConta: null,
+            aceitaWhatsapp: true
+        })
+
+        expect(resultado.ok).toBe(true)
+        expect(consentimento.registrar).toHaveBeenCalledWith(USER_ID, true, 'cadastro')
+    })
+
+    it('caixa desmarcada não registra nada — e nunca revoga um opt-in existente', async () => {
+        const { uow } = montarCenario()
+        const consentimento = consentimentoFalso()
+
+        await new SubmeterCandidaturaUseCase(uow, consentimento).executar({
+            userId: USER_ID,
+            dados: DADOS,
+            dataNascimentoDaConta: null,
+            aceitaWhatsapp: false
+        })
+
+        expect(consentimento.registrar).not.toHaveBeenCalled()
+    })
+
+    it('candidatura recusada pela validação não registra a concessão', async () => {
+        const { uow } = montarCenario()
+        const consentimento = consentimentoFalso()
+
+        const resultado = await new SubmeterCandidaturaUseCase(uow, consentimento).executar({
+            userId: USER_ID,
+            dados: { ...DADOS, cpf: '111' },
+            dataNascimentoDaConta: null,
+            aceitaWhatsapp: true
+        })
+
+        expect(resultado.ok).toBe(false)
+        expect(consentimento.registrar).not.toHaveBeenCalled()
+    })
+
+    it('falha ao registrar o opt-in não derruba a candidatura', async () => {
+        const { uow } = montarCenario()
+        const consentimento = { registrar: vi.fn(async () => Promise.reject(new Error('banco fora'))) }
+        const erro = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const resultado = await new SubmeterCandidaturaUseCase(uow, consentimento).executar({
+            userId: USER_ID,
+            dados: DADOS,
+            dataNascimentoDaConta: null,
+            aceitaWhatsapp: true
+        })
+
+        expect(resultado.ok).toBe(true)
+        expect(erro).toHaveBeenCalled()
+        erro.mockRestore()
     })
 })

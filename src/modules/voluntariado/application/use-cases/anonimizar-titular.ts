@@ -3,7 +3,7 @@ import type { Role } from '@/src/shared/auth/roles'
 import type { ImpactoExclusao, UnidadeDeTrabalho, VoluntarioRepository } from '../ports/voluntario-repository'
 
 /**
- * Eliminação dos próprios dados a pedido do titular (feature 024, FR-020 a
+ * Eliminação dos próprios dados a pedido do titular (feature 025, FR-020 a
  * FR-030) — LGPD art. 18, VI.
  *
  * **Anonimiza no lugar, nunca apaga.** A análise das chaves estrangeiras

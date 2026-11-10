@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { randomInt, randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
 import { db } from '@/src/shared/db/postgres'
@@ -9,7 +9,7 @@ import type { CandidaturaValidada } from '../../domain/candidatura'
 import { criarVoluntarioRepository } from './voluntario-repository'
 
 /**
- * Feature 024 — proteção dos dados sensíveis contra o Neon real.
+ * Feature 025 — proteção dos dados sensíveis contra o Neon real.
  *
  * O que só um teste de integração pega: que o valor **armazenado** é ciphertext
  * (um mock de repositório não provaria), que o índice único de `cpf_indice`
@@ -27,8 +27,8 @@ afterEach(async () => {
 })
 
 async function criarConta(): Promise<string> {
-    const id = `teste-024-${randomUUID()}`
-    await db.insert(user).values({ id, name: 'Teste 024', email: `${id}@exemplo.test`, role: 'usuario' })
+    const id = `teste-025-${randomUUID()}`
+    await db.insert(user).values({ id, name: 'Teste 025', email: `${id}@exemplo.test`, role: 'usuario' })
     criados.userIds.push(id)
     return id
 }
@@ -116,7 +116,10 @@ describe('unicidade e busca por CPF (FR-005, SC-007)', () => {
     })
 
     it('não encontra CPF inexistente', async () => {
-        expect(await criarVoluntarioRepository().buscarPorCpf('52998224725')).toBeNull()
+        // Aleatório: o banco de testes é compartilhado e um CPF fixo pode existir
+        // de verdade nele (o `52998224725` usado antes existia).
+        const inexistente = String(randomInt(10 ** 10, 10 ** 11 - 1))
+        expect(await criarVoluntarioRepository().buscarPorCpf(inexistente)).toBeNull()
     })
 
     it('o índice único barra dois cadastros com o mesmo CPF (INV-01)', async () => {

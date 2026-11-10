@@ -8,7 +8,7 @@ import type { ImpactoExclusao } from '../../application/ports/voluntario-reposit
 import { criarVoluntarioRepository } from '../../infrastructure/drizzle/voluntario-repository'
 
 /**
- * Leituras da área de conta do titular (feature 024, US4).
+ * Leituras da área de conta do titular (feature 025, US4).
  *
  * **Nunca cacheadas**: dependem de quem está autenticado, e `DESIGN.md` §7
  * proíbe cachear dado derivado de sessão. É também o que permite apresentar os

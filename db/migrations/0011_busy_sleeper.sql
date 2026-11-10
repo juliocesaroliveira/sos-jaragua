@@ -1,4 +1,4 @@
--- Feature 024 — ETAPA 2: nulabilidade para a anonimização a pedido do titular.
+-- Feature 025 — ETAPA 2: nulabilidade para a anonimização a pedido do titular.
 --
 -- Os campos pessoais passam a aceitar nulo porque a eliminação (FR-022) os
 -- esvazia e marca `anonimizado_em`, mantendo a linha. Nulo aqui significa

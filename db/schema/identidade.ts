@@ -43,7 +43,7 @@ export const user = pgTable(
          * A conta nasce com o campo nulo e ele é gravado no primeiro envio de
          * candidatura, via `UsuarioRepository.definirDataNascimentoSeAusente`.
          *
-         * **Protegida** (feature 024, FR-008): guarda o envelope
+         * **Protegida** (feature 025, FR-008): guarda o envelope
          * `v1.<iv>.<ct>.<tag>`, não a data civil.
          *
          * Era `date`. Virou `text` porque o valor armazenado é ciphertext — e

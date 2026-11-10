@@ -44,7 +44,7 @@ export const ROTULO_ACAO_AUDITADA: Record<AcaoAuditada, string> = {
     create: 'Criação',
     update: 'Alteração',
     delete: 'Exclusão',
-    // Feature 024: revelação de dado sensível e eliminação a pedido do titular.
+    // Feature 025: revelação de dado sensível e eliminação a pedido do titular.
     read: 'Revelação de dado sensível',
     anonimizar: 'Anonimização a pedido do titular'
 }

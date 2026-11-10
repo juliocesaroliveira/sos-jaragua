@@ -71,7 +71,7 @@ export async function withAudit<TResultado>(
             userId: identificacao.userId,
             userRole: identificacao.role,
             tabela: opcoes.tabela,
-            // Redigido aqui, no único ponto de passagem da trilha (feature 024,
+            // Redigido aqui, no único ponto de passagem da trilha (feature 025,
             // FR-026). Fica neste lugar pelo mesmo motivo que a auditoria toda
             // passa por `withAudit`: um caso de uso novo não pode depender de
             // alguém lembrar de redigir. Sem isso, a trilha imutável seria uma

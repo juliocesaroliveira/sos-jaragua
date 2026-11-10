@@ -171,7 +171,9 @@ describe('R-16 Envio de notificações', () => {
                 canal: 'email',
                 status: 'falhou',
                 destinatarioUserId: 'u-1',
-                erro: 'Caixa inexistente'
+                erro: 'Caixa inexistente',
+                motivo: null,
+                destino: null
             }
         ])
         notificacoes.totaisEnviosNotificacoes.mockResolvedValue([
@@ -190,6 +192,8 @@ describe('R-16 Envio de notificações', () => {
             'E-mail',
             'Falhou',
             'Maria Souza',
+            null,
+            null,
             'Caixa inexistente'
         ])
         expect(resultado.resumo).toEqual([
@@ -198,6 +202,65 @@ describe('R-16 Envio de notificações', () => {
             { rotulo: 'Plataforma — enviado', valor: 10 },
             { rotulo: 'Falhas — Lembrete de turno', valor: 1 }
         ])
+    })
+
+    describe('canal WhatsApp (024)', () => {
+        function envioWhatsapp() {
+            notificacoes.contarEnviosNotificacoes.mockResolvedValue(1)
+            notificacoes.enviosNotificacoesRelatorio.mockResolvedValue([
+                {
+                    id: 'w1',
+                    criadoEm: new Date('2026-10-05T15:00:00Z'),
+                    tipo: 'broadcast_urgencia',
+                    canal: 'whatsapp',
+                    status: 'falhou',
+                    destinatarioUserId: 'u-1',
+                    erro: '131026: Message undeliverable',
+                    motivo: 'numero_sem_whatsapp',
+                    destino: '5547999998888'
+                }
+            ])
+            notificacoes.totaisEnviosNotificacoes.mockResolvedValue([
+                { tipo: 'broadcast_urgencia', canal: 'whatsapp', status: 'nao_enviado', total: 3 },
+                { tipo: 'broadcast_urgencia', canal: 'whatsapp', status: 'lido', total: 2 }
+            ])
+        }
+
+        it('rotula canal, situação e motivo, e mascara o destino para quem não é administrador (FR-025)', async () => {
+            envioWhatsapp()
+            const resultado = await uc.pagina('notificacoes', {}, AGORA, 'membro_defesa_civil')
+            if (!resultado.ok) throw new Error(resultado.erro.message)
+
+            expect(resultado.valor.rows[0].celulas).toEqual([
+                '05/10/2026, 12:00',
+                'Convocação urgente',
+                'WhatsApp',
+                'Falhou',
+                'Maria Souza',
+                '(47) 9****-8888',
+                'Número sem WhatsApp',
+                '131026: Message undeliverable'
+            ])
+            expect(resultado.valor.resumo).toEqual(
+                expect.arrayContaining([
+                    { rotulo: 'WhatsApp — lido', valor: 2 },
+                    { rotulo: 'WhatsApp — não enviado', valor: 3 }
+                ])
+            )
+        })
+
+        it('mostra o número inteiro ao administrador', async () => {
+            envioWhatsapp()
+            const resultado = await uc.pagina('notificacoes', {}, AGORA, 'administrador')
+            if (!resultado.ok) throw new Error(resultado.erro.message)
+
+            expect(resultado.valor.rows[0].celulas[5]).toBe('+5547999998888')
+        })
+
+        it('sem papel informado, vale a forma mascarada', async () => {
+            envioWhatsapp()
+            expect((await pagina('notificacoes')).rows[0].celulas[5]).toBe('(47) 9****-8888')
+        })
     })
 
     it('"Todas" tira o filtro de situação da lista', async () => {

@@ -1,5 +1,5 @@
 /**
- * Validação de configuração no boot (feature 024, FR-003).
+ * Validação de configuração no boot (feature 025, FR-003).
  *
  * A doc do Next instalado (`01-app/03-api-reference/03-file-conventions/
  * instrumentation.md`) garante que `register` é chamado **uma vez** por

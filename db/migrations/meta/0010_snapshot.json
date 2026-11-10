@@ -1,6 +1,6 @@
 {
-  "id": "074fcb94-bc78-4077-93b3-00570d7aaba4",
-  "prevId": "e75c0cbd-e9ac-4ca7-b3d3-6f3f7fd1bd96",
+  "id": "e75c0cbd-e9ac-4ca7-b3d3-6f3f7fd1bd96",
+  "prevId": "5cd59f32-7d7a-4cfa-a7fe-e9f01b671b6d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1015,19 +1015,19 @@
           "name": "nome_completo",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "data_nascimento": {
           "name": "data_nascimento",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "cpf": {
           "name": "cpf",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "cpf_indice": {
           "name": "cpf_indice",
@@ -1039,25 +1039,25 @@
           "name": "telefone",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "cep": {
           "name": "cep",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "bairro": {
           "name": "bairro",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "profissao": {
           "name": "profissao",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "restricoes_saude": {
           "name": "restricoes_saude",
@@ -2065,6 +2065,95 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.consentimento_whatsapp": {
+      "name": "consentimento_whatsapp",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acao": {
+          "name": "acao",
+          "type": "acao_consentimento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origem": {
+          "name": "origem",
+          "type": "origem_consentimento",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefone": {
+          "name": "telefone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "criado_em": {
+          "name": "criado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "consentimento_whatsapp_user_criado_idx": {
+          "name": "consentimento_whatsapp_user_criado_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "criado_em",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "consentimento_whatsapp_user_id_user_id_fk": {
+          "name": "consentimento_whatsapp_user_id_user_id_fk",
+          "tableFrom": "consentimento_whatsapp",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.notificacao": {
       "name": "notificacao",
       "schema": "",
@@ -2245,20 +2334,67 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "motivo_nao_entrega",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "destino": {
+          "name": "destino",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_externo": {
+          "name": "id_externo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
-        "notificacao_envio_notificacao_idx": {
-          "name": "notificacao_envio_notificacao_idx",
+        "notificacao_envio_notificacao_canal_unico": {
+          "name": "notificacao_envio_notificacao_canal_unico",
           "columns": [
             {
               "expression": "notificacao_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "canal",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notificacao_envio_id_externo_idx": {
+          "name": "notificacao_envio_id_externo_idx",
+          "columns": [
+            {
+              "expression": "id_externo",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"notificacao_envio\".\"id_externo\" is not null",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -2279,6 +2415,77 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.preferencia_whatsapp": {
+      "name": "preferencia_whatsapp",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ativo": {
+          "name": "ativo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "atualizado_em": {
+          "name": "atualizado_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "preferencia_whatsapp_user_id_user_id_fk": {
+          "name": "preferencia_whatsapp_user_id_user_id_fk",
+          "tableFrom": "preferencia_whatsapp",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.whatsapp_resposta_automatica": {
+      "name": "whatsapp_resposta_automatica",
+      "schema": "",
+      "columns": {
+        "telefone": {
+          "name": "telefone",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ultima_em": {
+          "name": "ultima_em",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2403,12 +2610,44 @@
         "por_pessoa_desabrigada"
       ]
     },
+    "public.acao_consentimento": {
+      "name": "acao_consentimento",
+      "schema": "public",
+      "values": [
+        "concedido",
+        "revogado"
+      ]
+    },
     "public.canal_envio": {
       "name": "canal_envio",
       "schema": "public",
       "values": [
         "email",
-        "plataforma"
+        "plataforma",
+        "whatsapp"
+      ]
+    },
+    "public.motivo_nao_entrega": {
+      "name": "motivo_nao_entrega",
+      "schema": "public",
+      "values": [
+        "canal_desativado",
+        "sem_celular",
+        "usuario_inativo",
+        "nao_configurado",
+        "numero_sem_whatsapp",
+        "limite_envio",
+        "modelo_indisponivel",
+        "falha"
+      ]
+    },
+    "public.origem_consentimento": {
+      "name": "origem_consentimento",
+      "schema": "public",
+      "values": [
+        "cadastro",
+        "perfil",
+        "resposta_whatsapp"
       ]
     },
     "public.status_envio": {
@@ -2417,7 +2656,10 @@
       "values": [
         "pendente",
         "enviado",
-        "falhou"
+        "falhou",
+        "entregue",
+        "lido",
+        "nao_enviado"
       ]
     },
     "public.tipo_notificacao": {

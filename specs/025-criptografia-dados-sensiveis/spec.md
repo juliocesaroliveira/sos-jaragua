@@ -1,6 +1,6 @@
 # Feature Specification: Criptografia, Mascaramento e Exclusão de Dados Sensíveis (LGPD)
 
-**Feature Branch**: `024-criptografia-dados-sensiveis`
+**Feature Branch**: `025-criptografia-dados-sensiveis`
 
 **Created**: 2026-10-31
 

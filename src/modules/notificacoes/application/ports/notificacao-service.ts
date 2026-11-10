@@ -16,7 +16,7 @@ export const EVENTOS_NOTIFICACAO = [
 
 export type EventoNotificacao = (typeof EVENTOS_NOTIFICACAO)[number]
 
-export type CanalNotificacao = 'email' | 'plataforma'
+export type CanalNotificacao = 'email' | 'plataforma' | 'whatsapp'
 
 export type Notificacao = {
     evento: EventoNotificacao
@@ -42,4 +42,14 @@ export interface NotificacaoService {
     enviar(notificacao: Notificacao): Promise<void>
     /** Envio em lote (broadcast de urgência) — processado em chunks. */
     enviarEmLote(notificacoes: Notificacao[]): Promise<void>
+    /**
+     * Mesmo que `enviarEmLote`, devolvendo o alcance do WhatsApp (024, FR-024):
+     * quantos tiveram a mensagem encaminhada ao canal e quantos não puderam
+     * recebê-la por ele. A entrega em si só se confirma depois, pelo webhook.
+     */
+    enviarEmLoteComResumo(notificacoes: Notificacao[]): Promise<ResumoEnvio>
+}
+
+export type ResumoEnvio = {
+    whatsapp: { elegiveis: number; naoAlcancaveis: number }
 }

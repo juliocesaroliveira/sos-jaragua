@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 import { connection } from 'next/server'
 import { Suspense } from 'react'
 import { camposComErro } from '@/src/shared/kernel'
-import { exigirAcessoA } from '@/src/shared/auth/sessao'
+import { exigirAcessoA, obterSessao } from '@/src/shared/auth/sessao'
 import { normalizarPaginacao } from '@/src/shared/paginacao/esquema'
 import { chaveRelatorio } from '@/src/shared/query'
 import { estadoHidratado } from '@/src/shared/query/hidratacao'
@@ -91,9 +91,16 @@ async function Conteudo({
     const paginacao = normalizarPaginacao(parametros)
     const agora = new Date()
 
+    // Memoizado por request: a página já leu a sessão no gate de acesso.
+    const ator = await obterSessao()
     const [opcoes, resultado] = await Promise.all([
         relatorio.opcoesFiltros(),
-        new GerarRelatorioUseCase(obterRelatorio).pagina(relatorio.slug, { ...filtros, ...paginacao }, agora)
+        new GerarRelatorioUseCase(obterRelatorio).pagina(
+            relatorio.slug,
+            { ...filtros, ...paginacao },
+            agora,
+            ator?.role ?? null
+        )
     ])
 
     // O formulário mostra o período efetivo — inclusive o padrão de 30 dias
