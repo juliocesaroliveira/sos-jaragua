@@ -91,3 +91,15 @@ describe('resumoAlteracoes', () => {
         expect(resumoAlteracoes([])).toBe('')
     })
 })
+
+describe('ações introduzidas pela feature 025', () => {
+    it('revelação (read) não produz diff — não houve alteração de estado', () => {
+        expect(diferencaAuditoria('read', null, null)).toEqual([])
+        expect(diferencaAuditoria('read', { cpf: 'x' }, { cpf: 'x' })).toEqual([])
+    })
+
+    it('anonimização produz diff como uma alteração', () => {
+        const d = diferencaAuditoria('anonimizar', { nomeCompleto: 'Ana' }, { nomeCompleto: null })
+        expect(d).toEqual([{ campo: 'nomeCompleto', antes: 'Ana', depois: null, tipo: 'removido' }])
+    })
+})

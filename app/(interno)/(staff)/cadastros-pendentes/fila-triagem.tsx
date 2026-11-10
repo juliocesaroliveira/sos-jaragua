@@ -15,6 +15,9 @@ import { formatarCep, formatarCpf, formatarTelefone } from '@/src/modules/identi
 import { ROTULO_DISPONIBILIDADE, ROTULO_TIPO_VEICULO } from '@/src/modules/voluntariado/domain/candidatura'
 import type { CandidaturaPendente } from '@/src/modules/voluntariado/presentation/queries/candidaturas'
 import { aprovarCandidatura, rejeitarCandidatura } from '@/src/modules/voluntariado/presentation/actions/triagem'
+import type { ReactNode } from 'react'
+import { CampoSensivel } from '@/src/shared/ui/campo-sensivel/campo-sensivel'
+import { revelarDadoSensivel } from '@/src/modules/voluntariado/presentation/actions/dados-sensiveis'
 
 /**
  * Fila de Cadastros Pendentes (BR-VOL-01/02, VOL-04).
@@ -177,10 +180,48 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
                 {detalhe && (
                     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
                         <Campo rotulo="E-mail" valor={detalhe.email} />
-                        <Campo rotulo="CPF" valor={formatarCpf(detalhe.cpf)} />
-                        <Campo rotulo="Data de nascimento" valor={formatarData(detalhe.dataNascimento)} />
+                        {/*
+                            Os três campos sensíveis chegam mascarados da query e são
+                            revelados sob demanda (feature 025, FR-012 e FR-016). A
+                            autorização real está no caso de uso, no servidor: o botão
+                            aparecer não concede acesso.
+                        */}
+                        <Campo
+                            rotulo="CPF"
+                            valor={
+                                <CampoSensivel
+                                    apresentacao={detalhe.cpf}
+                                    campo="cpf"
+                                    formatar={formatarCpf}
+                                    onRevelar={() => revelarDadoSensivel({ perfilId: detalhe.id, campo: 'cpf' })}
+                                />
+                            }
+                        />
+                        <Campo
+                            rotulo="Data de nascimento"
+                            valor={
+                                <CampoSensivel
+                                    apresentacao={detalhe.dataNascimento}
+                                    campo="dataNascimento"
+                                    formatar={formatarData}
+                                    onRevelar={() =>
+                                        revelarDadoSensivel({ perfilId: detalhe.id, campo: 'dataNascimento' })
+                                    }
+                                />
+                            }
+                        />
                         <Campo rotulo="Telefone (WhatsApp)" valor={formatarTelefone(detalhe.telefone)} />
-                        <Campo rotulo="CEP" valor={formatarCep(detalhe.cep)} />
+                        <Campo
+                            rotulo="CEP"
+                            valor={
+                                <CampoSensivel
+                                    apresentacao={detalhe.cep}
+                                    campo="cep"
+                                    formatar={formatarCep}
+                                    onRevelar={() => revelarDadoSensivel({ perfilId: detalhe.id, campo: 'cep' })}
+                                />
+                            }
+                        />
                         <Campo rotulo="Bairro" valor={detalhe.bairro} />
                         <Campo rotulo="Profissão / formação" valor={detalhe.profissao} />
                         <Campo
@@ -256,7 +297,7 @@ export function FilaTriagem({ candidaturas }: { candidaturas: CandidaturaPendent
     )
 }
 
-function Campo({ rotulo, valor }: { rotulo: string; valor: string }) {
+function Campo({ rotulo, valor }: { rotulo: string; valor: ReactNode }) {
     return (
         <div className="flex flex-col">
             <dt className="text-xs font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">

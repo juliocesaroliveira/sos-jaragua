@@ -14,6 +14,8 @@ import {
 } from '@/db/schema/voluntariado'
 import { intervaloUtc } from '@/src/modules/contingencia/domain/periodo'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
+import { cifrar } from '@/src/shared/cripto'
+import { mascararCpf } from '@/src/shared/mascara'
 import {
     capacidadeRelatorio,
     contarOcupacaoTurnos,
@@ -89,14 +91,16 @@ async function criarVoluntario(dados: {
     aprovadoEm?: string | null
 }) {
     const userId = await criarUsuario(dados.nome)
+    // CPF único por teste — o índice é único e o banco é compartilhado.
+    const cpf = String(randomInt(10 ** 10, 10 ** 11 - 1))
     const [perfil] = await db
         .insert(voluntarioPerfil)
         .values({
             userId,
             nomeCompleto: dados.nome,
             dataNascimento: '1990-01-01',
-            // CPF único por teste — o índice é único e o banco é compartilhado.
-            cpf: String(randomInt(10 ** 10, 10 ** 11 - 1)),
+            // Gravado cifrado, como a aplicação grava desde a feature 025.
+            cpf: cifrar(cpf),
             telefone: '47999990000',
             cep: '89250000',
             bairro: dados.bairro,
@@ -116,7 +120,7 @@ async function criarVoluntario(dados: {
             .insert(voluntarioHabilidade)
             .values(dados.habilidades.map((habilidadeId) => ({ voluntarioPerfilId: perfil.id, habilidadeId })))
     }
-    return { userId, perfil }
+    return { userId, perfil, cpf }
 }
 
 async function criarAtividade(titulo: string) {
@@ -153,7 +157,7 @@ async function alocar(
 }
 
 describe('voluntariosRelatorio (R-09)', () => {
-    it('traz CPF e restrições completos, habilidades agregadas, e filtra por status, bairro, habilidade, veículo e disponibilidade', async () => {
+    it('traz CPF mascarado e restrições completas, habilidades agregadas, e filtra por status, bairro, habilidade, veículo e disponibilidade', async () => {
         const bairro = `Bairro ${sufixo()}`
         const barco = await criarHabilidade('Embarcação')
         const socorro = await criarHabilidade('Primeiros socorros')
@@ -168,8 +172,10 @@ describe('voluntariosRelatorio (R-09)', () => {
 
         const todos = await voluntariosRelatorio({ bairro }, TUDO)
         expect(todos.map((l) => l.nomeCompleto)).toEqual(['Ana', 'Bruno'])
+        // Relatório mascara o CPF para todas as roles (feature 025, FR-012 e FR-018).
+        expect(todos[0].cpf).not.toContain(ana.cpf)
         expect(todos[0]).toMatchObject({
-            cpf: ana.perfil.cpf,
+            cpf: mascararCpf(ana.cpf),
             restricoesSaude: 'Alergia a dipirona',
             habilidades: [barco.nome, socorro.nome].sort().join(', '),
             tipoVeiculo: 'barco',

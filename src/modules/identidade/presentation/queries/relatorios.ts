@@ -1,6 +1,6 @@
 import 'server-only'
-import { asc, inArray } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { inArray } from 'drizzle-orm'
+import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 
 /**
@@ -35,6 +35,6 @@ export async function opcoesUsuarios(): Promise<{ valor: string; rotulo: string 
     const linhas = await db
         .select({ id: user.id, nome: user.name, email: user.email })
         .from(user)
-        .orderBy(asc(user.name))
+        .orderBy(ordemAlfabetica(user.name))
     return linhas.map((l) => ({ valor: l.id, rotulo: `${l.nome} (${l.email})` }))
 }

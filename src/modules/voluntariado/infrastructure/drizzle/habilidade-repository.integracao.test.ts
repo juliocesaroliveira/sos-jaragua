@@ -94,12 +94,14 @@ describe('INV-01 — unicidade insensível a caixa (SC-004)', () => {
         const vencedoras = resultados.filter((r) => r.status === 'fulfilled')
         const recusadas = resultados.filter((r) => r.status === 'rejected')
 
+        // Registra para limpeza ANTES das asserções: se uma delas falhar, a
+        // vencedora não pode ficar órfã no banco compartilhado.
+        for (const v of vencedoras) habilidadesCriadas.push((v as PromiseFulfilledResult<{ id: string }>).value.id)
+
         expect(vencedoras).toHaveLength(1)
         expect(recusadas).toHaveLength(1)
         // O erro chega traduzido, não como erro bruto do driver.
         expect((recusadas[0] as PromiseRejectedResult).reason).toBeInstanceOf(DuplicadoError)
-
-        habilidadesCriadas.push((vencedoras[0] as PromiseFulfilledResult<{ id: string }>).value.id)
     })
 
     it('permite renomear para o próprio nome com outra caixa', async () => {

@@ -7,6 +7,7 @@ import { podeAcessar } from './rotas'
 import { auth } from './auth'
 import { expirouPorInatividade } from './inatividade'
 import { ehRole, type Role } from './roles'
+import { decifrar, ehEnvelope } from '@/src/shared/cripto'
 
 export type SessaoAtor = {
     userId: string
@@ -30,8 +31,32 @@ export type SessaoAtor = {
  * Normalizamos para a string de data civil que o domínio usa — sem passar por
  * fuso, que é justamente o que a coluna `date` existe para evitar.
  */
+/**
+ * Normaliza a data de nascimento vinda da sessão.
+ *
+ * **Decifra quando necessário** (feature 025, FR-008): `user.data_nascimento`
+ * passou a guardar o envelope `v1.…`, e o better-auth seleciona essa coluna pelo
+ * próprio adapter — sem passar pelos repositórios do projeto. Sem decifrar aqui,
+ * a sessão carregaria o ciphertext e o formulário de candidatura o exibiria ao
+ * usuário no lugar da data.
+ *
+ * Este é o ponto de passagem único da sessão, então é onde a tradução cabe. Um
+ * valor ilegível (chave trocada, dado corrompido) vira `null` **de propósito**:
+ * aqui a data serve para pré-preencher o formulário, e uma falha de leitura não
+ * pode impedir a autenticação. A sinalização explícita de FR-014 é da
+ * apresentação do cadastro, não da sessão.
+ */
 function normalizarDataNascimento(valor: unknown): string | null {
-    if (typeof valor === 'string') return valor.slice(0, 10) || null
+    if (typeof valor === 'string') {
+        if (ehEnvelope(valor)) {
+            try {
+                return decifrar(valor).slice(0, 10) || null
+            } catch {
+                return null
+            }
+        }
+        return valor.slice(0, 10) || null
+    }
     if (valor instanceof Date && !Number.isNaN(valor.getTime())) {
         return `${valor.getUTCFullYear()}-${String(valor.getUTCMonth() + 1).padStart(2, '0')}-${String(valor.getUTCDate()).padStart(2, '0')}`
     }

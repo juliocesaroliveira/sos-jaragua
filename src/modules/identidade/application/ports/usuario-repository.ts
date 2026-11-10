@@ -78,4 +78,18 @@ export interface UsuarioRepository {
      * (008-admin-password-reset, FR-013).
      */
     possuiSenhaPropria(userId: string): Promise<boolean>
+
+    /**
+     * Anonimiza a conta a pedido do titular (feature 025, FR-022 a FR-028).
+     *
+     * Sobrescreve nome, e-mail e data de nascimento, desativa a conta e remove
+     * sessões e vínculos de login. A **linha permanece**: apagá-la faria o
+     * `DELETE` falhar para quem tem histórico operacional, ou destruiria o
+     * histórico de turnos por cascade em `alocacao` (research.md D7).
+     *
+     * O e-mail recebe um valor neutro e **irrepetível**, não nulo: a coluna é
+     * `notNull unique`, a conta não pode ser reativável, e um futuro cadastro
+     * independente da mesma pessoa não pode ficar bloqueado.
+     */
+    anonimizarConta(userId: string): Promise<void>
 }

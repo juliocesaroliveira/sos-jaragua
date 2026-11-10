@@ -2,6 +2,7 @@ import 'server-only'
 import { atorAtual, type Ator } from '@/src/shared/contexto/ator'
 import type { AcaoAuditada, EntidadeAuditada } from '@/src/shared/db/mongo/audit-logs'
 import { registrarAuditoria } from './infrastructure/audit-writer'
+import { redigirCamposSensiveis } from './redacao'
 
 export type { AcaoAuditada, EntidadeAuditada }
 export { comAtor, atorAtual, type Ator } from '@/src/shared/contexto/ator'
@@ -70,8 +71,13 @@ export async function withAudit<TResultado>(
             userId: identificacao.userId,
             userRole: identificacao.role,
             tabela: opcoes.tabela,
-            dadosAnteriores: anteriores,
-            dadosNovos,
+            // Redigido aqui, no único ponto de passagem da trilha (feature 025,
+            // FR-026). Fica neste lugar pelo mesmo motivo que a auditoria toda
+            // passa por `withAudit`: um caso de uso novo não pode depender de
+            // alguém lembrar de redigir. Sem isso, a trilha imutável seria uma
+            // segunda cópia legível do que o Postgres passou a cifrar.
+            dadosAnteriores: redigirCamposSensiveis(anteriores),
+            dadosNovos: redigirCamposSensiveis(dadosNovos),
             metadata: ator?.ip || ator?.userAgent ? { ip: ator.ip, userAgent: ator.userAgent } : undefined
         })
     } catch (erro) {

@@ -9,7 +9,15 @@ import { clienteMongo } from './client'
  * de nenhuma entidade de negócio, só a trilha de auditoria. Nada aqui é lido
  * para reconstruir estado da aplicação.
  */
-export type AcaoAuditada = 'create' | 'update' | 'delete'
+/**
+ * Ações registradas na trilha.
+ *
+ * `read` e `anonimizar` entraram com a feature 025 (Princípio V da
+ * Constituição): uma **revelação** de dado sensível é uma leitura, e uma
+ * **anonimização** a pedido do titular não é nenhuma das três ações de escrita.
+ * Sem esse vocabulário, FR-017 e FR-024 não teriam como ser registrados.
+ */
+export type AcaoAuditada = 'create' | 'update' | 'delete' | 'read' | 'anonimizar'
 
 /**
  * Entidades do BRD §7. São abstratas de propósito — o mapeamento para as

@@ -1,6 +1,6 @@
 import 'server-only'
 import { and, asc, count, desc, eq, gte, lt, sql, type SQL } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, COLLATE_PT_BR, ordemAlfabetica } from '@/src/shared/db/postgres'
 import {
     alocacao,
     atividade,
@@ -11,6 +11,7 @@ import {
     voluntarioPerfil
 } from '@/db/schema/voluntariado'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
+import { cpfMascaradoParaRelatorio, nomeParaExibicao, textoOuAnonimizado } from './apresentar-sensiveis'
 
 /**
  * Leituras de Voluntariado para a central de relatórios
@@ -43,7 +44,7 @@ function mesmoBairro(bairro: string): SQL {
  * ambíguo entre `habilidade` e `voluntario_perfil`.
  */
 const habilidadesDoPerfil = sql<string | null>`(
-    select string_agg(h.nome, ', ' order by h.nome)
+    select string_agg(h.nome, ', ' order by h.nome ${COLLATE_PT_BR})
     from voluntario_habilidade vh
     inner join habilidade h on h.id = vh.habilidade_id
     where vh.voluntario_perfil_id = "voluntario_perfil"."id"
@@ -62,6 +63,16 @@ export type FiltrosVoluntarios = {
 export type LinhaVoluntarioRelatorio = {
     id: string
     nomeCompleto: string
+    /**
+     * **Sempre mascarado** (feature 025, FR-012 e FR-018).
+     *
+     * Relatório alimenta tela e planilha com o mesmo dado. Um arquivo exportado
+     * com milhares de CPFs em claro é o pior vetor de vazamento que esta feature
+     * existe para fechar — então a exportação não acompanha a Matriz de
+     * Visibilidade: ela mascara para todos, inclusive `coordenador` e
+     * `administrador`. Quem precisa do documento completo usa a revelação
+     * auditada, um campo por vez, na tela de triagem.
+     */
     cpf: string
     status: StatusVoluntario
     telefone: string
@@ -92,7 +103,7 @@ export async function voluntariosRelatorio(
     filtros: FiltrosVoluntarios,
     janela: Janela
 ): Promise<LinhaVoluntarioRelatorio[]> {
-    return db
+    const linhas = await db
         .select({
             id: voluntarioPerfil.id,
             nomeCompleto: voluntarioPerfil.nomeCompleto,
@@ -111,9 +122,18 @@ export async function voluntariosRelatorio(
         })
         .from(voluntarioPerfil)
         .where(condicoesVoluntarios(filtros))
-        .orderBy(asc(voluntarioPerfil.nomeCompleto), asc(voluntarioPerfil.id))
+        .orderBy(ordemAlfabetica(voluntarioPerfil.nomeCompleto), asc(voluntarioPerfil.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({
+        ...l,
+        cpf: cpfMascaradoParaRelatorio(l.cpf),
+        nomeCompleto: nomeParaExibicao(l.nomeCompleto),
+        telefone: textoOuAnonimizado(l.telefone),
+        bairro: textoOuAnonimizado(l.bairro),
+        profissao: textoOuAnonimizado(l.profissao)
+    }))
 }
 
 export async function contarVoluntariosRelatorio(filtros: FiltrosVoluntarios): Promise<number> {
@@ -158,7 +178,7 @@ const COLUNAS_TRIAGEM = {
 
 /** Pendentes primeiro, da mais antiga para a mais nova (FR-025); depois as decididas. */
 export async function triagemRelatorio(intervalo: Intervalo, janela: Janela): Promise<LinhaTriagem[]> {
-    return db
+    const linhas = await db
         .select(COLUNAS_TRIAGEM)
         .from(voluntarioPerfil)
         .where(condicoesTriagem(intervalo))
@@ -170,7 +190,15 @@ export async function triagemRelatorio(intervalo: Intervalo, janela: Janela): Pr
         )
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({
+        ...l,
+        nomeCompleto: nomeParaExibicao(l.nomeCompleto),
+        telefone: textoOuAnonimizado(l.telefone),
+        bairro: textoOuAnonimizado(l.bairro)
+    }))
 }
+
 
 export async function contarTriagem(intervalo: Intervalo): Promise<number> {
     const [linha] = await db.select({ total: count() }).from(voluntarioPerfil).where(condicoesTriagem(intervalo))
@@ -223,7 +251,7 @@ export async function capacidadeRelatorio(filtros: { bairro?: string }): Promise
                 and(eq(voluntarioPerfil.id, voluntarioHabilidade.voluntarioPerfilId), aprovados)
             )
             .groupBy(habilidade.id, habilidade.nome)
-            .orderBy(asc(habilidade.nome)),
+            .orderBy(ordemAlfabetica(habilidade.nome)),
         db
             .select({ tipoVeiculo: voluntarioPerfil.tipoVeiculo, total: count() })
             .from(voluntarioPerfil)
@@ -308,7 +336,7 @@ function baseOcupacao() {
 export async function ocupacaoTurnosRelatorio(filtros: FiltrosOcupacao, janela: Janela): Promise<LinhaOcupacao[]> {
     return baseOcupacao()
         .where(condicoesOcupacao(filtros))
-        .orderBy(asc(turno.inicio), asc(atividade.titulo), asc(turno.id))
+        .orderBy(asc(turno.inicio), ordemAlfabetica(atividade.titulo), asc(turno.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
 }
@@ -356,7 +384,7 @@ function condicoesParticipacao(intervalo: Intervalo): SQL | undefined {
  */
 export async function participacaoRelatorio(intervalo: Intervalo, janela: Janela): Promise<LinhaParticipacao[]> {
     const segundos = sql<number>`coalesce(sum(extract(epoch from ${turno.fim} - ${turno.inicio})), 0)`.mapWith(Number)
-    return db
+    const linhas = await db
         .select({
             participanteUserId: alocacao.participanteUserId,
             cpf: sql<string | null>`max(${voluntarioPerfil.cpf})`,
@@ -372,6 +400,8 @@ export async function participacaoRelatorio(intervalo: Intervalo, janela: Janela
         .orderBy(desc(segundos), asc(alocacao.participanteUserId))
         .limit(janela.limite)
         .offset(janela.deslocamento)
+
+    return linhas.map((l) => ({ ...l, cpf: l.cpf === null ? null : cpfMascaradoParaRelatorio(l.cpf) }))
 }
 
 export async function contarParticipacao(intervalo: Intervalo): Promise<number> {
@@ -395,12 +425,12 @@ export async function opcoesFiltrosVoluntariado(): Promise<{
     bairros: OpcaoLookup[]
 }> {
     const [habilidades, atividades, categorias, bairros] = await Promise.all([
-        db.select({ valor: habilidade.id, rotulo: habilidade.nome }).from(habilidade).orderBy(asc(habilidade.nome)),
+        db.select({ valor: habilidade.id, rotulo: habilidade.nome }).from(habilidade).orderBy(ordemAlfabetica(habilidade.nome)),
         db.select({ valor: atividade.id, rotulo: atividade.titulo }).from(atividade).orderBy(desc(atividade.criadoEm)),
         db
             .select({ valor: atividadeCategoria.id, rotulo: atividadeCategoria.nome })
             .from(atividadeCategoria)
-            .orderBy(asc(atividadeCategoria.nome)),
+            .orderBy(ordemAlfabetica(atividadeCategoria.nome)),
         db
             .selectDistinct({ bairro: sql<string>`trim(${voluntarioPerfil.bairro})` })
             .from(voluntarioPerfil)

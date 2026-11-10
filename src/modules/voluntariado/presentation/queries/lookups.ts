@@ -1,7 +1,6 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { asc } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { atividadeCategoria, habilidade } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 
@@ -23,7 +22,7 @@ export async function listarHabilidades(): Promise<Lookup[]> {
     cacheTag(CACHE_TAGS.lookups)
     cacheLife(CACHE_LIFE.medio)
 
-    return db.select({ id: habilidade.id, nome: habilidade.nome }).from(habilidade).orderBy(asc(habilidade.nome))
+    return db.select({ id: habilidade.id, nome: habilidade.nome }).from(habilidade).orderBy(ordemAlfabetica(habilidade.nome))
 }
 
 export async function listarCategoriasAtividade(): Promise<Lookup[]> {
@@ -34,5 +33,5 @@ export async function listarCategoriasAtividade(): Promise<Lookup[]> {
     return db
         .select({ id: atividadeCategoria.id, nome: atividadeCategoria.nome })
         .from(atividadeCategoria)
-        .orderBy(asc(atividadeCategoria.nome))
+        .orderBy(ordemAlfabetica(atividadeCategoria.nome))
 }

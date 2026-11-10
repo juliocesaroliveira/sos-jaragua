@@ -7,6 +7,7 @@ import { voluntarioPerfil } from '@/db/schema/voluntariado'
 import { unidadeDeTrabalho } from '../../infrastructure/drizzle/voluntario-repository'
 import { SubmeterCandidaturaUseCase } from './submeter-candidatura'
 import type { DadosCandidatura } from '../../domain/candidatura'
+import { cifrar, decifrar, ehEnvelope } from '@/src/shared/cripto'
 
 /**
  * 011-auto-cadastro-provedor, FR-016 (data-model.md R2).
@@ -15,6 +16,10 @@ import type { DadosCandidatura } from '../../domain/candidatura'
  * `user.data_nascimento` precisam ser gravados na **mesma transação**, e o
  * UPDATE condicional (`... AND data_nascimento IS NULL`) precisa ser realmente
  * idempotente no banco. Um repositório falso não prova nenhuma das duas coisas.
+ *
+ * Desde a feature 025 as datas de nascimento são gravadas **cifradas** (FR-001,
+ * FR-008): as leituras abaixo decifram antes de comparar e conferem que o valor
+ * armazenado é de fato um envelope, nunca texto em claro.
  */
 vi.mock('@/src/modules/auditoria', () => ({
     withAudit: <T>(_o: unknown, fn: () => Promise<T>) => fn()
@@ -60,7 +65,7 @@ function dadosCandidatura(overrides: Partial<DadosCandidatura> = {}): DadosCandi
 
 const criados: string[] = []
 
-/** Conta descartável, com ou sem data de nascimento já registrada. */
+/** Conta descartável, com ou sem data de nascimento já registrada (cifrada, como em produção). */
 async function criarConta(dataNascimento: string | null = null) {
     const userId = randomUUID()
     const sufixo = userId.slice(0, 8)
@@ -71,16 +76,23 @@ async function criarConta(dataNascimento: string | null = null) {
         email: `teste-${sufixo}@exemplo.test`,
         emailVerified: true,
         role: 'usuario',
-        dataNascimento
+        dataNascimento: dataNascimento === null ? null : cifrar(dataNascimento)
     })
 
     criados.push(userId)
     return userId
 }
 
+/** Decifra o valor armazenado, falhando se ele estiver em claro. */
+function emClaro(armazenado: string | null): string | null {
+    if (armazenado === null) return null
+    expect(ehEnvelope(armazenado), 'valor sensível gravado em claro').toBe(true)
+    return decifrar(armazenado)
+}
+
 async function lerDataNascimentoDaConta(userId: string) {
     const [conta] = await db.select({ dataNascimento: user.dataNascimento }).from(user).where(eq(user.id, userId))
-    return conta?.dataNascimento ?? null
+    return emClaro(conta?.dataNascimento ?? null)
 }
 
 afterEach(async () => {
@@ -110,7 +122,7 @@ describe('SubmeterCandidaturaUseCase (integração)', () => {
             .where(eq(voluntarioPerfil.id, r.valor.id))
 
         expect(perfil.status).toBe('pendente')
-        expect(perfil.dataNascimento).toBe('1990-05-20')
+        expect(emClaro(perfil.dataNascimento)).toBe('1990-05-20')
         // O ponto do teste: a conta saiu da transação já com a data.
         expect(await lerDataNascimentoDaConta(userId)).toBe('1990-05-20')
     })
@@ -140,7 +152,7 @@ describe('SubmeterCandidaturaUseCase (integração)', () => {
             .select({ dataNascimento: voluntarioPerfil.dataNascimento })
             .from(voluntarioPerfil)
             .where(eq(voluntarioPerfil.userId, userId))
-        expect(perfil.dataNascimento).toBe('1990-05-20')
+        expect(emClaro(perfil.dataNascimento)).toBe('1990-05-20')
     })
 
     it('o UPDATE condicional é idempotente: a segunda gravação não altera o valor', async () => {

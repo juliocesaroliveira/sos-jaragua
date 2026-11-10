@@ -112,6 +112,16 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
         atalho: { descricao: 'Envie seus dados para a triagem da Defesa Civil.' }
     },
     {
+        href: '/conta',
+        rotulo: 'Meus dados',
+        icone: 'User',
+        grupo: 'pessoal',
+        // Todas as roles: o direito de acesso aos próprios dados e o de pedir a
+        // eliminação (LGPD art. 18, II e VI) não dependem do papel da pessoa.
+        roles: [...ROLES],
+        atalho: { descricao: 'Veja seus dados cadastrados e gerencie a exclusão deles.' }
+    },
+    {
         href: '/conta/notificacoes',
         rotulo: 'Notificações',
         icone: 'BellRing',

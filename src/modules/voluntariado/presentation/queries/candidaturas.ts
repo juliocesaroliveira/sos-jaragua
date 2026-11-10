@@ -1,12 +1,14 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { asc, count, desc, eq, sql } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, COLLATE_PT_BR } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 import { voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import type { Disponibilidade, TipoVeiculo } from '../../domain/candidatura'
+import { apresentarSensiveis, nomeParaExibicao, textoOuAnonimizado } from './apresentar-sensiveis'
+import type { ApresentacaoCampo } from '@/src/shared/mascara'
 
 /**
  * Habilidades do perfil, agregadas no próprio banco — uma query por candidatura
@@ -23,7 +25,7 @@ const HABILIDADES_DO_PERFIL = sql<string[]>`coalesce(
         from "voluntario_habilidade"
         join "habilidade" on "habilidade"."id" = "voluntario_habilidade"."habilidade_id"
         where "voluntario_habilidade"."voluntario_perfil_id" = "voluntario_perfil"."id"
-        order by "habilidade"."nome"
+        order by "habilidade"."nome" ${COLLATE_PT_BR}
     ),
     '{}'
 )`
@@ -33,10 +35,19 @@ export type CandidaturaPendente = {
     userId: string
     nomeCompleto: string
     email: string
-    dataNascimento: string
-    cpf: string
+    /**
+     * Campos sensíveis chegam **sempre mascarados** (feature 025, FR-012).
+     *
+     * Esta função é `'use cache'`, e `'use cache'` não admite `cookies()` nem
+     * `headers()` no Next 16 — logo não há como decidir por role aqui, e se
+     * houvesse, a entrada de cache de um `coordenador` serviria a um
+     * `membro_defesa_civil`. O valor completo sai apenas pelo caminho de
+     * revelação, que lê a sessão fora de cache e audita (research.md D4).
+     */
+    dataNascimento: ApresentacaoCampo
+    cpf: ApresentacaoCampo
     telefone: string
-    cep: string
+    cep: ApresentacaoCampo
     bairro: string
     profissao: string
     restricoesSaude: string | null
@@ -86,6 +97,13 @@ export async function listarCandidaturasPendentes(): Promise<CandidaturaPendente
 
     return linhas.map((l) => ({
         ...l,
+        ...apresentarSensiveis(l),
+        // Titular anonimizado mantém a linha, com os campos pessoais vazios
+        // (FR-022). Resolver isso aqui deixa as telas sem tratar nulo.
+        nomeCompleto: nomeParaExibicao(l.nomeCompleto),
+        telefone: textoOuAnonimizado(l.telefone),
+        bairro: textoOuAnonimizado(l.bairro),
+        profissao: textoOuAnonimizado(l.profissao),
         tipoVeiculo: l.tipoVeiculo as TipoVeiculo | null,
         disponibilidade: l.disponibilidade as Disponibilidade[],
         criadoEm: l.criadoEm.toISOString()

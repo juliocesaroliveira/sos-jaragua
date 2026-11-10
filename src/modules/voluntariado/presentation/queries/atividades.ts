@@ -1,7 +1,7 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 import { alocacao, atividade, atividadeCategoria, turno, voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS, tagAtividade } from '@/src/shared/cache'
@@ -146,7 +146,7 @@ export async function buscarAtividadeDetalhada(atividadeId: string): Promise<Ati
         .innerJoin(user, eq(user.id, alocacao.participanteUserId))
         .leftJoin(voluntarioPerfil, eq(voluntarioPerfil.id, alocacao.voluntarioPerfilId))
         .where(and(eq(turno.atividadeId, atividadeId), eq(alocacao.status, 'confirmado')))
-        .orderBy(asc(nome))
+        .orderBy(ordemAlfabetica(nome))
 
     const porTurno = new Map<string, AlocadoNoTurno[]>()
     for (const { turnoId, ...alocado } of alocados) {

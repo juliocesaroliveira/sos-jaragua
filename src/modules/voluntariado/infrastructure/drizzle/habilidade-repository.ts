@@ -1,5 +1,5 @@
 import { asc, count, eq, ne, sql } from 'drizzle-orm'
-import { db, type Transacao } from '@/src/shared/db/postgres'
+import { db, type Transacao, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { habilidade, voluntarioHabilidade } from '@/db/schema/voluntariado'
 import { DuplicadoError, VinculoExistenteError } from '../../domain/habilidade'
 import type { Habilidade, HabilidadeRepository } from '../../application/ports/habilidade-repository'
@@ -18,9 +18,25 @@ type Executor = typeof db | Transacao
 const UNIQUE_VIOLATION = '23505'
 const FOREIGN_KEY_VIOLATION = '23503'
 
+/**
+ * SQLSTATE do erro, procurado também na cadeia de `cause`.
+ *
+ * O drizzle-orm (desde 0.44) embrulha o erro do driver num `DrizzleQueryError`
+ * ("Failed query: ...") e guarda o original do Postgres em `cause` — ler só o
+ * `code` do erro externo deixava as violações sem tradução e o usuário recebia
+ * um erro genérico em vez de "já existe" / "está em uso".
+ */
 function codigoPostgres(erro: unknown): string | undefined {
-    return typeof erro === 'object' && erro !== null && 'code' in erro ? String(erro.code) : undefined
+    for (let atual = erro, profundidade = 0; profundidade < 5; profundidade++) {
+        if (typeof atual !== 'object' || atual === null) return undefined
+        if ('code' in atual && typeof atual.code === 'string') return atual.code
+        atual = 'cause' in atual ? atual.cause : undefined
+    }
+    return undefined
 }
+
+/** Ordem alfabética do português; o `id` desempata para a paginação ser estável. */
+const ORDEM_POR_NOME = [ordemAlfabetica(habilidade.nome), asc(habilidade.id)] as const
 
 /**
  * A checagem prévia no caso de uso cobre o caso comum; esta tradução cobre a
@@ -59,7 +75,7 @@ export function criarHabilidadeRepository(executor: Executor = db): HabilidadeRe
                     .from(habilidade)
                     .leftJoin(voluntarioHabilidade, eq(voluntarioHabilidade.habilidadeId, habilidade.id))
                     .groupBy(habilidade.id)
-                    .orderBy(asc(habilidade.nome))
+                    .orderBy(...ORDEM_POR_NOME)
                     .limit(pageSize)
                     .offset((page - 1) * pageSize),
                 executor.select({ total: count() }).from(habilidade)

@@ -1,7 +1,7 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { and, asc, count, desc, eq, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { and, count, desc, eq, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm'
+import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { item, kit, kitReceitaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
@@ -71,7 +71,7 @@ async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSa
             .from(item)
             .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
             .where(where)
-            .orderBy(asc(item.nome))
+            .orderBy(ordemAlfabetica(item.nome))
             .limit(filtros.pageSize)
             .offset((filtros.page - 1) * filtros.pageSize),
         db.select({ total: count() }).from(item).leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id)).where(where)
@@ -108,7 +108,7 @@ function condicaoNome(coluna: AnyColumn, termo: string): SQL {
 }
 
 function ordemPorSemelhanca(coluna: AnyColumn, termo: string | undefined): SQL[] {
-    return termo ? [desc(sql`similarity(f_unaccent(${coluna}), f_unaccent(${termo}))`), asc(coluna)] : [asc(coluna)]
+    return termo ? [desc(sql`similarity(f_unaccent(${coluna}), f_unaccent(${termo}))`), ordemAlfabetica(coluna)] : [ordemAlfabetica(coluna)]
 }
 
 const COLUNAS_ITEM_COM_SALDO = {
@@ -237,7 +237,7 @@ export async function listarKitsComReceita(apenasAtivos = false): Promise<KitCom
         .select({ id: kit.id, nome: kit.nome, descricao: kit.descricao, ativo: kit.ativo })
         .from(kit)
         .where(apenasAtivos ? eq(kit.ativo, true) : undefined)
-        .orderBy(asc(kit.nome))
+        .orderBy(ordemAlfabetica(kit.nome))
 
     if (kits.length === 0) return []
 
@@ -263,7 +263,7 @@ export async function listarKitsComReceita(apenasAtivos = false): Promise<KitCom
                   )
                 : undefined
         )
-        .orderBy(asc(item.nome))
+        .orderBy(ordemAlfabetica(item.nome))
 
     const porKit = new Map<string, ComponenteDoKit[]>()
     for (const c of componentes) {
@@ -313,7 +313,7 @@ export async function inventarioParaExportacao(): Promise<ItemComSaldo[]> {
         })
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
-        .orderBy(asc(item.nome))
+        .orderBy(ordemAlfabetica(item.nome))
 
     return linhas.map(comNumeros) as ItemComSaldo[]
 }
