@@ -1,6 +1,6 @@
 import 'server-only'
 import { and, asc, count, desc, eq, gte, lt, sql, type SQL } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, COLLATE_PT_BR, ordemAlfabetica } from '@/src/shared/db/postgres'
 import {
     alocacao,
     atividade,
@@ -44,7 +44,7 @@ function mesmoBairro(bairro: string): SQL {
  * ambíguo entre `habilidade` e `voluntario_perfil`.
  */
 const habilidadesDoPerfil = sql<string | null>`(
-    select string_agg(h.nome, ', ' order by h.nome)
+    select string_agg(h.nome, ', ' order by h.nome ${COLLATE_PT_BR})
     from voluntario_habilidade vh
     inner join habilidade h on h.id = vh.habilidade_id
     where vh.voluntario_perfil_id = "voluntario_perfil"."id"
@@ -122,7 +122,7 @@ export async function voluntariosRelatorio(
         })
         .from(voluntarioPerfil)
         .where(condicoesVoluntarios(filtros))
-        .orderBy(asc(voluntarioPerfil.nomeCompleto), asc(voluntarioPerfil.id))
+        .orderBy(ordemAlfabetica(voluntarioPerfil.nomeCompleto), asc(voluntarioPerfil.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
 
@@ -251,7 +251,7 @@ export async function capacidadeRelatorio(filtros: { bairro?: string }): Promise
                 and(eq(voluntarioPerfil.id, voluntarioHabilidade.voluntarioPerfilId), aprovados)
             )
             .groupBy(habilidade.id, habilidade.nome)
-            .orderBy(asc(habilidade.nome)),
+            .orderBy(ordemAlfabetica(habilidade.nome)),
         db
             .select({ tipoVeiculo: voluntarioPerfil.tipoVeiculo, total: count() })
             .from(voluntarioPerfil)
@@ -336,7 +336,7 @@ function baseOcupacao() {
 export async function ocupacaoTurnosRelatorio(filtros: FiltrosOcupacao, janela: Janela): Promise<LinhaOcupacao[]> {
     return baseOcupacao()
         .where(condicoesOcupacao(filtros))
-        .orderBy(asc(turno.inicio), asc(atividade.titulo), asc(turno.id))
+        .orderBy(asc(turno.inicio), ordemAlfabetica(atividade.titulo), asc(turno.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
 }
@@ -425,12 +425,12 @@ export async function opcoesFiltrosVoluntariado(): Promise<{
     bairros: OpcaoLookup[]
 }> {
     const [habilidades, atividades, categorias, bairros] = await Promise.all([
-        db.select({ valor: habilidade.id, rotulo: habilidade.nome }).from(habilidade).orderBy(asc(habilidade.nome)),
+        db.select({ valor: habilidade.id, rotulo: habilidade.nome }).from(habilidade).orderBy(ordemAlfabetica(habilidade.nome)),
         db.select({ valor: atividade.id, rotulo: atividade.titulo }).from(atividade).orderBy(desc(atividade.criadoEm)),
         db
             .select({ valor: atividadeCategoria.id, rotulo: atividadeCategoria.nome })
             .from(atividadeCategoria)
-            .orderBy(asc(atividadeCategoria.nome)),
+            .orderBy(ordemAlfabetica(atividadeCategoria.nome)),
         db
             .selectDistinct({ bairro: sql<string>`trim(${voluntarioPerfil.bairro})` })
             .from(voluntarioPerfil)

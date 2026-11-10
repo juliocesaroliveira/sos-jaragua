@@ -1,6 +1,6 @@
 import 'server-only'
 import { and, asc, count, desc, eq, gte, lt, lte, sql, type AnyColumn, type SQL } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { descarte, entrada, item, kit, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { escaparLike } from '@/src/shared/busca/escapar-like'
 import { itensCriticos, limiarDoItem } from '../../domain/estoque-minimo'
@@ -79,7 +79,7 @@ export async function inventarioRelatorio(
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
         .where(filtros.categoria ? eq(item.categoria, filtros.categoria) : undefined)
-        .orderBy(asc(item.nome), asc(item.id))
+        .orderBy(ordemAlfabetica(item.nome), asc(item.id))
 
     return linhas
         .map((l): LinhaInventario => {
@@ -160,7 +160,7 @@ export async function saidasNoPeriodo(filtros: FiltrosSaidas, janela: Janela): P
         .innerJoin(saida, eq(saida.id, saidaItem.saidaId))
         .innerJoin(item, eq(item.id, saidaItem.itemId))
         .where(condicoesSaidas(filtros))
-        .orderBy(desc(saida.criadoEm), asc(item.nome), asc(saidaItem.id))
+        .orderBy(desc(saida.criadoEm), ordemAlfabetica(item.nome), asc(saidaItem.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
 
@@ -385,7 +385,7 @@ export async function validadesRelatorio(filtros: FiltrosValidades, janela: Jane
         .from(entrada)
         .innerJoin(item, eq(item.id, entrada.itemId))
         .where(condicoesValidades(filtros))
-        .orderBy(asc(entrada.dataValidade), asc(item.nome), asc(entrada.id))
+        .orderBy(asc(entrada.dataValidade), ordemAlfabetica(item.nome), asc(entrada.id))
         .limit(janela.limite)
         .offset(janela.deslocamento)
 
@@ -459,7 +459,7 @@ export async function movimentacaoRelatorio(filtros: {
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
         .where(filtros.categoria ? eq(item.categoria, filtros.categoria) : undefined)
-        .orderBy(asc(item.nome), asc(item.id))
+        .orderBy(ordemAlfabetica(item.nome), asc(item.id))
 
     return linhas.map((l) => ({
         id: l.id,

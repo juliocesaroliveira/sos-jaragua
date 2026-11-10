@@ -1,5 +1,5 @@
 import { asc, count, eq, ne, sql } from 'drizzle-orm'
-import { db, type Transacao } from '@/src/shared/db/postgres'
+import { db, type Transacao, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { habilidade, voluntarioHabilidade } from '@/db/schema/voluntariado'
 import { DuplicadoError, VinculoExistenteError } from '../../domain/habilidade'
 import type { Habilidade, HabilidadeRepository } from '../../application/ports/habilidade-repository'
@@ -35,13 +35,8 @@ function codigoPostgres(erro: unknown): string | undefined {
     return undefined
 }
 
-/**
- * Ordem alfabética do português. O banco usa a collation `C.UTF-8` (ordem de
- * bytes), que põe maiúsculas antes de minúsculas e acentuadas depois do "z"
- * — "teste" depois de "Zona", "Água" no fim da lista. O `id` desempata para a
- * paginação ser estável.
- */
-const ORDEM_POR_NOME = [sql`${habilidade.nome} collate "pt-BR-x-icu"`, asc(habilidade.id)] as const
+/** Ordem alfabética do português; o `id` desempata para a paginação ser estável. */
+const ORDEM_POR_NOME = [ordemAlfabetica(habilidade.nome), asc(habilidade.id)] as const
 
 /**
  * A checagem prévia no caso de uso cobre o caso comum; esta tradução cobre a

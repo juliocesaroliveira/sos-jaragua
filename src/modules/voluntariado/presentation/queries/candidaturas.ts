@@ -1,7 +1,7 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { asc, count, desc, eq, sql } from 'drizzle-orm'
-import { db } from '@/src/shared/db/postgres'
+import { db, COLLATE_PT_BR } from '@/src/shared/db/postgres'
 import { user } from '@/db/schema/identidade'
 import { voluntarioPerfil } from '@/db/schema/voluntariado'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
@@ -25,7 +25,7 @@ const HABILIDADES_DO_PERFIL = sql<string[]>`coalesce(
         from "voluntario_habilidade"
         join "habilidade" on "habilidade"."id" = "voluntario_habilidade"."habilidade_id"
         where "voluntario_habilidade"."voluntario_perfil_id" = "voluntario_perfil"."id"
-        order by "habilidade"."nome"
+        order by "habilidade"."nome" ${COLLATE_PT_BR}
     ),
     '{}'
 )`

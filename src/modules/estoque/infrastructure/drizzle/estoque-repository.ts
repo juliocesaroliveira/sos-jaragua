@@ -1,6 +1,6 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { escaparLike } from '@/src/shared/busca/escapar-like'
-import { db, type Transacao } from '@/src/shared/db/postgres'
+import { db, type Transacao, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { descarte, entrada, item, kit, kitReceitaItem, saida, saidaItem, saldoEstoque } from '@/db/schema/estoque'
 import { arredondar, paraNumeric, paraNumero } from '../../domain/quantidade'
 import {
@@ -264,7 +264,7 @@ export const kitRepository: KitRepository = {
             .select(COLUNAS_KIT)
             .from(kit)
             .where(apenasAtivos ? eq(kit.ativo, true) : undefined)
-            .orderBy(asc(kit.nome))
+            .orderBy(ordemAlfabetica(kit.nome))
         return linhas as Kit[]
     },
 
