@@ -1,7 +1,7 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
-import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao'
+import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import { criarHabilidadeRepository } from '../../infrastructure/drizzle/habilidade-repository'
 import type { LinhaHabilidade } from '../../application/ports/habilidade-repository'
 

@@ -1,4 +1,4 @@
-import type { ParametrosPaginacao } from '@/src/shared/paginacao'
+import type { ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 
 /** Port de Habilidade (017-gestao-habilidades, contracts/gestao-habilidades.md). */
 
