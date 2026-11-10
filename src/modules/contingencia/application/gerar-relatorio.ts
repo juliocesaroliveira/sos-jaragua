@@ -47,12 +47,13 @@ export class GerarRelatorioUseCase {
     async pagina(
         slug: unknown,
         entrada: Record<string, unknown>,
-        agora: Date = new Date()
+        agora: Date = new Date(),
+        papel: string | null = null
     ): Promise<Result<PaginaRelatorio, DomainError>> {
         const relatorio = this.obterRelatorio(slug)
         if (!relatorio) return falha(relatorioInvalido())
 
-        const preparada = relatorio.preparar(paraParametros(entrada), agora)
+        const preparada = relatorio.preparar(paraParametros(entrada), agora, papel)
         if (!preparada.ok) return preparada
         const consulta = preparada.valor
 
@@ -89,13 +90,13 @@ export class GerarRelatorioUseCase {
     async completo(
         slug: unknown,
         entrada: Record<string, unknown>,
-        ator: { nome: string },
+        ator: { nome: string; role?: string },
         agora: Date = new Date()
     ): Promise<Result<ExportacaoRelatorio, DomainError>> {
         const relatorio = this.obterRelatorio(slug)
         if (!relatorio) return falha(relatorioInvalido())
 
-        const preparada = relatorio.preparar(paraParametros(entrada), agora)
+        const preparada = relatorio.preparar(paraParametros(entrada), agora, ator.role ?? null)
         if (!preparada.ok) return preparada
         const consulta = preparada.valor
 

@@ -15,6 +15,7 @@ import { Textarea } from '@/src/shared/ui/textarea/textarea'
 import { avisar } from '@/src/shared/ui/toast/toast'
 import type { Lookup } from '@/src/modules/voluntariado/presentation/queries/lookups'
 import { enviarBroadcast } from '@/src/modules/notificacoes/presentation/actions/notificacoes'
+import { LIMITE_MENSAGEM_WHATSAPP, parametrosDoModelo } from '@/src/modules/notificacoes/domain/whatsapp'
 
 /**
  * Broadcast de Urgência (BRD §6, NOT-05).
@@ -55,6 +56,12 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
 
     const habilidadeEscolhida = habilidades.find((h) => h.id === watch('habilidadeId'))
 
+    // O WhatsApp leva a mensagem numa variável de modelo de tamanho limitado
+    // (024, research D7). O corte nunca é silencioso: o aviso aparece antes do
+    // envio, e e-mail e sino levam o texto inteiro.
+    const mensagemAtual = watch('mensagem')
+    const encurtadaNoWhatsapp = parametrosDoModelo('', mensagemAtual).encurtada
+
     /**
      * Submeter o formulário **valida e abre a confirmação** — nunca dispara a
      * convocação direto. O envio real só acontece no botão do diálogo.
@@ -89,11 +96,8 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 return
             }
 
-            const total = resultado.valor.destinatarios
-            avisar.sucesso(
-                'Convocação enviada',
-                total === 1 ? '1 voluntário foi notificado.' : `${total} voluntários foram notificados.`
-            )
+            const { destinatarios: total, whatsapp } = resultado.valor
+            avisar.sucesso('Convocação enviada', resumoDoEnvio(total, whatsapp))
             reset(VALORES_INICIAIS)
             setConfirmando(false)
         })
@@ -104,7 +108,8 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
             {erro && <Alert tom="danger" titulo={erro} />}
 
             <Alert tom="warning" titulo="Esta mensagem vai para muitos voluntários de uma vez">
-                Use para convocação de urgência. Todos os destinatários recebem no sino e por e-mail.
+                Use para convocação de urgência. Todos os destinatários recebem no sino e por e-mail; quem ativou o
+                WhatsApp recebe também por lá.
             </Alert>
 
             <Input
@@ -121,9 +126,17 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
                 label="Mensagem"
                 obrigatorio
                 rows={6}
+                apoio={`WhatsApp: ${mensagemAtual.length}/${LIMITE_MENSAGEM_WHATSAPP} caracteres`}
                 erro={errors.mensagem?.message}
                 {...register('mensagem')}
             />
+
+            {encurtadaNoWhatsapp && (
+                <Alert tom="warning" titulo="No WhatsApp, a convocação vai encurtada">
+                    Passa de {LIMITE_MENSAGEM_WHATSAPP} caracteres: o WhatsApp leva os primeiros ~680, seguidos de um
+                    botão para o texto completo. E-mail e sino levam o texto inteiro.
+                </Alert>
+            )}
 
             <Controller
                 control={control}
@@ -194,4 +207,16 @@ export function ConvocacaoForm({ habilidades, totalAprovados }: { habilidades: L
             </Dialog>
         </Formulario>
     )
+}
+
+function resumoDoEnvio(total: number, whatsapp: { elegiveis: number; naoAlcancaveis: number }): string {
+    const base = total === 1 ? '1 voluntário foi notificado' : `${total} voluntários foram notificados`
+    const pelo = whatsapp.elegiveis === 1 ? '1 também pelo WhatsApp' : `${whatsapp.elegiveis} também pelo WhatsApp`
+    const sem =
+        whatsapp.naoAlcancaveis === 0
+            ? ''
+            : whatsapp.naoAlcancaveis === 1
+              ? '; 1 sem WhatsApp habilitado'
+              : `; ${whatsapp.naoAlcancaveis} sem WhatsApp habilitado`
+    return `${base} — ${pelo}${sem}.`
 }

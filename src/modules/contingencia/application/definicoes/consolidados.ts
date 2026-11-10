@@ -21,6 +21,7 @@ import {
     type CanalNotificacao,
     type EventoNotificacao
 } from '@/src/modules/notificacoes/application/ports/notificacao-service'
+import { mascararTelefone, type MotivoNaoEntrega } from '@/src/modules/notificacoes/domain/whatsapp'
 import {
     contarEnviosNotificacoes,
     enviosNotificacoesRelatorio,
@@ -214,20 +215,42 @@ const ROTULO_TIPO_NOTIFICACAO: Record<EventoNotificacao, string> = {
     inscricao_turno: 'Inscrição em turno'
 }
 
-const CANAIS = ['email', 'plataforma'] as const satisfies readonly CanalNotificacao[]
-const ROTULO_CANAL: Record<CanalNotificacao, string> = { email: 'E-mail', plataforma: 'Plataforma' }
+const CANAIS = ['email', 'plataforma', 'whatsapp'] as const satisfies readonly CanalNotificacao[]
+const ROTULO_CANAL: Record<CanalNotificacao, string> = {
+    email: 'E-mail',
+    plataforma: 'Plataforma',
+    whatsapp: 'WhatsApp'
+}
 
 /** "Todos" é opção explícita: sem filtro, a lista mostra as falhas — o motivo de abrir o relatório. */
-const SITUACOES_FILTRO = ['falhou', 'pendente', 'enviado', 'todos'] as const
+const SITUACOES_FILTRO = ['falhou', 'nao_enviado', 'pendente', 'enviado', 'entregue', 'lido', 'todos'] as const
 type SituacaoFiltro = (typeof SITUACOES_FILTRO)[number]
 const ROTULO_SITUACAO_ENVIO: Record<SituacaoFiltro, string> = {
     falhou: 'Falhou',
+    nao_enviado: 'Não enviado',
     pendente: 'Pendente',
     enviado: 'Enviado',
+    entregue: 'Entregue',
+    lido: 'Lido',
     todos: 'Todas'
 }
 
-type LinhaEnvioComNome = LinhaEnvio & { destinatario: string | null }
+/**
+ * Motivo de um WhatsApp não ter chegado, em linguagem de quem opera (024, US3).
+ * "Não enviado" é decisão do sistema, não falha técnica.
+ */
+const ROTULO_MOTIVO: Record<MotivoNaoEntrega, string> = {
+    canal_desativado: 'WhatsApp não ativado pelo voluntário',
+    sem_celular: 'Sem celular cadastrado',
+    usuario_inativo: 'Usuário desativado',
+    nao_configurado: 'WhatsApp não configurado no sistema',
+    numero_sem_whatsapp: 'Número sem WhatsApp',
+    limite_envio: 'Limite de envio do WhatsApp atingido',
+    modelo_indisponivel: 'Modelo de mensagem indisponível na Meta',
+    falha: 'Falha no envio'
+}
+
+type LinhaEnvioComNome = LinhaEnvio & { destinatario: string | null; destinoExibido: string | null }
 
 function filtrosEnvios(
     c: ConsultaRelatorio<{ tipo?: EventoNotificacao; canal?: CanalNotificacao; status?: SituacaoFiltro }>
@@ -270,13 +293,21 @@ const notificacoes = definirRelatorio({
         { cabecalho: 'Canal', valor: (l) => ROTULO_CANAL[l.canal] ?? l.canal, largura: 12 },
         { cabecalho: 'Situação', valor: (l) => ROTULO_SITUACAO_ENVIO[l.status] ?? l.status, largura: 12 },
         { cabecalho: 'Destinatário', valor: (l) => l.destinatario, largura: 28 },
+        { cabecalho: 'Destino', valor: (l) => l.destinoExibido, largura: 18 },
+        { cabecalho: 'Motivo', valor: (l) => (l.motivo ? ROTULO_MOTIVO[l.motivo] : null), largura: 34 },
         { cabecalho: 'Erro', valor: (l) => l.erro, largura: 50 }
     ],
     contar: (c) => contarEnviosNotificacoes(filtrosEnvios(c)),
     async carregar(c, janela) {
         const linhas = await enviosNotificacoesRelatorio(filtrosEnvios(c), janela)
         const nome = await resolverNomes(linhas, (l) => l.destinatarioUserId)
-        return linhas.map((l) => ({ ...l, destinatario: nome(l) }))
+        // O número inteiro só para o administrador (024, FR-025).
+        const completo = c.papel === 'administrador'
+        return linhas.map((l) => ({
+            ...l,
+            destinatario: nome(l),
+            destinoExibido: l.destino ? (completo ? `+${l.destino}` : mascararTelefone(l.destino)) : null
+        }))
     },
     /**
      * Totais por canal × situação e, quando há falhas, por tipo — ignora o

@@ -110,16 +110,21 @@ O **SOS Jaraguá** é uma plataforma web para gestão de crises pela Defesa Civi
 
 ### 6. Matriz de Comunicação e Notificações
 
-| Evento / Gatilho        | Destinatário         | Canal               | Conteúdo da Mensagem (Resumo)                                            |
-| :---------------------- | :------------------- | :------------------ | :----------------------------------------------------------------------- |
-| Triagem Concluída       | Voluntário           | E-mail / Plataforma | "Seu cadastro foi aprovado. Você agora é um voluntário."                 |
-| Atividade Atribuída     | Voluntário           | E-mail / Plataforma | Detalhes da tarefa, data, turno (horário) e local.                       |
-| Alteração de Atividade  | Voluntário           | E-mail / Plataforma | Aviso de mudança de local, horário ou cancelamento.                      |
-| Lembrete de Turno       | Voluntário           | Plataforma (Push)   | Disparado 2h antes do início do turno estabelecido.                      |
-| _Broadcast_ de Urgência | Todos os Voluntários | E-mail / Plataforma | Disparo manual do Coordenador para convocação em massa.                  |
-| Cadastros Acumulados    | Coordenadores        | Plataforma (Alerta) | "Existem X cadastros de voluntários aguardando aprovação."               |
-| Estoque Crítico         | Coordenadores        | Plataforma (Alerta) | "O item [Nome] atingiu o estoque mínimo de segurança."                   |
-| Déficit de Atendimento  | Defesa Civil         | Plataforma (Alerta) | "A capacidade de montagem de kits está X% abaixo da demanda de vítimas." |
+| Evento / Gatilho        | Destinatário         | Canal                          | Conteúdo da Mensagem (Resumo)                                            |
+| :---------------------- | :------------------- | :----------------------------- | :----------------------------------------------------------------------- |
+| Triagem Concluída       | Voluntário           | E-mail / Plataforma / WhatsApp | "Seu cadastro foi aprovado. Você agora é um voluntário."                 |
+| Atividade Atribuída     | Voluntário           | E-mail / Plataforma / WhatsApp | Detalhes da tarefa, data, turno (horário) e local.                       |
+| Alteração de Atividade  | Voluntário           | E-mail / Plataforma / WhatsApp | Aviso de mudança de local, horário ou cancelamento.                      |
+| Lembrete de Turno       | Voluntário           | Plataforma / WhatsApp          | Disparado 2h antes do início do turno estabelecido.                      |
+| _Broadcast_ de Urgência | Todos os Voluntários | E-mail / Plataforma / WhatsApp | Disparo manual do Coordenador para convocação em massa.                  |
+| Cadastros Acumulados    | Coordenadores        | Plataforma (Alerta)            | "Existem X cadastros de voluntários aguardando aprovação."               |
+| Estoque Crítico         | Coordenadores        | Plataforma (Alerta)            | "O item [Nome] atingiu o estoque mínimo de segurança."                   |
+| Déficit de Atendimento  | Defesa Civil         | Plataforma (Alerta)            | "A capacidade de montagem de kits está X% abaixo da demanda de vítimas." |
+
+_WhatsApp acrescentado por `specs/024-notificacoes-whatsapp`: só para quem ativou o canal
+(opt-in explícito) e tem celular cadastrado; o e-mail continua sendo enviado. O lembrete de
+turno, implementado como aviso matinal diário (DESIGN.md §12), passa a chegar também pelo
+WhatsApp, cobrindo o "push" originalmente previsto._
 
 ---
 

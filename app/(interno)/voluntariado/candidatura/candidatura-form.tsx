@@ -57,7 +57,9 @@ const esquemaBase = z.object({
     veiculoProprio: z.boolean(),
     tipoVeiculo: selecaoObrigatoria(TIPOS_VEICULO, MENSAGEM_TIPO_VEICULO).optional(),
     disponibilidade: listaNaoVazia(z.enum(DISPONIBILIDADES), 'Selecione ao menos uma disponibilidade.'),
-    habilidadeIds: z.array(z.string())
+    habilidadeIds: z.array(z.string()),
+    /** Opt-in do WhatsApp (024, FR-012): desmarcado por padrão e opcional. */
+    aceitaWhatsapp: z.boolean()
 })
 
 /**
@@ -128,6 +130,7 @@ export function CandidaturaForm({
             nomeCompleto: nomeInicial,
             dataNascimento: dataNascimentoDaConta ?? '',
             veiculoProprio: false,
+            aceitaWhatsapp: false,
             disponibilidade: [],
             habilidadeIds: []
         }
@@ -274,6 +277,28 @@ export function CandidaturaForm({
                     erro={errors.telefone?.message}
                     {...register('telefone')}
                 />
+
+                {/*
+                  Opt-in explícito (024, FR-012): ter o telefone cadastrado não
+                  equivale a consentir. Fica colado ao campo de telefone porque é
+                  sobre este número.
+                */}
+                <div className="md:col-span-2">
+                    <Controller
+                        control={control}
+                        name="aceitaWhatsapp"
+                        render={({ field }) => (
+                            <Switch
+                                ref={field.ref}
+                                id="aceitaWhatsapp"
+                                label="Quero receber avisos do SOS Jaraguá pelo WhatsApp neste número"
+                                apoio="Aprovação do cadastro, atividades, mudanças, lembretes de turno e convocações urgentes. Você pode desativar quando quiser em Minha conta → Notificações ou respondendo SAIR."
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        )}
+                    />
+                </div>
 
                 <Input
                     id="cep"

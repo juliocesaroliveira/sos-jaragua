@@ -1,5 +1,8 @@
 import 'server-only'
-import type { Notificacao, NotificacaoService } from '../application/ports/notificacao-service'
+import { after } from 'next/server'
+import { contatosWhatsapp } from '@/src/modules/voluntariado/infrastructure/drizzle/contatos-whatsapp'
+import type { Notificacao, NotificacaoService, ResumoEnvio } from '../application/ports/notificacao-service'
+import { despacharWhatsapp, type DependenciasDespacho, type ResumoWhatsapp } from './despacho-whatsapp'
 import { enviarEmails, eventoVaiPorEmail, type EmailParaEnviar } from './notificacao-email'
 import {
     buscarContatos,
@@ -7,6 +10,8 @@ import {
     registrarEnvioEmail,
     type NotificacaoGravada
 } from './notificacao-plataforma'
+import { whatsappCloudApi } from './whatsapp-cloud-api'
+import { whatsappRepositorio } from './whatsapp-repositorio'
 
 /**
  * Tamanho do chunk no envio em lote (broadcast de urgência, DESIGN.md §12).
@@ -18,11 +23,36 @@ import {
 const TAMANHO_CHUNK = 50
 
 /**
+ * Montagem do canal WhatsApp (024). Este arquivo é o ponto onde os adapters
+ * concretos se encontram: a implementação de `ContatosWhatsapp` vem do
+ * Voluntariado, dono do telefone, e entra aqui só pelo port (research D10).
+ */
+const dependenciasWhatsapp: DependenciasDespacho = {
+    mensageria: whatsappCloudApi,
+    envios: whatsappRepositorio,
+    contatos: contatosWhatsapp,
+    async situacaoUsuarios(userIds) {
+        const contatos = await buscarContatos(userIds)
+        return new Map([...contatos].map(([userId, c]) => [userId, c.ativo]))
+    },
+    agendar(tarefa) {
+        // `after()` só existe dentro de uma requisição (Server Action, Route
+        // Handler); fora dela lança, e então o envio roda na hora.
+        try {
+            after(tarefa)
+        } catch {
+            return tarefa()
+        }
+    }
+}
+
+/**
  * Implementação do port de notificação (DESIGN.md §12).
  *
  * Ordem deliberada: grava **primeiro** in-plataforma (a cópia durável), depois
- * tenta o e-mail. Se o e-mail falhar, a notificação continua existindo no sino
- * e `notificacao_envio` registra a falha para reconciliação.
+ * os canais acessórios — e-mail e WhatsApp (024). Se um deles falhar, a
+ * notificação continua existindo no sino e `notificacao_envio` registra a
+ * falha para reconciliação; a falha de um canal não impede o outro.
  *
  * Contrato de falha: notificar **nunca** derruba a operação de negócio que a
  * disparou. Erros são registrados no log estruturado (visível no Log Stream da
@@ -30,24 +60,44 @@ const TAMANHO_CHUNK = 50
  */
 export const notificacaoService: NotificacaoService = {
     async enviar(notificacao) {
-        await this.enviarEmLote([notificacao])
+        await processar([notificacao])
     },
 
     async enviarEmLote(notificacoes) {
-        for (let i = 0; i < notificacoes.length; i += TAMANHO_CHUNK) {
-            const chunk = notificacoes.slice(i, i + TAMANHO_CHUNK)
-            try {
-                const gravadas = await gravarNaPlataforma(chunk)
-                await despacharEmails(chunk, gravadas)
-            } catch (erro) {
-                console.error('[notificacoes] falha ao processar chunk', {
-                    quantidade: chunk.length,
-                    eventos: [...new Set(chunk.map((n: Notificacao) => n.evento))],
-                    erro
-                })
-            }
+        await processar(notificacoes)
+    },
+
+    enviarEmLoteComResumo(notificacoes) {
+        return processar(notificacoes)
+    }
+}
+
+async function processar(notificacoes: Notificacao[]): Promise<ResumoEnvio> {
+    const whatsapp: ResumoWhatsapp = { elegiveis: 0, naoAlcancaveis: 0 }
+
+    for (let i = 0; i < notificacoes.length; i += TAMANHO_CHUNK) {
+        const chunk = notificacoes.slice(i, i + TAMANHO_CHUNK)
+        try {
+            const gravadas = await gravarNaPlataforma(chunk)
+            const [, resumo] = await Promise.all([
+                despacharEmails(chunk, gravadas).catch((erro: unknown) => {
+                    console.error('[notificacoes] falha ao despachar e-mails', { quantidade: chunk.length, erro })
+                }),
+                // Captura as próprias falhas e devolve resumo zerado.
+                despacharWhatsapp(chunk, gravadas, dependenciasWhatsapp)
+            ])
+            whatsapp.elegiveis += resumo.elegiveis
+            whatsapp.naoAlcancaveis += resumo.naoAlcancaveis
+        } catch (erro) {
+            console.error('[notificacoes] falha ao processar chunk', {
+                quantidade: chunk.length,
+                eventos: [...new Set(chunk.map((n: Notificacao) => n.evento))],
+                erro
+            })
         }
     }
+
+    return { whatsapp }
 }
 
 async function despacharEmails(chunk: Notificacao[], gravadas: NotificacaoGravada[]): Promise<void> {

@@ -357,14 +357,63 @@ Configuração da proporção usada no cálculo de demanda (BR-INT-01).
 Separado de `notificacao` para que falha de entrega em um canal (ex.: bounce de e-mail)
 não corrompa o estado lido/não-lido in-app.
 
-| Campo           | Tipo                            | Regras                                    |
-| --------------- | ------------------------------- | ----------------------------------------- |
-| `id`            | uuid, pk                        |                                           |
-| `notificacaoId` | uuid, fk → `notificacao.id`     |                                           |
-| `canal`         | enum(`email,plataforma`)        | Sem push real no MVP (decisão confirmada) |
-| `status`        | enum(`pendente,enviado,falhou`) | default `pendente`                        |
-| `enviadoEm`     | timestamptz, nullable           |                                           |
-| `erro`          | text, nullable                  |                                           |
+| Campo           | Tipo                                                        | Regras                                                                  |
+| --------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `id`            | uuid, pk                                                    |                                                                         |
+| `notificacaoId` | uuid, fk → `notificacao.id`                                 |                                                                         |
+| `canal`         | enum(`email,plataforma,whatsapp`)                           | Sem push do navegador (decisão confirmada); `whatsapp` desde a 024      |
+| `status`        | enum(`pendente,enviado,entregue,lido,falhou,nao_enviado`)   | default `pendente`; `entregue`/`lido` vêm do webhook da Meta            |
+| `enviadoEm`     | timestamptz, nullable                                       |                                                                         |
+| `erro`          | text, nullable                                              | Código e texto originais do provedor                                    |
+| `motivo`        | enum `motivo_nao_entrega`, nullable                         | Preenchido em `falhou`/`nao_enviado` do canal `whatsapp`                |
+| `destino`       | text, nullable                                              | Número E.164 sem `+` usado no envio (canal `whatsapp`)                  |
+| `idExterno`     | text, nullable                                              | `wamid` da Meta; casa os webhooks de situação                           |
+| `atualizadoEm`  | timestamptz, nullable                                       | Última transição de situação                                            |
+
+`motivo_nao_entrega`: `canal_desativado, sem_celular, usuario_inativo, nao_configurado,
+numero_sem_whatsapp, limite_envio, modelo_indisponivel, falha`.
+
+Índices (024): único `notificacao_envio_notificacao_canal_unico` em `(notificacao_id, canal)` —
+um registro por canal por notificação, o que impede envio duplo de WhatsApp; substitui o antigo
+`notificacao_envio_notificacao_idx`. Não é parcial (`WHERE canal = 'whatsapp'`) porque o valor
+novo do enum não pode ser usado na mesma transação da migração e o cast `::text` não é
+`IMMUTABLE`. Único parcial `notificacao_envio_id_externo_idx` em `(id_externo) WHERE id_externo IS NOT NULL`.
+
+A situação do canal `whatsapp` só avança (`pendente → enviado → entregue → lido`; `falhou` a
+partir de `pendente`/`enviado`; `nao_enviado` é terminal e só nasce na inserção).
+
+### 8.3. `preferencia_whatsapp` (024)
+
+Estado atual do opt-in. **Ausência de linha = desligado.**
+
+| Campo          | Tipo                             | Regras           |
+| -------------- | -------------------------------- | ---------------- |
+| `userId`       | text, pk, fk → `user.id` cascade | 1:1 com `user`   |
+| `ativo`        | boolean                          | Obrigatório      |
+| `atualizadoEm` | timestamptz                      | default `now()`  |
+
+### 8.4. `consentimento_whatsapp` (024)
+
+Histórico append-only de concessões e revogações (evidência de LGPD). Gravado só quando o
+estado muda.
+
+| Campo      | Tipo                                                         | Regras                                  |
+| ---------- | ------------------------------------------------------------ | --------------------------------------- |
+| `id`       | uuid, pk                                                     |                                         |
+| `userId`   | text, fk → `user.id` cascade                                 | índice `(userId, criadoEm)`             |
+| `acao`     | enum(`concedido,revogado`)                                   |                                         |
+| `origem`   | enum(`cadastro,perfil,resposta_whatsapp`)                    |                                         |
+| `telefone` | text, nullable                                               | Número E.164 vigente no momento da ação |
+| `criadoEm` | timestamptz                                                  | default `now()`                         |
+
+### 8.5. `whatsapp_resposta_automatica` (024)
+
+Limita a resposta automática a uma por número a cada 24h.
+
+| Campo      | Tipo        | Regras                |
+| ---------- | ----------- | --------------------- |
+| `telefone` | text, pk    | `wa_id` como recebido |
+| `ultimaEm` | timestamptz |                       |
 
 ---
 

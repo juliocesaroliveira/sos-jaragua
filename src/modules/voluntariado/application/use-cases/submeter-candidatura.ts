@@ -1,6 +1,7 @@
 import { DomainError, ValidacaoError, falha, ok, type Result, type UseCase } from '@/src/shared/kernel'
 import { withAudit } from '@/src/modules/auditoria'
 import { resolverDataNascimento, validarCandidatura, type DadosCandidatura } from '../../domain/candidatura'
+import type { ConsentimentoWhatsappPort } from '@/src/modules/notificacoes/application/ports/consentimento-whatsapp'
 import type { PerfilVoluntario, UnidadeDeTrabalho } from '../ports/voluntario-repository'
 
 export type EntradaSubmeterCandidatura = {
@@ -12,6 +13,12 @@ export type EntradaSubmeterCandidatura = {
      * FR-017.
      */
     dataNascimentoDaConta: string | null
+    /**
+     * Caixa "Quero receber avisos pelo WhatsApp" (024, FR-012). Só **concede**:
+     * desmarcada num reenvio não revoga um opt-in já dado, que se desfaz em
+     * Minha conta → Notificações ou respondendo SAIR.
+     */
+    aceitaWhatsapp?: boolean
 }
 
 /**
@@ -29,12 +36,17 @@ export type EntradaSubmeterCandidatura = {
  * editável no próximo acesso, contradizendo FR-014.
  */
 export class SubmeterCandidaturaUseCase implements UseCase<EntradaSubmeterCandidatura, PerfilVoluntario, DomainError> {
-    constructor(private readonly uow: UnidadeDeTrabalho) {}
+    constructor(
+        private readonly uow: UnidadeDeTrabalho,
+        /** Port de Notificações (024, research D11); opcional para quem não oferece a caixa. */
+        private readonly consentimentoWhatsapp?: ConsentimentoWhatsappPort
+    ) {}
 
     async executar({
         userId,
         dados,
-        dataNascimentoDaConta
+        dataNascimentoDaConta,
+        aceitaWhatsapp
     }: EntradaSubmeterCandidatura): Promise<Result<PerfilVoluntario, DomainError>> {
         // A conta é a autoridade sobre a data; o formulário só entra quando ela
         // ainda não tem valor. `?? ''` deixa a mensagem de campo obrigatório
@@ -90,6 +102,17 @@ export class SubmeterCandidaturaUseCase implements UseCase<EntradaSubmeterCandid
                     return salvo
                 })
         )
+
+        // Depois de salvar: o opt-in valida o celular lendo o perfil recém-gravado.
+        // Uma falha aqui não desfaz a candidatura — o voluntário ainda pode ativar
+        // o canal depois, em Minha conta → Notificações.
+        if (aceitaWhatsapp && this.consentimentoWhatsapp) {
+            try {
+                await this.consentimentoWhatsapp.registrar(userId, true, 'cadastro')
+            } catch (erro) {
+                console.error('[voluntariado] falha ao registrar opt-in do WhatsApp na candidatura', { userId, erro })
+            }
+        }
 
         return ok(perfil)
     }

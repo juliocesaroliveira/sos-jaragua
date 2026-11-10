@@ -32,7 +32,7 @@ export async function consultarRelatorioAction(entrada: unknown): Promise<Result
     if (!podeAcessar(relatorio.rota, ator.role)) return semPermissao()
 
     const useCase = new GerarRelatorioUseCase(obterRelatorio)
-    return serializar(await useCase.pagina(relatorio.slug, parametros))
+    return serializar(await useCase.pagina(relatorio.slug, parametros, new Date(), ator.role))
 }
 
 function semPermissao(): ResultadoAction<never> {

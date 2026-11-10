@@ -3,6 +3,7 @@ import { and, count, desc, eq, gte, lt, type SQL } from 'drizzle-orm'
 import { db } from '@/src/shared/db/postgres'
 import { notificacao, notificacaoEnvio } from '@/db/schema/notificacoes'
 import type { CanalNotificacao, EventoNotificacao } from '../../application/ports/notificacao-service'
+import type { MotivoNaoEntrega, SituacaoEnvio } from '../../domain/whatsapp'
 
 /**
  * Leituras de Notificações para a central de relatórios — R-16 Envio de
@@ -15,7 +16,8 @@ import type { CanalNotificacao, EventoNotificacao } from '../../application/port
  */
 
 export type Intervalo = { inicio: Date; fimExclusivo: Date }
-export type StatusEnvio = 'pendente' | 'enviado' | 'falhou'
+/** `entregue`, `lido` e `nao_enviado` vêm do canal WhatsApp (024). */
+export type StatusEnvio = SituacaoEnvio
 
 export type FiltrosEnvios = {
     intervalo: Intervalo
@@ -32,6 +34,9 @@ export type LinhaEnvio = {
     status: StatusEnvio
     destinatarioUserId: string
     erro: string | null
+    /** Canal WhatsApp (024): por que não chegou e para qual número foi. */
+    motivo: MotivoNaoEntrega | null
+    destino: string | null
 }
 
 export type TotalEnvios = { tipo: EventoNotificacao; canal: CanalNotificacao; status: StatusEnvio; total: number }
@@ -58,7 +63,9 @@ export async function enviosNotificacoesRelatorio(
             canal: notificacaoEnvio.canal,
             status: notificacaoEnvio.status,
             destinatarioUserId: notificacao.destinatarioUserId,
-            erro: notificacaoEnvio.erro
+            erro: notificacaoEnvio.erro,
+            motivo: notificacaoEnvio.motivo,
+            destino: notificacaoEnvio.destino
         })
         .from(notificacaoEnvio)
         .innerJoin(notificacao, eq(notificacao.id, notificacaoEnvio.notificacaoId))
