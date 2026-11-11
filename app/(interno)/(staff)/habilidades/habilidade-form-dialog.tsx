@@ -4,7 +4,11 @@ import { useEffect } from 'react'
 import { Check, X } from 'lucide-react'
 import { z } from '@/src/shared/validacao/zod-ptbr'
 import { aplicarErrosDoServidor, textoObrigatorio, useFormulario } from '@/src/shared/formulario'
-import { Button, Dialog, Formulario, Input, avisar } from '@/src/shared/ui'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { Formulario } from '@/src/shared/ui/formulario/formulario'
+import { Input } from '@/src/shared/ui/input/input'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { LIMITES_NOME_HABILIDADE } from '@/src/modules/voluntariado/domain/habilidade'
 import { criarHabilidade, editarHabilidade } from '@/src/modules/voluntariado/presentation/actions/habilidades'
 import type { LinhaHabilidade } from '@/src/modules/voluntariado/presentation/queries/habilidades'
@@ -90,9 +94,7 @@ export function HabilidadeFormDialog({ open, onOpenChange, onSucesso, habilidade
 
         avisar.sucesso(
             modoEdicao ? 'Habilidade atualizada' : 'Habilidade cadastrada',
-            modoEdicao
-                ? `"${dados.nome}" foi atualizada.`
-                : `"${dados.nome}" já pode ser declarada pelos voluntários.`
+            modoEdicao ? `"${dados.nome}" foi atualizada.` : `"${dados.nome}" já pode ser declarada pelos voluntários.`
         )
         onOpenChange(false)
         onSucesso?.()
