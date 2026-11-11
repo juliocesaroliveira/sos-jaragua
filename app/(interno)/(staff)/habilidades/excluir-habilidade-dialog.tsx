@@ -2,7 +2,10 @@
 
 import { useState } from 'react'
 import { Trash2, X } from 'lucide-react'
-import { Alert, Button, Dialog, avisar } from '@/src/shared/ui'
+import { Alert } from '@/src/shared/ui/alert/alert'
+import { Button } from '@/src/shared/ui/button/button'
+import { Dialog } from '@/src/shared/ui/dialog/dialog'
+import { avisar } from '@/src/shared/ui/toast/toast'
 import { excluirHabilidade } from '@/src/modules/voluntariado/presentation/actions/habilidades'
 import type { LinhaHabilidade } from '@/src/modules/voluntariado/presentation/queries/habilidades'
 
@@ -25,12 +28,7 @@ export interface ExcluirHabilidadeDialogProps {
     habilidade?: LinhaHabilidade
 }
 
-export function ExcluirHabilidadeDialog({
-    open,
-    onOpenChange,
-    onSucesso,
-    habilidade
-}: ExcluirHabilidadeDialogProps) {
+export function ExcluirHabilidadeDialog({ open, onOpenChange, onSucesso, habilidade }: ExcluirHabilidadeDialogProps) {
     const [excluindo, setExcluindo] = useState(false)
 
     const vinculados = habilidade?.voluntariosVinculados ?? 0

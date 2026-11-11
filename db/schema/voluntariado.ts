@@ -231,7 +231,16 @@ export const alocacao = pgTable(
     (t) => [
         // Uma linha por pessoa por turno — inclusive quem é staff e também tem
         // perfil de voluntário (research D1).
-        uniqueIndex('alocacao_turno_participante_idx').on(t.turnoId, t.participanteUserId),
+        //
+        // Parcial (026-danger-zone-admin, research D5): quando a Danger Zone
+        // apaga usuários preservando o histórico, as alocações deles passam a
+        // apontar para "Usuário removido". Dois usuários apagados do mesmo turno
+        // colidiriam aqui e a ação inteira falharia. O índice não é alvo de
+        // `ON CONFLICT` em nenhum caminho, então a exceção não muda as telas.
+        // O literal é `REGISTROS_SISTEMA.usuario` — o schema não importa de `src/`.
+        uniqueIndex('alocacao_turno_participante_idx')
+            .on(t.turnoId, t.participanteUserId)
+            .where(sql`${t.participanteUserId} <> 'sistema-usuario-removido'`),
         index('alocacao_voluntario_idx').on(t.voluntarioPerfilId),
         index('alocacao_participante_idx').on(t.participanteUserId)
     ]

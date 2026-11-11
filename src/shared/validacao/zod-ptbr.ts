@@ -8,6 +8,7 @@ import {
     number,
     object,
     preprocess,
+    record,
     string,
     union,
     uuid,
@@ -51,6 +52,7 @@ export const z = {
     number,
     object,
     preprocess,
+    record,
     string,
     union,
     uuid

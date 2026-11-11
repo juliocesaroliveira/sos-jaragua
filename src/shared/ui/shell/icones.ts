@@ -12,6 +12,7 @@ import {
     Package,
     PackageMinus,
     PackagePlus,
+    ShieldAlert,
     Trash2,
     TriangleAlert,
     UserCheck,
@@ -38,6 +39,8 @@ export const ICONES: Readonly<Record<NomeIcone, LucideIcon>> = {
     UserCheck,
     ClipboardList,
     TriangleAlert,
+    // 026-danger-zone-admin — distinto do alerta de crise, que usa TriangleAlert.
+    ShieldAlert,
     Boxes,
     PackagePlus,
     PackageMinus,

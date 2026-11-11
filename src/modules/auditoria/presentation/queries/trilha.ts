@@ -37,7 +37,9 @@ export const ROTULO_ENTIDADE_AUDITADA: Record<EntidadeAuditada, string> = {
     Voluntario: 'Voluntário',
     Atividade: 'Atividade',
     Usuario: 'Usuário',
-    Habilidade: 'Habilidade'
+    Habilidade: 'Habilidade',
+    // 026-danger-zone-admin: resets e exclusões em massa.
+    ManutencaoDados: 'Manutenção de dados'
 }
 
 export const ROTULO_ACAO_AUDITADA: Record<AcaoAuditada, string> = {
