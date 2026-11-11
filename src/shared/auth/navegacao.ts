@@ -45,6 +45,11 @@ export type ItemNavegacao = {
      * `/estoque/descarte`), alcançáveis pelo menu lateral.
      */
     readonly atalho?: { readonly descricao: string }
+    /**
+     * Destino de risco (026-danger-zone-admin, FR-002): o shell o pinta com a
+     * cor de alerta para que não se confunda com as áreas operacionais.
+     */
+    readonly perigo?: true
 }
 
 export type GrupoNavegacao = {
@@ -222,7 +227,16 @@ export const NAVEGACAO: readonly ItemNavegacao[] = [
 
     // Primeiro item do grupo `administracao` (006-user-management-page,
     // research.md D2) — a rota já era reservada em REGRAS_DE_ROTA.
-    { href: '/admin', rotulo: 'Usuários', icone: 'Users', grupo: 'administracao', roles: ['administrador'] }
+    { href: '/admin', rotulo: 'Usuários', icone: 'Users', grupo: 'administracao', roles: ['administrador'] },
+    // Sem `atalho`: uma área que apaga dados não é "acesso rápido" (U-07).
+    {
+        href: '/admin/danger-zone',
+        rotulo: 'Danger Zone',
+        icone: 'ShieldAlert',
+        grupo: 'administracao',
+        roles: ['administrador'],
+        perigo: true
+    }
 ]
 
 /** Itens visíveis ao perfil, na ordem de declaração. Pode ser vazio. */

@@ -52,6 +52,7 @@ planilhas.
 | **Notificações**            | Disparo e registro de eventos de comunicação           | `Notificacao`, `NotificacaoEnvio`               | `notificacao`, `notificacao_envio`                                                                       | Identidade (destinatário); cross-cutting, assinado pelos demais módulos          |
 | **Auditoria**               | Log imutável de CRUD em entidades críticas             | `AuditLog` (Mongo)                              | — (Mongo `audit_logs`)                                                                                   | Identidade (ator); cross-cutting, invocado como wrapper pelos módulos de escrita |
 | **Contingência/Relatórios** | Exportação CSV/XLSX e pacote offline                   | — (sem entidades próprias)                      | —                                                                                                        | Estoque, Voluntariado — orquestrador read-only                                   |
+| **Manutenção de Dados**     | Danger Zone: reset de tabela e exclusão de registros (026) | — (catálogo declarativo em código)        | — (opera sobre todas, via catálogo)                                                                      | **Exceção ao isolamento** (§21): acessa as tabelas dos demais módulos diretamente; Auditoria via porta bloqueante |
 
 **Regra de dependência**: Logística e Contingência nunca importam repositórios internos de
 Estoque/Voluntariado — apenas os _ports_ (`EstoqueQueryPort`, `VoluntariadoQueryPort`) que
@@ -844,6 +845,7 @@ com o usuário, sem pendências para a implementação:
 | Busca sem acento (021)                   | Extensão `unaccent` + função `IMMUTABLE` `public.f_unaccent` (o `unaccent()` é `STABLE` e não compõe índice) + índice GIN trigram de expressão `item_nome_unaccent_trgm_idx`. Descartadas: normalizar só no cliente (não resolve o acento gravado) e coluna gerada `nome_busca` (backfill e mais uma coluna a manter) |
 | Item criado no cadastro de kit (022)     | Criado só ao salvar o kit, na mesma transação. Vínculo por nome normalizado (`f_unaccent` + `ILIKE` sem curinga) sob `pg_advisory_xact_lock` por nome, que serializa kits concorrentes. Coluna `item.aguardando_primeira_entrada` (default `false`) o mantém fora do alerta de estoque crítico até a primeira entrada. Descartadas: índice único em nome (duplicatas antigas e a Entrada aceita repetição) e "sem entrada" derivado (tiraria do alerta itens antigos sem entrada). **Risco aceito**: Entrada e kit simultâneos com o mesmo nome novo ainda podem duplicar, porque a Entrada não pega o lock. Substitui, para o kit, a premissa da 021 de que só a Entrada cria item |
 | Vulnerabilidades moderadas aceitas       | `drizzle-kit` (`esbuild` antigo via `@esbuild-kit/*`; ferramenta de dev, corrigir exige downgrade major) e `uuid` via `exceljs` (caminhos v3/v5/v6 com `buf`, que o `exceljs` não usa). Revisar a cada atualização das duas (feature 020)                                                                             |
+| Danger Zone (026)                        | Módulo `manutencao` com catálogo declarativo conferido contra `pg_constraint` a cada uso; vínculo não classificado bloqueia. Preservação redireciona histórico para registros padrão de id fixo ("Usuário/Item/Categoria removido(a)"). Auditoria **bloqueante** e append-only só aqui (exceção restrita ao Princípio V, decisão Q4 da clarificação). Ver §21 |
 
 ---
 
@@ -882,3 +884,61 @@ do Next 16, que dá interface ciente de conexão e repetição automática de na
 Actions falhadas. É experimental, então também merece decisão própria antes de entrar.
 
 **Sem Web Push.** Continua valendo a decisão do MVP: notificações in-app + e-mail, sem VAPID.
+
+---
+
+## 21. Manutenção de Dados (Danger Zone)
+
+Feature 026 (`specs/026-danger-zone-admin/`). Área `/admin/danger-zone`, só `administrador`, para
+**resetar tabelas** e **excluir registros selecionados**. Nenhuma edição de campo nem comando livre.
+
+**Módulo `manutencao` e a exceção ao isolamento (research D1).** A operação é sobre linhas, não
+sobre regra de domínio, e uma cascata atravessa módulos (`user` → `entrada` → `saldo_estoque`)
+dentro de uma única transação. Por isso o módulo acessa diretamente as tabelas dos demais, só
+através do **catálogo** `src/modules/manutencao/domain/catalogo.ts`. O catálogo lista as 26 tabelas,
+as colunas seguras para exibir e as 30 FKs classificadas como **inseparável** ou **histórico**. O
+lado Mongo continua isolado: a auditoria é acessada pela porta do módulo Auditoria.
+
+**Catálogo × banco (D2).** A cada prévia, `conferirCatalogo` compara o catálogo com `pg_constraint`.
+Qualquer divergência bloqueia as ações nas tabelas envolvidas, e o teste de integração
+`catalogo.integracao.test.ts` impede o merge. **Toda migração que acrescentar FK precisa
+classificá-la no catálogo.**
+
+**Algoritmo (D6/D7).** Os conjuntos-alvo ficam em tabelas temporárias `ON COMMIT DROP` e são
+expandidos até um ponto fixo, com a regra "a exclusão prevalece sobre o redirecionamento". A execução
+segue esta ordem:
+
+1. `LOCK … SHARE ROW EXCLUSIVE` em ordem alfabética;
+2. recálculo dos conjuntos e comparação com a impressão digital da prévia;
+3. snapshots na auditoria;
+4. `UPDATE` dos vínculos de histórico;
+5. `DELETE` dos filhos antes dos pais;
+6. recálculo de `saldo_estoque` (Σ entrada − Σ saída − Σ descarte);
+7. commit.
+
+Redirecionar antes de apagar é o que faz a classificação prevalecer sobre o `ON DELETE CASCADE`
+físico.
+
+**Auditoria bloqueante (D8), exceção restrita ao Princípio V.** A sequência é:
+
+1. ping no Mongo;
+2. evento `iniciada` e um snapshot redigido de cada linha atingida, antes do commit;
+3. evento `concluida` ou `falhou` depois do commit.
+
+Credenciais (`account.password` e tokens, `session.token`, `verification.value`) são **removidas**
+do snapshot. Sem auditoria, a ação não executa. Tudo fica append-only no campo `manutencao` de
+`audit_logs`. `withAudit` e a degradação graciosa continuam valendo para todo o resto do sistema.
+
+**Registros padrão (D4/D5/D15).** São três ids fixos em `src/shared/kernel/registros-sistema.ts`,
+criados pela migração 0012. Eles recebem os vínculos obrigatórios de histórico na preservação, são
+excluídos das listas de escolha e continuam visíveis nos relatórios. Por causa deles, o índice
+único de `alocacao` virou parcial.
+
+**Sessão recente (D11).** Para executar, o login precisa ter no máximo 15 minutos
+(`session.createdAt`). Fora disso, a tela pede um novo login, que funciona tanto com senha quanto
+por provedor social.
+
+**Cache (D12).** Depois de uma execução, todas as `CACHE_TAGS` são invalidadas, mais as tags por id
+de atividades e usuários atingidos. Sessões apagadas continuam valendo por até 5 minutos por causa
+do cookie cache (§6.2.1).
+

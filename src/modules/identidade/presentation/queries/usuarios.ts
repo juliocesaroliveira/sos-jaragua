@@ -1,5 +1,8 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
+import { inArray } from 'drizzle-orm'
+import { db } from '@/src/shared/db/postgres'
+import { user } from '@/db/schema/identidade'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import { criarUsuarioRepository } from '../../infrastructure/drizzle/usuario-repository'
@@ -28,4 +31,19 @@ export async function listarUsuarios(filtros: FiltrosUsuarios): Promise<PaginaDe
 
     const repositorio = criarUsuarioRepository()
     return paginarComClamp(filtros, (p) => repositorio.listar(p))
+}
+
+/**
+ * Nome de cada conta, por id (026-danger-zone-admin, T043): o histórico da
+ * Danger Zone mostra quem executou cada ação sem que o módulo `manutencao`
+ * leia a tabela `user` por conta própria (Princípio I). Id ausente — conta já
+ * apagada — fica de fora do mapa; quem consome decide o rótulo.
+ */
+export async function nomesDeUsuarios(ids: readonly string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map()
+    const linhas = await db
+        .select({ id: user.id, nome: user.name })
+        .from(user)
+        .where(inArray(user.id, [...ids]))
+    return new Map(linhas.map((l) => [l.id, l.nome]))
 }

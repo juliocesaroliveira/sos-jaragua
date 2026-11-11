@@ -23,6 +23,13 @@ export type SessaoAtor = {
      */
     dataNascimento: string | null
     sessionToken: string
+    /**
+     * Quando a sessão foi **criada** — o login, não a última atividade
+     * (026-danger-zone-admin, research D11). A Danger Zone exige sessão recente
+     * para executar; um novo login prova a posse da credencial tanto para quem
+     * entra com senha quanto para quem entra só pelo Google.
+     */
+    sessaoCriadaEm: Date
 }
 
 /**
@@ -61,6 +68,17 @@ function normalizarDataNascimento(valor: unknown): string | null {
         return `${valor.getUTCFullYear()}-${String(valor.getUTCMonth() + 1).padStart(2, '0')}-${String(valor.getUTCDate()).padStart(2, '0')}`
     }
     return null
+}
+
+/**
+ * O cookie cache serializa a sessão e pode reidratar datas como string. Um
+ * valor ilegível vira a época zero: a sessão passa a contar como **não**
+ * recente, que é o lado seguro para quem consome o campo.
+ */
+function normalizarInstante(valor: unknown): Date {
+    const data =
+        valor instanceof Date ? valor : new Date(typeof valor === 'string' || typeof valor === 'number' ? valor : 0)
+    return Number.isNaN(data.getTime()) ? new Date(0) : data
 }
 
 /**
@@ -111,7 +129,8 @@ export async function resolverSessao(cabecalhos: Headers): Promise<SessaoResolvi
             // Só chega aqui quem passou pelo `encerrar` acima.
             ativo: true,
             dataNascimento: normalizarDataNascimento(sessao.user.dataNascimento),
-            sessionToken: sessao.session.token
+            sessionToken: sessao.session.token,
+            sessaoCriadaEm: normalizarInstante(sessao.session.createdAt)
         },
         setCookies
     }

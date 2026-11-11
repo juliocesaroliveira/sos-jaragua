@@ -92,3 +92,20 @@ export async function withAudit<TResultado>(
 
     return resultado
 }
+
+/**
+ * Porta bloqueante da Danger Zone (026-danger-zone-admin, research D8). Não é
+ * alternativa a `withAudit` para escrita de negócio: é a exceção restrita ao
+ * Princípio V, com consumidor único no módulo `manutencao`.
+ */
+export {
+    criarLeitorExecucoesManutencao,
+    criarRegistroExecucaoManutencao,
+    type ExecucaoManutencao,
+    type SituacaoExecucao,
+    type EventoExecucao,
+    type FaseEvento,
+    type RegistroExecucaoManutencao,
+    type SnapshotLinha
+} from './infrastructure/registro-manutencao'
+export { AuditoriaIndisponivelError } from './infrastructure/erros'

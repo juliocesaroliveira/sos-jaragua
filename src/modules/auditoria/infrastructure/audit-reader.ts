@@ -26,12 +26,9 @@ import {
  * então um teste que gravasse nela sujaria a trilha para sempre.
  */
 
-export class AuditoriaIndisponivelError extends Error {
-    constructor(causa?: unknown) {
-        super('Base de auditoria indisponível.', { cause: causa })
-        this.name = 'AuditoriaIndisponivelError'
-    }
-}
+import { AuditoriaIndisponivelError } from './erros'
+
+export { AuditoriaIndisponivelError }
 
 export type FiltrosTrilha = {
     intervalo: { inicio: Date; fimExclusivo: Date }

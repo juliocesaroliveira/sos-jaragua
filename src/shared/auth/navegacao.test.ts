@@ -159,6 +159,7 @@ describe('INV-04 — matriz de visibilidade por perfil', () => {
             '/conta',
             '/conta/notificacoes',
             '/admin',
+            '/admin/danger-zone',
             '/dashboard',
             '/cadastros-pendentes',
             '/voluntarios',

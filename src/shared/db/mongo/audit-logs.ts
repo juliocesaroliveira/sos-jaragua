@@ -27,9 +27,38 @@ export type AcaoAuditada = 'create' | 'update' | 'delete' | 'read' | 'anonimizar
  * - `Doacao`     → `entrada`, `saida`/`saida_item`, `descarte`, `kit`/`kit_receita_item`
  * - `Usuario`    → `user` (006-user-management-page: cadastro/edição de conta e papel)
  * - `Habilidade` → `habilidade` (017-gestao-habilidades: cadastro/edição/exclusão)
+ * - `ManutencaoDados` → qualquer tabela (026-danger-zone-admin): resets e
+ *   exclusões em massa da Danger Zone, com um documento por linha atingida
  */
-export const ENTIDADES_AUDITADAS = ['Voluntario', 'Atividade', 'Doacao', 'Usuario', 'Habilidade'] as const
+export const ENTIDADES_AUDITADAS = [
+    'Voluntario',
+    'Atividade',
+    'Doacao',
+    'Usuario',
+    'Habilidade',
+    'ManutencaoDados'
+] as const
 export type EntidadeAuditada = (typeof ENTIDADES_AUDITADAS)[number]
+
+/**
+ * Fases de uma execução da Danger Zone (026, research D8). A trilha é
+ * append-only: o estado de uma execução é o evento mais recente do seu `id`,
+ * nunca um documento atualizado.
+ */
+export const FASES_EXECUCAO = ['iniciada', 'snapshot', 'concluida', 'falhou', 'recusada', 'cancelada'] as const
+export type FaseExecucao = (typeof FASES_EXECUCAO)[number]
+
+/**
+ * Campo `manutencao` dos documentos da Danger Zone. Não se chama `execucao`
+ * porque os testes de integração da trilha já usam esse nome como etiqueta de
+ * limpeza dos próprios documentos.
+ */
+export type ExecucaoAuditada = {
+    execucaoId: string
+    fase: FaseExecucao
+    /** Só nos eventos (não nos snapshots) — data-model §3. */
+    resumo?: Record<string, unknown>
+}
 
 export type RegistroAuditoria = {
     timestamp: Date
@@ -45,6 +74,8 @@ export type RegistroAuditoria = {
     dadosAnteriores: Record<string, unknown> | null
     dadosNovos: Record<string, unknown> | null
     metadata?: { ip?: string; userAgent?: string }
+    /** Presente só nos documentos da Danger Zone (026-danger-zone-admin). */
+    manutencao?: ExecucaoAuditada
 }
 
 export const NOME_COLECAO = 'audit_logs'
@@ -71,6 +102,13 @@ export async function garantirIndicesAuditoria(): Promise<string[]> {
         // Tudo que um ator fez — prestação de contas por pessoa.
         { key: { userId: 1, timestamp: -1 }, name: 'userId_timestamp' },
         // Varredura cronológica geral, alimenta BR-REL-01.
-        { key: { timestamp: -1 }, name: 'timestamp' }
+        { key: { timestamp: -1 }, name: 'timestamp' },
+        // Eventos e snapshots de uma execução da Danger Zone (026, data-model §3).
+        // Parcial: os demais documentos não carregam `manutencao`.
+        {
+            key: { 'manutencao.execucaoId': 1, timestamp: 1 },
+            name: 'manutencao_execucao_timestamp',
+            partialFilterExpression: { 'manutencao.execucaoId': { $exists: true } }
+        }
     ])
 }

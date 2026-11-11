@@ -1,9 +1,10 @@
-import { and, count, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm'
 import { db, type Transacao } from '@/src/shared/db/postgres'
 import { account, session, user } from '@/db/schema/identidade'
 import type { Role } from '@/src/shared/auth/roles'
 import type { LinhaUsuario, UsuarioRepository } from '../../application/ports/usuario-repository'
 import { cifrar, decifrar, ehEnvelope } from '@/src/shared/cripto'
+import { REGISTROS_SISTEMA } from '@/src/shared/kernel/registros-sistema'
 import {
     consentimentoWhatsapp,
     notificacao,
@@ -11,6 +12,14 @@ import {
     preferenciaWhatsapp,
     whatsappRespostaAutomatica
 } from '@/db/schema/notificacoes'
+
+/**
+ * "Usuário removido" (026-danger-zone-admin, research D15) é o autor herdado
+ * pelo histórico de contas apagadas na Danger Zone. Fora da gestão de contas:
+ * reativá-lo ou trocar sua role daria uma conta que agrega o histórico de
+ * várias pessoas.
+ */
+const naoEhUsuarioRemovido = ne(user.id, REGISTROS_SISTEMA.usuario)
 
 /**
  * Implementação Drizzle do port de Identidade (DESIGN.md §5).
@@ -57,10 +66,11 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
                         podeTrocarSenha: POSSUI_SENHA_PROPRIA
                     })
                     .from(user)
+                    .where(naoEhUsuarioRemovido)
                     .orderBy(desc(user.createdAt))
                     .limit(pageSize)
                     .offset((page - 1) * pageSize),
-                executor.select({ total: count() }).from(user)
+                executor.select({ total: count() }).from(user).where(naoEhUsuarioRemovido)
             ])
 
             return {
@@ -163,9 +173,7 @@ export function criarUsuarioRepository(executor: Executor = db): UsuarioReposito
                 .innerJoin(notificacao, eq(notificacao.id, notificacaoEnvio.notificacaoId))
                 .where(and(eq(notificacao.destinatarioUserId, userId), isNotNull(notificacaoEnvio.destino)))
             const telefones = [
-                ...new Set(
-                    [...consentimentos, ...envios].map((l) => l.telefone).filter((t): t is string => t !== null)
-                )
+                ...new Set([...consentimentos, ...envios].map((l) => l.telefone).filter((t): t is string => t !== null))
             ]
             if (telefones.length > 0) {
                 await executor

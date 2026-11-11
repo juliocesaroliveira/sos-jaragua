@@ -166,8 +166,12 @@ export function GavetaNavegacao({ itens, aberta, onAbertaChange }: GavetaNavegac
                                         'flex min-h-11 items-center gap-3 rounded-lg px-3 text-base',
                                         ANEL_FOCO,
                                         ehAtivo
-                                            ? 'bg-primary-600 text-primary-foreground dark:bg-primary-500'
-                                            : 'text-foreground hover:bg-surface-muted'
+                                            ? item.perigo
+                                                ? 'bg-danger-600 text-white dark:bg-danger-500'
+                                                : 'bg-primary-600 text-primary-foreground dark:bg-primary-500'
+                                            : item.perigo
+                                              ? 'text-danger-700 hover:bg-danger-50 dark:text-danger-400 dark:hover:bg-danger-950'
+                                              : 'text-foreground hover:bg-surface-muted'
                                     )}
                                 >
                                     {Icone ? <Icone aria-hidden className="size-5 shrink-0" /> : null}

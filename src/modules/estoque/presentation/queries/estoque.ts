@@ -1,11 +1,12 @@
 import 'server-only'
 import { cacheLife, cacheTag } from 'next/cache'
-import { and, count, desc, eq, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, ne, sql, type AnyColumn, type SQL } from 'drizzle-orm'
 import { db, ordemAlfabetica } from '@/src/shared/db/postgres'
 import { item, kit, kitReceitaItem, saldoEstoque } from '@/db/schema/estoque'
 import { CACHE_LIFE, CACHE_TAGS } from '@/src/shared/cache'
 import { paginarComClamp, type PaginaDe, type ParametrosPaginacao } from '@/src/shared/paginacao/esquema'
 import { escaparLike } from '@/src/shared/busca/escapar-like'
+import { REGISTROS_SISTEMA } from '@/src/shared/kernel/registros-sistema'
 import { paraNumero } from '../../domain/quantidade'
 import type { CategoriaItem, UnidadeMedida } from '../../domain/item'
 
@@ -49,8 +50,16 @@ export async function listarEstoque(filtros: FiltrosEstoque): Promise<PaginaDe<I
     return paginarComClamp(filtros, (p) => buscarEstoque({ ...filtros, ...p }))
 }
 
+/**
+ * "Item removido" (026-danger-zone-admin, research D15) recebe as movimentações
+ * de itens apagados pela Danger Zone. Aparece em relatórios — é a leitura certa
+ * do histórico —, mas nunca como item escolhível nem na listagem de estoque.
+ */
+const naoEhRegistroSistema = ne(item.id, REGISTROS_SISTEMA.item)
+
 async function buscarEstoque(filtros: FiltrosEstoque): Promise<{ rows: ItemComSaldo[]; totalCount: number }> {
     const condicoes = [
+        naoEhRegistroSistema,
         filtros.categoria ? eq(item.categoria, filtros.categoria) : undefined,
         filtros.somenteComSaldo ? sql`coalesce(${saldoEstoque.quantidadeAtual}, 0) > 0` : undefined
     ].filter(Boolean)
@@ -108,7 +117,9 @@ function condicaoNome(coluna: AnyColumn, termo: string): SQL {
 }
 
 function ordemPorSemelhanca(coluna: AnyColumn, termo: string | undefined): SQL[] {
-    return termo ? [desc(sql`similarity(f_unaccent(${coluna}), f_unaccent(${termo}))`), ordemAlfabetica(coluna)] : [ordemAlfabetica(coluna)]
+    return termo
+        ? [desc(sql`similarity(f_unaccent(${coluna}), f_unaccent(${termo}))`), ordemAlfabetica(coluna)]
+        : [ordemAlfabetica(coluna)]
 }
 
 const COLUNAS_ITEM_COM_SALDO = {
@@ -127,7 +138,7 @@ export async function sugerirItens(termo: string): Promise<ItemComSaldo[]> {
         .select(COLUNAS_ITEM_COM_SALDO)
         .from(item)
         .leftJoin(saldoEstoque, eq(saldoEstoque.itemId, item.id))
-        .where(condicaoNome(item.nome, termo))
+        .where(and(naoEhRegistroSistema, condicaoNome(item.nome, termo)))
         .orderBy(...ordemPorSemelhanca(item.nome, termo))
         .limit(LIMITE_SUGESTOES)
 
@@ -137,7 +148,9 @@ export async function sugerirItens(termo: string): Promise<ItemComSaldo[]> {
 /** Página da tabela de pesquisa de itens do Lookup (FR-005, FR-007). */
 export async function listarItensLookup(filtros: FiltrosLookup): Promise<PaginaDe<ItemComSaldo>> {
     return paginarComClamp(filtros, async ({ page, pageSize }) => {
-        const where = filtros.termo ? condicaoNome(item.nome, filtros.termo) : undefined
+        const where = filtros.termo
+            ? and(naoEhRegistroSistema, condicaoNome(item.nome, filtros.termo))
+            : naoEhRegistroSistema
         const [linhas, [total]] = await Promise.all([
             db
                 .select(COLUNAS_ITEM_COM_SALDO)

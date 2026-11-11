@@ -549,3 +549,34 @@ Nos campos pessoais, nulo **não** é "cadastro incompleto": a obrigatoriedade c
 validação da candidatura, no `domain`. Nulo é o estado de quem pediu a eliminação. A linha permanece
 porque apagá-la faria o `DELETE` falhar para quem tem histórico operacional, ou destruiria o histórico
 de turnos por cascade em `alocacao`.
+
+---
+
+## Feature 026 — Danger Zone
+
+### Registros padrão (migração `0012_danger_zone`)
+
+| Tabela | Id | Conteúdo |
+|---|---|---|
+| `user` | `sistema-usuario-removido` | "Usuário removido", `usuario-removido@sistema.invalid`, `role = usuario`, `ativo = false`, sem `account` |
+| `item` | `00000000-0000-4000-8000-000000000001` | "Item removido", categoria `outros`, unidade `unidade` |
+| `atividade_categoria` | `00000000-0000-4000-8000-000000000002` | "Categoria removida" |
+
+Os ids estão espelhados em `src/shared/kernel/registros-sistema.ts`. As linhas recebem os vínculos
+obrigatórios de histórico quando a Danger Zone apaga preservando dependentes. Nunca são apagadas
+pela Danger Zone e são recriadas se faltarem.
+
+### `alocacao_turno_participante_idx` agora é parcial
+
+`UNIQUE (turno_id, participante_user_id) WHERE participante_user_id <> 'sistema-usuario-removido'`.
+Dois usuários apagados do mesmo turno passam a apontar para o mesmo registro padrão, e o índice
+cheio recusaria a segunda alocação. Nenhum `ON CONFLICT` usa este índice.
+
+### `audit_logs.manutencao` (Mongo)
+
+Campo opcional `{ execucaoId, fase, resumo? }`, com
+`fase ∈ iniciada | snapshot | concluida | falhou | recusada | cancelada`, mais
+`entidade = 'ManutencaoDados'`. O índice parcial `manutencao_execucao_timestamp` é criado por
+`npm run mongo:setup`. O estado de uma execução é o evento mais recente do seu `execucaoId`: nada é
+atualizado.
+
